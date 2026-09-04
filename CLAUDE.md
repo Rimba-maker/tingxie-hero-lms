@@ -27,3 +27,8 @@ Default five canonical roles (`needs-triage`, `needs-info`, `ready-for-agent`,
 
 Single-context layout — `CONTEXT.md` + `docs/adr/` at the repo root. See
 `docs/agents/domain.md`.
+
+### Build skills
+
+Which installed skills to invoke per FSD build phase, and in what order. Read
+`docs/agents/build-skills.md` before starting each phase of FSD §6.

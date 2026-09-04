@@ -36,6 +36,13 @@ export async function gradeWithGemini(
       },
     ],
     config: {
+      // HIGH costs the same 256 tokens/image as MEDIUM but does "zoomed
+      // reframing" (per @google/genai's MediaResolution docs) — better for
+      // reading individual handwritten strokes in a Tian Zige grid, at no
+      // extra token cost over MEDIUM. LOW (64 tokens) risks losing enough
+      // detail that even a human grader would struggle. Verified via
+      // Context7, not assumed.
+      mediaResolution: "MEDIA_RESOLUTION_HIGH",
       responseMimeType: "application/json",
       responseSchema: {
         type: "array",

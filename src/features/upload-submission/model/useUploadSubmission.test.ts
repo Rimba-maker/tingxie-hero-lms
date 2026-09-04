@@ -17,13 +17,14 @@ describe("useUploadSubmission store", () => {
       .upload({ file: new Blob(["fake-image-bytes"]), lessonId: "lesson-1" });
     expect(store.getState().status).toBe("uploading");
 
-    await promise;
-    expect(store.getState()).toMatchObject({
+    const result = await promise;
+    expect(result).toMatchObject({
       status: "success",
       submissionId: "sub-123",
       score: 2,
       totalPossible: 3,
     });
+    expect(store.getState()).toMatchObject(result);
   });
 
   test("transitions to error with a message when the upload step fails", async () => {
@@ -35,9 +36,12 @@ describe("useUploadSubmission store", () => {
     };
     const store = createUploadSubmissionStore(fakeApi);
 
-    await store.getState().upload({ file: new Blob(["fake-image-bytes"]), lessonId: "lesson-1" });
+    const result = await store
+      .getState()
+      .upload({ file: new Blob(["fake-image-bytes"]), lessonId: "lesson-1" });
 
-    expect(store.getState()).toMatchObject({ status: "error", message: "Network error" });
+    expect(result).toMatchObject({ status: "error", message: "Network error" });
+    expect(store.getState()).toMatchObject(result);
   });
 
   test("transitions to error with a message when the grade step fails", async () => {
@@ -49,9 +53,12 @@ describe("useUploadSubmission store", () => {
     };
     const store = createUploadSubmissionStore(fakeApi);
 
-    await store.getState().upload({ file: new Blob(["fake-image-bytes"]), lessonId: "lesson-1" });
+    const result = await store
+      .getState()
+      .upload({ file: new Blob(["fake-image-bytes"]), lessonId: "lesson-1" });
 
-    expect(store.getState()).toMatchObject({ status: "error", message: "Grading failed" });
+    expect(result).toMatchObject({ status: "error", message: "Grading failed" });
+    expect(store.getState()).toMatchObject(result);
   });
 
   test("reset returns to idle", async () => {

@@ -15,7 +15,10 @@ export type UploadState =
   | { status: "error"; message: string };
 
 export type UploadStore = UploadState & {
-  upload(params: { file: Blob; lessonId: string }): Promise<void>;
+  // Returns the terminal state ("success" or "error"), not just void — so
+  // callers read the outcome from what they already awaited instead of
+  // reaching for the store's getState() escape hatch right after.
+  upload(params: { file: Blob; lessonId: string }): Promise<UploadState>;
   reset(): void;
 };
 
@@ -28,9 +31,16 @@ export function createUploadSubmissionStore(api: UploadSubmissionApi) {
         const { submissionId } = await api.uploadSubmission(params);
         set({ status: "grading", submissionId });
         const { score, totalPossible } = await api.gradeSubmission(submissionId);
-        set({ status: "success", submissionId, score, totalPossible });
+        const result: UploadState = { status: "success", submissionId, score, totalPossible };
+        set(result);
+        return result;
       } catch (err) {
-        set({ status: "error", message: err instanceof Error ? err.message : "Upload failed" });
+        const result: UploadState = {
+          status: "error",
+          message: err instanceof Error ? err.message : "Upload failed",
+        };
+        set(result);
+        return result;
       }
     },
     reset() {

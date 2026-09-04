@@ -14,10 +14,9 @@ export function ScanScreen({ lessonId }: ScanScreenProps) {
   const upload = useUploadSubmission();
 
   async function handleCapture(file: Blob) {
-    await upload.upload({ file, lessonId });
-    const latest = useUploadSubmission.getState();
-    if (latest.status === "success") {
-      router.push(`/results/${latest.submissionId}`);
+    const result = await upload.upload({ file, lessonId });
+    if (result.status === "success") {
+      router.push(`/results/${result.submissionId}`);
     }
   }
 

@@ -33,7 +33,7 @@ export function LessonCard({ lesson, expanded, onToggle }: LessonCardProps) {
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
-          className="w-full cursor-pointer rounded-t-xl px-(--card-spacing) py-(--card-spacing) text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="w-full cursor-pointer rounded-t-xl px-(--card-spacing) pt-2 pb-(--card-spacing) text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <CardTitle className="flex items-start justify-between gap-2 text-sm">
             <span>

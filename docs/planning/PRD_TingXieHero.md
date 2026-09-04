@@ -51,6 +51,14 @@ This assignment scopes only the **Paper Test Scan → AI Grading → Feedback** 
 6. PWA manifest
 7. Deployment to Vercel with live URL
 
+**Added beyond the original 4 screens, during build:** the bottom navigation on Screens 1 and 2
+shows four tabs (Dashboard, Syllabus, History, Premium), but only Dashboard and Syllabus were
+scoped with real screens. Rather than let History and Premium 404, both got minimal real
+destinations — a **History** screen (list of past graded submissions, linking into Results) and a
+**Premium** stub (matches the "Top Up"/credits stub precedent above). Neither is part of the
+assignment's evaluated flow; both exist purely so the mockup's own bottom nav doesn't lead
+anywhere broken.
+
 ### Out of scope (explicitly excluded)
 - User authentication / login (not mentioned in assignment; hardcoded profile only)
 - Real-time sync between parent's phone and a separate "student device" (belongs to the broader product JD, not this assignment)
@@ -66,9 +74,9 @@ This assignment scopes only the **Paper Test Scan → AI Grading → Feedback** 
 
 | Ambiguity in source doc | Assumption made | Rationale |
 |---|---|---|
-| "Overlay of the correct word in red pen" — no coordinate/bounding-box data specified in the Gemini prompt or response schema | Implement as a **structured annotation overlay**: display the captured photo alongside a results list where incorrect characters are shown with the correct character rendered in red text next to/below them — not pixel-precise placement on the image itself | Gemini prompt in the assignment only returns a JSON array of character correctness, not coordinates. Pixel-exact overlay would require bounding-box data not requested in the spec. |
+| "Overlay of the correct word in red pen" — no coordinate/bounding-box data specified in the Gemini prompt or response schema | Implement as a **structured annotation**, not a pixel-overlay on the photo — see Screen 4 below for exactly what shipped and why it changed from the original plan during build | Gemini prompt in the assignment only returns a JSON array of character correctness, not coordinates. Pixel-exact overlay would require bounding-box data not requested in the spec. |
 | "QR code target box" in camera overlay (Screen 3) | Treated as a **static UI element only** (visual guide box in the viewfinder), not an active QR-scanning feature | No functional QR-scanning requirement appears anywhere in the Technical Requirements section |
-| Gemini 1.5 Flash specified, but this model is being deprecated | Substitute with **Gemini 2.0 Flash or 2.5 Flash** via the current `@google/genai` SDK | Assignment explicitly allows "equivalent substitutions... as long as core functionality remains identical" |
+| Gemini 1.5 Flash specified, but this model is being deprecated | Substitute with the Google-maintained `gemini-flash-latest` alias via the current `@google/genai` SDK | Assignment explicitly allows "equivalent substitutions... as long as core functionality remains identical." `gemini-2.5-flash` (the initially-planned substitute) was itself retired for new API keys mid-build, and its suggested replacement `gemini-3.6-flash` hit consistent 503s live — the `-latest` alias avoids needing another manual bump on the next retirement. |
 | No auth mentioned | No login/auth implemented; student profile hardcoded as instructed | Matches explicit instruction: "Hardcode student profile details (Lucas – Primary 2)" |
 | "Prepaid Lesson Credits" (12/20) and "Top Up" button | Displayed as static/hardcoded data; "Top Up" button present in UI but non-functional (or shows a disabled/toast state) | Not covered by any Technical Requirement bullet — UI-reference only |
 
@@ -82,16 +90,19 @@ This assignment scopes only the **Paper Test Scan → AI Grading → Feedback** 
 - Header: "Welcome back, Sarah" with student switcher showing "Lucas — Primary 2" (hardcoded, switcher can be visual-only/disabled)
 - Prepaid Lesson Credits card: "12 of 20 Remaining", "Top Up" button (non-functional stub), expiry note ("Credits expire on 30 Nov 2026")
 - Mastery Rate stat: "82.4%", delta indicator ("+3.1% this month") — can be computed from `character_results` if data exists, otherwise hardcoded per mockup
-- Practiced stat: "48 Characters", "8 lessons covered" — same as above
+- Practiced stat: "48 Characters", "8 lists covered" — same as above
 - Upcoming Ting Xie: weekly calendar strip (Mon–Sat), current/selected day highlighted
 - Upcoming test card: "Week 4 (第十课) Spelling Test — Wednesday, 14 Oct at 3:00 PM · P2 MOE Syllabus"
 - Primary CTA: **"Scan & Grade Worksheet"** button → navigates to Camera screen (Screen 3)
 - Bottom navigation: Dashboard, Syllabus, History, Premium (only Dashboard and Syllabus need to be functional destinations; History can route to Results screen; Premium can be a stub)
 
 **Acceptance criteria:**
-- [ ] Page renders matching mockup layout/hierarchy
-- [ ] "Scan & Grade Worksheet" navigates to camera capture flow
-- [ ] Responsive on mobile viewport (this is a PWA, mobile-first)
+- [x] Page renders matching mockup layout/hierarchy — verified via a dedicated mockup-fidelity
+  pass (screenshot compared side-by-side against `screen1-dashboard.png`)
+- [x] "Scan & Grade Worksheet" navigates to camera capture flow
+- [x] Responsive on mobile viewport (this is a PWA, mobile-first) — verified at 375/390/414/430px
+  widths; no desktop/tablet layout, which matches the brief (re-verified directly against the
+  source PDF, not just the mockup images — no responsive requirement appears anywhere in it)
 
 ---
 
@@ -100,7 +111,9 @@ This assignment scopes only the **Paper Test Scan → AI Grading → Feedback** 
 
 - Header: same profile bar as Dashboard
 - P1–P6 tab/pill selector (P2 active by default, matching student's grade)
-- Header text: "MOE Primary 2 Syllabus · 24 Lessons Total"
+- Header text: "MOE Primary 2 Syllabus · N Lessons Total" — the mockup shows a static "24" as an
+  example; the actual count is computed live from however many lessons are seeded for the active
+  level (currently 3 for P2, 0 for P1/P3-P6)
 - Expandable lesson cards, each showing:
   - Week number + lesson title (Chinese + pinyin/translation), e.g. "Week 4 《第十课 – 我们的校园》"
   - Status badge: **Pending Practice** / **Completed (80%)** / **Needs Revision** (hardcoded per mockup data)
@@ -115,9 +128,9 @@ This assignment scopes only the **Paper Test Scan → AI Grading → Feedback** 
 | 2 | 第八课 – 快乐的周末 | Needs Revision | 玩耍 (wán shuǎ), 公园 (gōng yuán) |
 
 **Acceptance criteria:**
-- [ ] Tab selector switches active level (P2 minimum functional; other tabs can show empty/placeholder state)
-- [ ] Lesson cards expand/collapse to reveal vocabulary
-- [ ] Status badges render correctly per lesson
+- [x] Tab selector switches active level (P2 has 3 seeded lessons; P1/P3-P6 correctly show an empty state, no seed data for those levels)
+- [x] Lesson cards expand/collapse to reveal vocabulary
+- [x] Status badges render correctly per lesson
 
 ---
 
@@ -126,16 +139,21 @@ This assignment scopes only the **Paper Test Scan → AI Grading → Feedback** 
 
 - Full-screen camera view using rear camera (`getUserMedia`, `facingMode: environment`)
 - Header: "Align Worksheet" title, close (X) button, flash toggle button
-- Overlay: centered rectangular guide box with corner brackets, instruction text ("Keep page flat and inside the brackets"), QR target box (static visual element per Section 5 assumption)
+- Overlay: centered rectangular guide box with corner brackets, instruction text ("Keep page flat and inside the brackets"), QR target box (static visual element per Section 5 assumption — a dashed-border icon box, positioned clear of the corner brackets)
 - Bottom: circular shutter button — "Capture & Grade"
 - On capture: freeze frame, convert to Blob/File, show uploading state, POST to backend upload endpoint
 - On successful grading response: navigate to Results screen (Screen 4) with the new submission's ID
 
 **Acceptance criteria:**
-- [ ] Camera permission requested and stream displays live video
-- [ ] Capture button produces an image blob from the live stream
-- [ ] Uploading state is visually indicated (spinner/progress) while backend processes
-- [ ] Error state handled gracefully if camera permission denied or upload fails
+- [ ] Camera permission requested and stream displays live video — **code complete, not yet
+  verified on a real device.** Headless Chromium's fake camera device doesn't produce a usable
+  stream in this dev sandbox (confirmed via a direct `getUserMedia` test), so this needs a human on
+  an actual phone/browser before showcase.
+- [ ] Capture button produces an image blob from the live stream — same real-device caveat as above
+- [x] Uploading state is visually indicated (spinner/progress) while backend processes — verified
+  (uploading/grading states render correctly in `ScanScreen`)
+- [x] Error state handled gracefully if camera permission denied or upload fails — verified via
+  Playwright (permission-denied path) and the store's own tests (upload/grade failure paths)
 
 ---
 
@@ -144,16 +162,33 @@ This assignment scopes only the **Paper Test Scan → AI Grading → Feedback** 
 
 - Header: "Test Feedback — Week 4 Syllabus Test" with status badge ("Needs Revision" or similar, derived from score)
 - Score display: large circular badge showing score (e.g. "8/10", "80%")
-- Metadata: "Graded on [date], [time]", "[N] characters missed"
-- **Correction overlay (KEY EVALUATION POINT):** For each character graded, show whether it was correct; for incorrect characters, show the correct character rendered in red next to/below the flagged item (per Section 5 assumption — annotation-list style, not pixel-overlay)
-- Historical Matrix Table: rows = tested Chinese characters/words, columns = test dates; cells show green check (✓) or red cross (✗) per historical `character_results` records for that character
+- Metadata: "Graded on [date], [time]", "[N] character(s) missed"
+- **Correction feedback (KEY EVALUATION POINT — this is what the client evaluates, "the flow"
+  matters more than which specific component renders it):** Every graded character's
+  correct/incorrect status must be visible with the correct answer clear for mistakes. **What
+  shipped differs from the original plan:** a standalone `CorrectionOverlay` widget (a distinct
+  chip list under the score, red text for misses) was built first per this section's original
+  wording, but was **removed during a mockup-fidelity pass** once it became clear the Historical
+  Matrix Table below already renders exactly this information — its most recent (current
+  submission's) date column shows a ✓/✗ per character, which *is* the correction feedback for this
+  submission, not just history. Two components both showing the same 3-6 rows of check/cross marks
+  read as redundant, not as extra clarity, and the mockup itself never shows a separate chip list.
+  The underlying requirement (per-character correct/incorrect, correct answer visible) is still
+  fully met — by the matrix's current-date column — with one component instead of two.
+- Historical Matrix Table: rows = tested Chinese characters/words, columns = test dates; cells show
+  green check (✓) or red cross (✗) per historical `character_results` records for that character.
+  Doubles as the current submission's correction feedback (see above).
 - Actions: "Share Report" (can be a stub — e.g. copy link or share sheet trigger), "Retest Missed" (can route back to camera flow, or be a stub if out of time)
 
 **Acceptance criteria:**
-- [ ] Score, date, and missed-character count pull from the actual `submissions` record (live data, not hardcoded)
-- [ ] Correction overlay clearly shows correct vs. incorrect characters with the correct answer visible for mistakes
-- [ ] Historical matrix reflects real historical `character_results` rows from Supabase, not mock data
-- [ ] Page is reachable both immediately after a new scan and via a "History" entry point
+- [x] Score, date, and missed-character count pull from the actual `submissions` record (live data,
+  not hardcoded) — verified via real upload → real Gemini grade → real Supabase write → real render
+- [x] Correction feedback clearly shows correct vs. incorrect characters with the correct answer
+  visible for mistakes — via the Historical Matrix's current-date column (see above)
+- [x] Historical matrix reflects real historical `character_results` rows from Supabase, not mock
+  data
+- [x] Page is reachable both immediately after a new scan and via a "History" entry point — History
+  screen lists past graded submissions and links into each one's Results page
 
 ---
 
@@ -176,6 +211,13 @@ Represents the per-character grading outcome of a single submission: which chara
 - **Security:** Gemini API key and Supabase service role key must live server-side only (Next.js API routes / server actions), never exposed to the client bundle.
 - **NDA-safety:** Since this is a take-home for a company with IP-sensitive policies, avoid referencing this project publicly by client name after submission unless explicitly permitted.
 - **Performance:** Not a primary evaluation criterion per the assignment, but image upload should show loading feedback so the flow doesn't feel broken during the Gemini round-trip (which can take a few seconds).
+- **Test coverage:** 28 unit tests (Vitest) covering every entity function's business logic — Gemini
+  response parsing, score computation, the pivot logic behind the historical matrix — against fakes,
+  no live credentials needed to run them. 5 Playwright E2E specs covering navigation, tab switching,
+  and both History states (empty and populated). The camera's live video stream is the one thing
+  that can't be exercised this way — headless Chromium's fake camera device doesn't produce a
+  usable stream in this environment — so that path is verified structurally (layout, error states)
+  rather than end-to-end.
 
 ---
 
@@ -193,7 +235,8 @@ Represents the per-character grading outcome of a single submission: which chara
 
 | Risk | Mitigation |
 |---|---|
-| Gemini 1.5 Flash deprecated/unavailable | Use `gemini-2.0-flash` or `2.5-flash` via `@google/genai` (see Section 5) |
-| Camera permissions denied on some devices/browsers | Graceful fallback UI with retry instructions; test on both desktop Chrome and a real mobile browser before submission |
+| Gemini model deprecated/unavailable | Realized twice during build, not just a theoretical risk: `gemini-2.5-flash` (the initial substitute) was retired for new API keys, then `gemini-3.6-flash` hit consistent 503s. Settled on the `gemini-flash-latest` alias (see Section 5) specifically so the next retirement doesn't need a manual bump. |
+| Camera permissions denied on some devices/browsers | Graceful fallback UI with retry instructions, verified via Playwright. Real-device test on a mobile browser still needed before showcase (no desktop scope — see Screen 1 acceptance criteria) — this sandbox can't produce a working camera stream in headless Chromium. |
 | Free-tier rate limits (Gemini / Supabase) hit during grading/demo | Keep grading prompt minimal (JD confirms accuracy isn't graded); avoid unnecessary repeated calls during testing |
 | Time overrun across 5-day window | Follow phased build order in FSD; core flow (upload → grade → overlay) is completed before UI polish |
+| Upload endpoint accepting arbitrary files | Not anticipated in the original plan — found during a later maturity audit: `/api/upload` accepted any `Blob` with no size or type check. Fixed with `validateWorksheetImage` (image MIME + 10MB limit) before anything touches Storage or Gemini. |

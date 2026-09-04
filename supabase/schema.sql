@@ -87,10 +87,13 @@ create policy character_results_public_read on character_results
   using (true);
 
 -- Storage bucket for uploaded worksheet photos
--- Public bucket (matches FSD §3 "public (or signed-URL) bucket" note): the client
--- needs to render the photo directly on the Results screen without a signed-URL
--- round trip, and content is a child's worksheet scan, not sensitive PII — an
--- acceptable simplification for this assignment's scope.
+-- Public bucket (matches FSD §3 "public (or signed-URL) bucket" note). Originally
+-- chosen so the client could render the photo directly on the Results screen
+-- without a signed-URL round trip — the Results screen ended up never actually
+-- displaying the photo (only the grading data), so in practice this bucket is
+-- read server-side only (POST /api/grade fetches the image to send to Gemini).
+-- Left public rather than tightened: content is a child's worksheet scan, not
+-- sensitive PII, so there's no real security reason to revisit this now.
 insert into storage.buckets (id, name, public)
 values ('worksheet-photos', 'worksheet-photos', true)
 on conflict (id) do nothing;

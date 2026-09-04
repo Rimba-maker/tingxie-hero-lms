@@ -1,7 +1,7 @@
 # FSD — TingXie HERO: Technical Architecture & Build Plan
 **Companion doc:** See `PRD_TingXieHero.md` for product requirements & scope
 **Architecture style:** Feature-Sliced Design (FSD), Open/Closed principle — new feature = new file/folder, avoid modifying shared code across features
-**Target:** Hand this document directly to Claude Code CLI as the implementation spec
+**Status:** Build complete (Phases 1-5) + a maturity/audit pass beyond the original 5-day plan — see §6. This document reflects the **as-built** system, not the original plan; where the two diverged, a note explains why.
 
 ---
 
@@ -9,337 +9,332 @@
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Framework | Next.js 14+ (App Router) | Default stack |
-| Language | TypeScript | Strict mode on |
-| Styling | Tailwind CSS v4 + Shadcn UI | Table, Badge, Tabs, Card components map directly to Results/Syllabus UI |
-| Database | Supabase (PostgreSQL) | Matches assignment spec |
+| Framework | Next.js 16 (App Router, Turbopack) | |
+| Language | TypeScript (strict mode) | |
+| Styling | Tailwind CSS v4 + Shadcn UI (base-nova/base-ui style) | Table, Badge, Tabs, Card, Button, Avatar, Skeleton components |
+| Database | Supabase (PostgreSQL) | |
 | Storage | Supabase Storage Bucket | For uploaded worksheet photos |
-| AI Vision | Google Gemini via `@google/genai` SDK | **Substitution from deprecated `gemini-1.5-flash`** → use `gemini-2.0-flash` or `gemini-2.5-flash` |
-| Deployment | Vercel | Frontend + API routes together |
-| PWA | Serwist (`@serwist/next`) | `next-pwa` is stale and has known App Router issues; Serwist is the maintained Workbox fork built for App Router — see FSD §6 Phase 5 |
-| State (client) | Zustand | For camera/upload flow state only — most data is server-fetched |
+| AI Vision | Google Gemini via `@google/genai` SDK | Model: `gemini-flash-latest` (Google-maintained alias) — `gemini-2.5-flash` was retired for new API keys mid-build, its suggested replacement `gemini-3.6-flash` hit consistent 503s, so the alias was chosen specifically to avoid another manual version bump on the next deprecation |
+| Deployment | Vercel | Frontend + API routes together. **Not yet deployed** — deliberately deferred pending final review (see §8) |
+| PWA | Serwist (`@serwist/next` + `@serwist/turbopack` + `@serwist/cli`) | Configurator mode, required for Turbopack (webpack-only `next-pwa` doesn't work here) |
+| State (client) | Zustand | `useUploadSubmission` store only — everything else is server-fetched or local `useState` |
+| Icons | lucide-react | |
+| Utilities | class-variance-authority, clsx, tailwind-merge | shadcn's standard variant/className stack |
 
 ---
 
-## 2. Feature-Sliced Design Folder Structure
+## 2. Feature-Sliced Design Folder Structure (as built)
 
 ```
 src/
-├── app/                          # Next.js App Router — routing shell only
+├── app/                                    # Next.js App Router — routing shell
 │   ├── (dashboard)/
-│   │   └── page.tsx              # Screen 1 route
+│   │   ├── page.tsx                        # Screen 1 route (RSC, force-dynamic)
+│   │   ├── loading.tsx
+│   │   └── error.tsx
 │   ├── syllabus/
-│   │   └── page.tsx              # Screen 2 route
+│   │   ├── page.tsx                        # Screen 2 route
+│   │   ├── loading.tsx
+│   │   └── error.tsx
 │   ├── scan/
-│   │   └── page.tsx              # Screen 3 route
-│   ├── results/
-│   │   └── [submissionId]/
-│   │       └── page.tsx          # Screen 4 route
+│   │   └── page.tsx                        # Screen 3 route (renders ScanScreen, client-side camera flow)
+│   ├── results/[submissionId]/
+│   │   ├── page.tsx                        # Screen 4 route
+│   │   ├── loading.tsx
+│   │   └── error.tsx
+│   ├── history/
+│   │   └── page.tsx                        # Not in original 4-screen scope — added because the
+│   │                                        # bottom nav's "History" tab needs a real destination;
+│   │                                        # lists past graded submissions, links into Results
+│   ├── premium/
+│   │   └── page.tsx                        # Stub page (bottom nav needs a destination; feature is
+│   │                                        # explicitly out of scope per PRD §4)
 │   ├── api/
-│   │   ├── upload/route.ts       # POST /api/upload
-│   │   ├── grade/route.ts        # POST /api/grade
-│   │   └── submissions/
-│   │       └── [id]/route.ts     # GET /api/submissions/:id
-│   ├── manifest.ts               # PWA manifest
-│   └── layout.tsx
+│   │   ├── upload/route.ts                 # POST /api/upload
+│   │   └── grade/route.ts                  # POST /api/grade
+│   ├── manifest.ts                         # PWA manifest
+│   ├── sw.ts                               # Serwist service worker source
+│   ├── layout.tsx
+│   └── global-error.tsx
 │
-├── screens/                      # FSD "pages" layer — screen compositions
-│   ├── dashboard/
-│   │   └── ui/DashboardScreen.tsx
-│   ├── syllabus/
-│   │   └── ui/SyllabusScreen.tsx
-│   ├── scan/
-│   │   └── ui/ScanScreen.tsx
-│   └── results/
-│       └── ui/ResultsScreen.tsx
+├── screens/                                # FSD "pages" layer — screen compositions
+│   ├── dashboard/ui/DashboardScreen.tsx
+│   ├── syllabus/ui/SyllabusScreen.tsx
+│   ├── scan/ui/ScanScreen.tsx
+│   ├── results/ui/ResultsScreen.tsx
+│   └── history/ui/HistoryScreen.tsx
 │
-├── widgets/                      # composed UI blocks used by screens
-│   ├── credits-card/
-│   │   └── ui/CreditsCard.tsx
-│   ├── mastery-stats/
-│   │   └── ui/MasteryStats.tsx
-│   ├── weekly-calendar-strip/
-│   │   └── ui/WeeklyCalendarStrip.tsx
-│   ├── lesson-card/
-│   │   └── ui/LessonCard.tsx
-│   ├── camera-viewfinder/
-│   │   └── ui/CameraViewfinder.tsx
-│   ├── score-header/
-│   │   └── ui/ScoreHeader.tsx
-│   ├── correction-overlay/
-│   │   └── ui/CorrectionOverlay.tsx
-│   └── historical-matrix/
-│       └── ui/HistoricalMatrix.tsx
+├── widgets/                                # composed UI blocks used by screens
+│   ├── app-header/ui/AppHeader.tsx         # shared avatar + welcome text + level pill + bell,
+│   │                                        # used by Dashboard, Syllabus, Premium
+│   ├── bottom-nav/ui/BottomNav.tsx         # Dashboard / Syllabus / History / Premium
+│   ├── credits-card/ui/CreditsCard.tsx
+│   ├── mastery-stats/ui/MasteryStats.tsx
+│   ├── weekly-calendar-strip/ui/WeeklyCalendarStrip.tsx
+│   ├── lesson-card/ui/LessonCard.tsx
+│   ├── camera-viewfinder/ui/CameraViewfinder.tsx
+│   ├── score-header/ui/ScoreHeader.tsx
+│   └── historical-matrix/ui/HistoricalMatrix.tsx
+│       # No separate CorrectionOverlay widget — see PRD §6 Screen 4 for why
+│       # (the historical matrix's own current-date column already shows the
+│       # current submission's per-character correctness).
 │
-├── features/                     # user actions / interactions
+├── features/                               # user actions / interactions
 │   ├── capture-worksheet/
-│   │   ├── model/useCameraCapture.ts     # getUserMedia + capture logic
+│   │   ├── model/useCameraCapture.ts       # getUserMedia + canvas capture, real browser-API complexity
 │   │   └── ui/ShutterButton.tsx
-│   ├── upload-submission/
-│   │   └── model/useUploadSubmission.ts  # POST to /api/upload, tracks upload state (Zustand)
-│   ├── expand-lesson/
-│   │   └── model/useExpandLesson.ts      # local expand/collapse state
-│   └── select-level-tab/
-│       └── model/useLevelTab.ts          # P1–P6 tab state
+│   └── upload-submission/
+│       └── model/useUploadSubmission.ts    # Zustand store: POST /api/upload -> POST /api/grade,
+│                                            # tracks idle/uploading/grading/success/error,
+│                                            # upload() resolves to the terminal state (not void)
+│       # No expand-lesson or select-level-tab feature folders — both were single-caller
+│       # (SyllabusScreen only) thin useState wrappers, inlined during a repo-wide
+│       # over-engineering audit (ponytail-audit). MOE_LEVELS/MoeLevel now live as a
+│       # local const/type in SyllabusScreen.tsx.
 │
-├── entities/                     # domain models — pure data shape + fetch logic
+├── entities/                               # domain models — pure data shape + fetch logic
 │   ├── lesson/
-│   │   ├── model/types.ts                # Lesson type
-│   │   └── api/getLessons.ts             # Supabase query
+│   │   ├── model/types.ts                  # Lesson, VocabEntry
+│   │   └── api/getLessons.ts
 │   ├── submission/
-│   │   ├── model/types.ts                # Submission type
+│   │   ├── model/types.ts
 │   │   └── api/
-│   │       ├── createSubmission.ts
-│   │       └── getSubmission.ts
+│   │       ├── createSubmission.ts         # POST /api/upload step 2: insert pending submission
+│   │       ├── uploadWorksheetImage.ts     # POST /api/upload step 1: Storage upload
+│   │       ├── validateWorksheetImage.ts   # trust-boundary check (image MIME + <=10MB) before
+│   │       │                               # either of the above run
+│   │       ├── getSubmissionForGrading.ts  # POST /api/grade step 1: fetch image_url + vocabList
+│   │       ├── gradeWithGemini.ts          # POST /api/grade step 2: prompt, safety settings,
+│   │       │                               # mediaResolution, response parsing, score computation
+│   │       ├── saveGradingResult.ts        # POST /api/grade step 3: write character_results,
+│   │       │                               # update submissions.status/graded_at
+│   │       ├── getSubmissionDetail.ts      # Results screen data (join lessons for week_number)
+│   │       └── listSubmissionHistory.ts    # History screen data (graded submissions only)
 │   └── character-result/
-│       ├── model/types.ts                # CharacterResult type
+│       ├── model/types.ts                  # CharacterResult
 │       └── api/
-│           ├── saveCharacterResults.ts
-│           └── getCharacterResultsHistory.ts
+│           ├── getCharacterHistory.ts      # batched query across all matching characters
+│           │                               # (one query, not N+1 per character)
+│           └── buildCharacterHistoryMatrix.ts  # pure pivot logic (rows/cols), TDD seam
 │
-└── shared/                       # cross-cutting, no business logic
+└── shared/                                 # cross-cutting, no business logic
     ├── lib/
     │   ├── supabase/
-    │   │   ├── client.ts                 # browser client — plain @supabase/supabase-js + anon key (no @supabase/ssr: no auth/session in scope)
-    │   │   └── server.ts                 # server client — plain @supabase/supabase-js + service role key, server-only
-    │   └── gemini/
-    │       └── client.ts                 # @google/genai client instance
-    ├── ui/                                # Shadcn primitives (Button, Card, Badge, Tabs, Table)
-    ├── config/
-    │   ├── env.client.ts                 # typed access to NEXT_PUBLIC_* vars only, safe anywhere
-    │   └── env.server.ts                 # typed access to service-role/Gemini keys, `server-only`-guarded
-    └── types/
-        └── api.ts                        # shared API request/response types
+    │   │   └── server.ts                   # server-only client, service role key, lazy singleton
+    │   │       # No browser client (shared/lib/supabase/client.ts) — removed as dead code.
+    │   │       # This app is server-only per PRD §2 (no auth/session), so nothing ever
+    │   │       # needed a browser-side Supabase client.
+    │   ├── gemini/client.ts                # server-only, lazy singleton
+    │   ├── pluralize.ts                    # count-aware singular/plural helper, used at every
+    │   │                                    # count+noun display (characters, lessons, lists)
+    │   └── utils.ts                        # cn() (clsx + tailwind-merge)
+    ├── ui/                                  # Shadcn primitives: Button, Card, Badge, Tabs, Table,
+    │                                        # Avatar, Skeleton
+    └── config/
+        ├── requireEnv.ts                   # shared "throw if missing" helper
+        ├── env.client.ts                   # NEXT_PUBLIC_SUPABASE_URL only
+        └── env.server.ts                   # SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY,
+                                             # `server-only`-guarded
 ```
 
-**Open/Closed reminder:** when adding a new screen or widget later, create a new folder under the relevant layer — never bolt unrelated logic onto an existing entity/widget file.
+**No `shared/types/api.ts`.** The original sketch planned shared request/response types for a
+separate GET API layer; that layer was never built (see §4), so there's nothing to type there —
+each server-fetching screen imports its entity function's own return type directly.
+
+**Open/Closed reminder:** when adding a new screen or widget later, create a new folder under the
+relevant layer — never bolt unrelated logic onto an existing entity/widget file.
 
 ---
 
 ## 3. Database Schema (Supabase / PostgreSQL DDL)
 
-**Applied version:** `supabase/schema.sql` + `supabase/seed.sql` — reviewed against
-the `supabase-postgres-best-practices` skill (RLS policies, FK indexes, status
-check constraints, `numeric(4,1)` for scores, storage bucket policy added). The
-sketch below is the original design intent; the files are the source of truth.
+**Source of truth:** `supabase/schema.sql` + `supabase/seed.sql` — reviewed against the
+`supabase-postgres-best-practices` skill before applying (RLS policies, FK indexes, status check
+constraints, `numeric(4,1)` for scores, storage bucket policy). Read those files directly for the
+authoritative, fully-commented version; the summary below is for orientation only.
 
-```sql
--- lessons: syllabus content
-create table lessons (
-  id uuid primary key default gen_random_uuid(),
-  week_number int not null,
-  title text not null,               -- e.g. "第十课 – 我们的校园"
-  moe_level text not null,           -- e.g. "P2"
-  status text not null default 'pending', -- 'pending' | 'completed' | 'needs_revision'
-  vocabulary jsonb not null,         -- [{ "character": "校园", "pinyin": "xiào yuán" }, ...]
-  created_at timestamptz default now()
-);
+**Tables:** `lessons` (syllabus content + vocabulary jsonb), `submissions` (one graded worksheet
+scan, FK to `lessons`), `character_results` (per-character grading outcome, FK to `submissions`,
+cascade delete).
 
--- submissions: one graded worksheet scan
-create table submissions (
-  id uuid primary key default gen_random_uuid(),
-  student_id text not null default 'lucas-p2',  -- hardcoded per assignment scope
-  lesson_id uuid references lessons(id),
-  image_url text not null,           -- Supabase Storage public/signed URL
-  total_score numeric,               -- e.g. 8.0 (out of 10)
-  total_possible int not null default 10,
-  status text not null default 'pending', -- 'pending' | 'graded' | 'failed'
-  submitted_at timestamptz default now(),
-  graded_at timestamptz
-);
+**RLS:** No end-user auth in scope, so no `auth.uid()`-scoped policies. All three tables get a
+public-read policy for `anon`/`authenticated`; writes only ever happen server-side via the service
+role key, which bypasses RLS entirely.
 
--- character_results: per-character grading outcome
-create table character_results (
-  id uuid primary key default gen_random_uuid(),
-  submission_id uuid references submissions(id) on delete cascade,
-  character text not null,           -- e.g. "礼堂"
-  is_correct boolean not null,
-  created_at timestamptz default now()
-);
+**Storage:** `worksheet-photos` bucket, public. Public rather than signed-URL because the upload
+flow needs a URL immediately usable without a round trip — **note:** the Results screen ended up
+never rendering the photo itself (only the grading data), so this bucket is effectively only ever
+read server-side (`POST /api/grade` fetches the image to send to Gemini). The public-bucket choice
+is still a reasonable simplification (worksheet photos aren't sensitive PII), just not for the
+original "client renders it directly" reason.
 
--- indexes for the historical matrix query (character x date lookups)
-create index idx_character_results_character on character_results(character);
-create index idx_submissions_submitted_at on submissions(submitted_at);
-```
-
-**Seed data** (insert on setup, matches PRD §6 Screen 2 table):
-```sql
-insert into lessons (week_number, title, moe_level, status, vocabulary) values
-(4, '第十课 – 我们的校园', 'P2', 'pending',
-  '[{"character":"校园","pinyin":"xiào yuán"},{"character":"礼堂","pinyin":"lǐ táng"},{"character":"老师","pinyin":"lǎo shī"}]'),
-(3, '第九课 – 我爱我的家', 'P2', 'completed',
-  '[{"character":"爸爸","pinyin":"bà ba"},{"character":"妈妈","pinyin":"mā ma"},{"character":"温暖","pinyin":"wēn nuǎn"}]'),
-(2, '第八课 – 快乐的周末', 'P2', 'needs_revision',
-  '[{"character":"玩耍","pinyin":"wán shuǎ"},{"character":"公园","pinyin":"gōng yuán"}]');
-```
-
-**Storage bucket:** create a public (or signed-URL) bucket named `worksheet-photos` in Supabase Storage.
+**Seed data** (`supabase/seed.sql`, matches PRD §6 Screen 2): 3 lessons for P2 (weeks 2-4, one each
+of `pending`/`completed`/`needs_revision` status) with their vocabulary lists. P1 and P3-P6 have no
+seed lessons — the Syllabus screen's tab selector for those levels correctly renders an empty
+state.
 
 ---
 
 ## 4. API Contract
 
-### `POST /api/upload`
-Uploads captured photo, creates a pending submission record.
+Two real API routes — the flow the assignment evaluates. Everything else (Dashboard, Syllabus,
+Results, History) is a React Server Component fetching its entity function directly, **not** a
+separate GET API layer — see the note at the end of this section for why.
 
+### `POST /api/upload`
 **Request:** `multipart/form-data` — `{ image: Blob, lessonId: string }`
 
-**Response:**
-```json
-{ "submissionId": "uuid", "status": "pending" }
-```
-
 **Server logic:**
-1. Upload image blob to Supabase Storage bucket `worksheet-photos`
-2. Insert row into `submissions` with `image_url`, `lesson_id`, `status: 'pending'`
-3. Return `submissionId` to client
-4. Client immediately calls `/api/grade` with the `submissionId` (or this route triggers grading server-side directly — see Section 6 for build-order tradeoff)
+1. Validate the image (`validateWorksheetImage`: must be `image/*`, ≤10MB) — 400 with a clear
+   message if not, before anything touches Storage.
+2. Upload to Supabase Storage bucket `worksheet-photos` (`uploadWorksheetImage`).
+3. Insert a `submissions` row with `image_url`, `lesson_id`, `status: 'pending'`
+   (`createSubmission`).
+
+**Response:** `{ "submissionId": "uuid", "status": "pending" }`
 
 ### `POST /api/grade`
-Runs Gemini Vision grading on a pending submission.
-
-**Request:**
-```json
-{ "submissionId": "uuid" }
-```
-
-**Response:**
-```json
-{
-  "submissionId": "uuid",
-  "score": 8,
-  "totalPossible": 10,
-  "results": [
-    { "character": "校园", "isCorrect": true },
-    { "character": "礼堂", "isCorrect": false },
-    { "character": "老师", "isCorrect": true }
-  ]
-}
-```
+**Request:** `{ "submissionId": "uuid" }`
 
 **Server logic:**
-1. Fetch submission's `image_url` and associated lesson's `vocabulary` list
-2. Call Gemini with the image + prompt (see Section 6)
-3. Parse JSON response, compute `total_score`
-4. Insert rows into `character_results`, update `submissions.status = 'graded'`, `graded_at = now()`
-5. Return structured result to client for the overlay UI
-
-### `GET /api/submissions/:id`
-Fetches a single submission with its character results — used by Results screen.
-
-**Response:**
-```json
-{
-  "id": "uuid",
-  "score": 8,
-  "totalPossible": 10,
-  "submittedAt": "2026-10-14T15:12:00Z",
-  "imageUrl": "https://...",
-  "characterResults": [
-    { "character": "校园", "isCorrect": true },
-    { "character": "礼堂", "isCorrect": false }
-  ]
-}
-```
-
-### `GET /api/character-history?character=礼堂` (or batch equivalent)
-Fetches historical correct/incorrect records per character across submission dates — powers the Historical Matrix Table (PRD §6 Screen 4).
+1. Fetch the submission's `image_url` and its lesson's `vocabulary` list (`getSubmissionForGrading`).
+2. Fetch the image, base64-encode it, call Gemini with the prompt + `responseSchema` +
+   `safetySettings` (`BLOCK_ONLY_HIGH` — content is always a benign child's worksheet photo) +
+   `mediaResolution: MEDIA_RESOLUTION_HIGH` (`gradeWithGemini`).
+3. Check `promptFeedback.blockReason` first (a named condition, not a parse failure) before
+   attempting to parse `response.text` as JSON.
+4. Write `character_results` rows, update `submissions.status = 'graded'`, `graded_at = now()`
+   (`saveGradingResult`).
 
 **Response:**
 ```json
-{
-  "character": "礼堂",
-  "history": [
-    { "date": "2026-10-08", "isCorrect": false },
-    { "date": "2026-10-10", "isCorrect": false },
-    { "date": "2026-10-12", "isCorrect": true }
-  ]
-}
+{ "submissionId": "uuid", "score": 8, "totalPossible": 10,
+  "results": [{ "character": "校园", "isCorrect": true }, ...] }
 ```
-*(Implementation note: for the matrix table showing multiple characters × multiple dates, prefer a single batched query — e.g. `GET /api/character-history/matrix` returning all rows/columns at once — over N+1 calls per character.)*
+
+**Why no `GET /api/submissions/:id` or `GET /api/character-history` routes** (both were in the
+original plan): Dashboard, Syllabus, and Results are React Server Components that call their
+entity function directly (`getSubmissionDetail`, `getCharacterHistory`, etc.) with
+`export const dynamic = "force-dynamic"`. This is simpler than a full GET API for read-only screens
+and avoids an unnecessary network hop — the client-observable "flow" the assignment actually grades
+(upload → grade → feedback) is entirely `POST /api/upload` + `POST /api/grade`, which remain real
+API routes. Supabase queries still live inside `entities/*/api/` either way — screens and widgets
+never call Supabase directly, so the narrow-interface/seam discipline that a GET API would have
+enforced is preserved without the extra layer.
 
 ---
 
 ## 5. Gemini Integration Detail
 
 ```ts
-// shared/lib/gemini/client.ts
-import { GoogleGenAI } from '@google/genai';
+// src/shared/lib/gemini/client.ts — server-only, lazy singleton
+import { GoogleGenAI } from "@google/genai";
+import { getServerEnv } from "@/shared/config/env.server";
 
-export const gemini = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY!,
-});
+let client: GoogleGenAI | undefined;
+export function getGeminiClient(): GoogleGenAI {
+  if (!client) {
+    const { geminiApiKey } = getServerEnv();
+    client = new GoogleGenAI({ apiKey: geminiApiKey });
+  }
+  return client;
+}
 ```
 
 ```ts
-// entities/submission/api/gradeSubmission.ts (server-only)
-const prompt = `Compare the handwriting in this Tian Zige grid against the expected spelling list [${vocabList.join(', ')}]. Return which words were written correctly or incorrectly.`;
+// src/entities/submission/api/gradeWithGemini.ts (server-only, TDD'd — 5 tests)
+const GEMINI_MODEL = "gemini-flash-latest";
 
-const response = await gemini.models.generateContent({
-  model: 'gemini-2.5-flash', // substituted from deprecated gemini-1.5-flash
-  contents: [
-    { role: 'user', parts: [
-      { text: prompt },
-      { inlineData: { mimeType: 'image/jpeg', data: base64Image } }
-    ]}
-  ],
+const response = await geminiClient.models.generateContent({
+  model: GEMINI_MODEL,
+  contents: [{ role: "user", parts: [
+    { text: buildPrompt(vocabList) },
+    { inlineData: { mimeType: "image/jpeg", data: imageBase64 } },
+  ]}],
   config: {
-    responseMimeType: 'application/json',
-    responseSchema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          character: { type: 'string' },
-          isCorrect: { type: 'boolean' },
-        },
-        required: ['character', 'isCorrect'],
-      },
-    },
+    mediaResolution: "MEDIA_RESOLUTION_HIGH", // same 256 tokens/image as MEDIUM, better stroke detail
+    safetySettings: [
+      { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+      { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+      { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+      { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+    ],
+    responseMimeType: "application/json",
+    responseSchema: { /* array of { character: string, isCorrect: boolean } */ },
   },
 });
 
-const parsed = JSON.parse(response.text); // schema-enforced, but keep a try/catch — treat as untrusted API output regardless
+const blockReason = response.promptFeedback?.blockReason;
+if (blockReason) throw new Error(`Gemini blocked this image: ${blockReason}`);
+
+const results = JSON.parse(response.text); // still try/catch'd — untrusted external output
+const score = results.filter((r) => r.isCorrect).length;
+// totalPossible = results.length, NOT vocabList.length — Gemini sometimes grades
+// each character individually rather than per-word, so a 3-word list can come
+// back as 6 results (confirmed live). totalPossible must match what was actually graded.
 ```
 
-**Note:** `responseSchema` makes the Gemini API itself enforce valid JSON matching this shape, replacing the old approach of prompting for JSON and defensively stripping markdown fences. Still wrap the parse in a try/catch and validate before writing to the database — never trust an external API's output blindly.
+**Deprecation history during this build:** the FSD originally specced `gemini-2.5-flash`
+(substituted from the assignment's named `gemini-1.5-flash`, already deprecated at spec time).
+`gemini-2.5-flash` itself then returned 404 "no longer available to new users" once live credentials
+were connected. Its suggested replacement, `gemini-3.6-flash`, hit consistent 503 "high demand"
+across multiple retries. Settled on the `-latest` alias Google maintains, specifically so the next
+model retirement doesn't need another manual version bump.
 
 ---
 
-## 6. Build Order (5-day phased plan)
+## 6. Build History
 
-Prioritized for a **Back-End Developer candidate** — backend robustness gets more polish time; frontend gets "clean and functional" but not pixel-perfect.
+### Phases 1-5 (original 5-day plan) — complete
+- **Phase 1 — Foundation:** Next.js/FSD/Tailwind/Shadcn scaffold, Supabase project + schema + seed,
+  git repo.
+- **Phase 2 — Core backend pipeline:** `POST /api/upload`, `POST /api/grade`, TDD'd against fakes,
+  then verified live end-to-end (real upload → real Gemini call → real Supabase write → real
+  Results render) once credentials were connected. Two real bugs found and fixed this way: the
+  Gemini model deprecation cascade above, and `totalPossible` computed from `vocabList.length`
+  instead of the actual result count.
+- **Phase 3 — Camera + upload flow:** `useCameraCapture`, `CameraViewfinder`, chained into
+  `useUploadSubmission`. Layout/error paths verified via Playwright; the live camera stream itself
+  needs a real device (headless Chromium's fake camera device doesn't work in this dev
+  environment — confirmed via a direct `getUserMedia` test).
+- **Phase 4 — Results, Dashboard, Syllabus:** built against mockups, then a dedicated visual-fidelity
+  pass compared each screen pixel-by-pixel against `docs/reference/mockups/*.png` and fixed every
+  discrepancy found (colors, spacing, alignment, a real WCAG contrast bug in the warning Badge
+  variant, a real vertical-alignment bug in the lesson card header).
+- **Phase 5 — PWA:** Serwist Configurator mode (required for Turbopack), manifest, icons. Service
+  worker registration confirmed live via Playwright (registers → installs → activates → controls
+  the page, zero console errors).
 
-**Before each phase below, check `docs/agents/build-skills.md`** — it maps installed Claude Code skills to these phases, in invocation order.
+### Phase 6 (beyond the original plan) — maturity & pre-showcase audit
+Not in the original 5-day scope, done afterward as an explicit "make this as mature as possible
+before showcase" pass:
+- **`mattpocock-skills:improve-codebase-architecture`** — repo-wide deepening review. Found one real
+  issue (`useUploadSubmission`'s `upload()` returned `void`, forcing the one caller to reach past
+  the reactive store binding via `.getState()`) and fixed it; everything else in the codebase was
+  already appropriately deep (entity layer, `gradeWithGemini`) or appropriately shallow
+  (presentational UI).
+- **`ponytail-audit`** — repo-wide over-engineering scan. Cut: 39 lines of dead shadcn-scaffold CSS
+  tokens (chart/sidebar, zero consumers), the entire unused browser Supabase client (and the env var
+  it was the sole consumer of), two single-caller feature hooks inlined into `SyllabusScreen`. One
+  finding (dropping `esbuild` as a direct devDependency) was reverted after it broke the build —
+  `@serwist/cli` needs it present but doesn't force-install it itself.
+- **`mattpocock-skills:grill-me`** — self-answered pre-showcase readiness interview. Added real
+  upload validation (`validateWorksheetImage`, a genuine trust-boundary gap — no size/MIME check
+  existed before), README screenshots + a Known Limitations section + a Deployment-readiness
+  section. Explicitly decided *against* seeding demo data into the review database (fabricated
+  `submitted_at` history would look like faked usage to a technical reviewer) and against a
+  dark-mode polish pass (brief and mockups are light-only).
+- **Deep audit + doc refresh** (this pass) — found and closed one real implementation gap (the
+  camera overlay's QR target box was never built, despite being in the assignment's text
+  requirements and already assumed-about in the PRD), found and fixed a pluralization bug
+  ("1 characters missed") plus 3 latent instances of the same bug elsewhere, then rewrote this
+  document and the PRD to match the as-built system rather than the original plan.
 
-### Phase 1 (Day 1) — Foundation
-- [x] Next.js project scaffold, FSD folder structure, Tailwind + Shadcn setup
-- [x] Supabase project, run schema DDL + seed data (Section 3) — project `tingxie-hero-lms` (ap-southeast-1) created via CLI 2026-09-04, `schema.sql`/`seed.sql` applied and verified, 3 lessons + `worksheet-photos` bucket confirmed live
-- [ ] Env vars configured (Section 7), deploy empty skeleton to Vercel immediately — *Supabase + Gemini env vars are configured locally (`.env.local`, gitignored); Vercel still deferred deliberately: it auto-deploys on every push, and this repo's commit cadence is deliberately granular (see commit history) — connecting it now would burn free-tier deploys on every WIP commit. Will connect once the app is further along.*
-- [x] Git repo initialized with meaningful first commit (submission timestamp is verified via GitHub)
-
-### Phase 2 (Day 2) — Core Backend Pipeline
-- [x] `POST /api/upload` — Supabase Storage upload + submission record creation (code complete, TDD'd against a fake Supabase client — see `src/entities/submission/api/*.test.ts`)
-- [x] `POST /api/grade` — Gemini integration, prompt, JSON parsing, `character_results` writes (same — TDD'd against a fake Gemini/Supabase client)
-- [x] Test this pipeline directly via Postman/curl before wiring any UI — **this is the highest-value, highest-risk part of the assignment** — *run live via curl once Supabase/Gemini credentials were connected (2026-09-04): real upload → real Gemini call → real Supabase write → real Results page render, confirmed via SQL query against the actual rows. Surfaced and fixed 2 real bugs along the way — `gemini-2.5-flash` retired for new API keys (now `gemini-flash-latest`), and `totalPossible` was computed from `vocabList.length` instead of the actual result count (Gemini can grade per-character rather than per-word). Test submissions cleaned up afterward.*
-
-### Phase 3 (Day 3) — Camera + Upload Flow (Screen 3)
-- [x] `getUserMedia` camera access, live preview — code complete (`useCameraCapture`), layout/error-path verified via Playwright; live-streaming happy path needs a real browser/device (headless Chromium's fake camera isn't working in this dev environment)
-- [x] Capture → Blob conversion → call `/api/upload` → `/api/grade` — chained in `useUploadSubmission`, TDD'd
-- [x] Uploading/loading states — `uploading`/`grading`/`error` states shown in `ScanScreen`
-
-### Phase 4 (Day 4) — Results, Dashboard, Syllabus (Screens 1, 2, 4)
-- [x] Results screen — score header, correction overlay (per PRD §6 assumption), historical matrix. Matches mockup (verified via a throwaway Playwright preview with fake data, then again with a real graded submission once Supabase/Gemini were connected — see Phase 2).
-- [x] Dashboard screen — hardcoded/derived stats, calendar strip, CTA routing. Verified live with real Supabase data (real lesson IDs, real status).
-- [x] Syllabus screen — tabs, expandable lesson cards, seed data rendering. Verified live with real Supabase data.
-- Design tokens (colors, font) extracted from `docs/reference/mockups/*.png` directly — see `src/app/globals.css` header comment for why (the `ui-ux-pro-max` design-system search didn't have a matching palette in its database after two tries).
-- Screens are React Server Components fetching entity functions directly (`export const dynamic = "force-dynamic"`), not going through separate GET API routes — simpler than FSD §4's GET /api/submissions/:id sketch and avoids an unnecessary network hop; the client-observable "flow" the assignment grades (upload → grade → overlay) is unaffected since that's entirely POST /api/upload + POST /api/grade.
-
-### Phase 5 (Day 5) — PWA, Polish, Deployment
-- [x] Serwist manifest + service worker + icons — Configurator mode (`@serwist/next` + `@serwist/turbopack` + `@serwist/cli`, bundler-agnostic, verified via Context7 since this project runs Turbopack, not webpack). Service worker registration confirmed live via Playwright (registers → installs → activates → controls the page, zero console errors); manifest, icons, and `/sw.js` all confirmed reachable.
-- [ ] End-to-end test: real photo → real grading → real results, on both desktop and mobile browser
-- [ ] README with setup instructions + live Vercel URL
-- [ ] Final deploy, verify GitHub last-updated timestamp is well before deadline (Tue Sep 8, 3:00 AM WIB)
+**Deliberately still open**, tracked rather than silently left:
+- [ ] Vercel env vars set, deploy triggered, live URL added to README — deferred pending your
+  explicit go-ahead (standing instruction from earlier in this project).
+- [ ] Real-device camera test (`/scan`) — cannot be done from this sandbox; needs a human on an
+  actual phone/browser.
 
 ---
 
@@ -347,27 +342,37 @@ Prioritized for a **Back-End Developer candidate** — backend robustness gets m
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=        # server-only, never expose to client
 GEMINI_API_KEY=                   # server-only
 ```
+
+No `NEXT_PUBLIC_SUPABASE_ANON_KEY` — the original plan included one for a browser-side Supabase
+client, but that client was never actually used anywhere (no auth/session in scope, so nothing
+ever needed browser-side Supabase access) and was removed as dead code, along with this env var.
 
 ---
 
 ## 8. Deployment Checklist
 
-- [ ] Supabase project created, schema + seed data applied, Storage bucket `worksheet-photos` created with appropriate access policy
-- [ ] Vercel project linked to GitHub repo, env vars set in Vercel dashboard (not committed to repo)
-- [ ] Serwist build output verified (manifest reachable, icons load, service worker registers)
-- [ ] Live URL tested end-to-end from a real mobile device (camera access requires HTTPS — Vercel provides this by default)
-- [ ] README includes: setup steps, env vars needed, live URL, brief note on architecture decisions and the assumptions from PRD §5
+- [x] Supabase project created, schema + seed data applied, `worksheet-photos` bucket created with
+  its access policy
+- [ ] Vercel project linked to GitHub repo, env vars set in Vercel dashboard (not committed to
+  repo) — see README's Deployment section for the exact steps
+- [x] Serwist build output verified (manifest reachable, icons load, service worker registers,
+  confirmed via Playwright)
+- [ ] Live URL tested end-to-end from a real mobile device (needs the deploy above first)
+- [x] README includes: setup steps, env vars needed, screenshots, architecture notes, Known
+  Limitations, Deployment steps — live URL itself still pending the deploy above
 
 ---
 
-## 9. Naming & Convention Notes (for Claude Code CLI to follow)
+## 9. Naming & Convention Notes
 
 - Component files: PascalCase (`ScoreHeader.tsx`)
 - Hooks/model files: camelCase, prefixed `use` for hooks (`useCameraCapture.ts`)
 - API routes: kebab-case folder names under `app/api/`
-- Every new screen/widget/feature = new folder under its FSD layer — do not add unrelated logic to `shared/` unless it's genuinely cross-cutting with no business meaning
-- Keep Supabase queries inside `entities/*/api/` — screens and widgets should not call Supabase directly
+- Every new screen/widget/feature = new folder under its FSD layer — do not add unrelated logic to
+  `shared/` unless it's genuinely cross-cutting with no business meaning
+- Keep Supabase queries inside `entities/*/api/` — screens and widgets never call Supabase directly
+- A "feature" folder needs a real second caller or genuinely non-trivial local logic to justify
+  itself — see §2's note on `expand-lesson`/`select-level-tab` for what got inlined instead and why

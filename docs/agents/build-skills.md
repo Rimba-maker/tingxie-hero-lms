@@ -64,13 +64,49 @@ spec, not loose inspiration.
 ## Phase 5 — PWA, Polish, Deployment
 
 10. **`webapp-testing`** — the FSD §6 Phase 5 checklist item "real photo →
-    real grading → real results, desktop and mobile" — run it through
-    Playwright, don't just eyeball it.
+    real grading → real results" (mobile only — no desktop/tablet layout is
+    in scope, confirmed against the source PDF, not just the mockup images)
+    — run it through Playwright, don't just eyeball it.
 11. **`security-review`** (built-in) — final pass before submitting: confirm
     `SUPABASE_SERVICE_ROLE_KEY` and `GEMINI_API_KEY` never reach client
     bundles, per FSD §7/§8 and PRD's security NFR.
 12. **`fewer-permission-prompts`** (built-in, optional) — reduce approval
     friction for the remaining `gh`/`vercel`/`npm` calls in this phase.
+
+## Phase 6 — Maturity & pre-showcase audit (beyond the original 5-day plan)
+
+Not part of FSD §6's original build order — run afterward, once Phases 1-5 were
+functionally complete, as an explicit "make this as mature as possible before
+showcase" pass. Reference: FSD §6's own "Phase 6" section documents what each
+of these actually found.
+
+13. **`mattpocock-skills:improve-codebase-architecture`** — repo-wide deepening
+    review (module/interface/depth/seam vocabulary from `codebase-design`).
+    Run this before `ponytail-audit`, not after — architecture findings
+    (shallow modules, missing locality) are a different failure mode than
+    over-engineering findings, and fixing depth issues first means the
+    over-engineering pass isn't auditing code that's about to change shape.
+14. **`ponytail-audit`** — repo-wide over-engineering/dead-code scan (distinct
+    from the `ponytail` cross-cutting discipline above — this is the explicit
+    audit command, not just the always-on lazy-dev persona). Verify every
+    proposed cut against the actual build/test suite before committing it —
+    this project had one audit finding (dropping `esbuild` as a direct
+    dependency) that looked correct via `npm ls` but broke the build in
+    practice.
+15. **`mattpocock-skills:grill-me`** — self-answered (or user-answered)
+    interview to sharpen what "showcase-ready" actually requires, before
+    doing more work speculatively. Decisions from this project's run: add
+    real upload validation (a genuine trust-boundary gap), add README
+    screenshots + Known Limitations + Deployment sections, explicitly do NOT
+    seed demo data into the review database and do NOT invest in a dark-mode
+    pass.
+16. **`ui-ux-pro-max`** (re-invoked, not `design-taste-frontend`) — for any
+    further UI work after the initial Phase 4 build. Scored explicitly during
+    this project's Phase 6 (9/10 vs 3/10) specifically because
+    `design-taste-frontend`'s own scope note excludes dashboards/dense
+    product UI — see FSD §6 Phase 6 for the full comparison. Used for a
+    mockup-fidelity pass on the Results screen, which caught a real
+    pluralization bug ("1 characters missed").
 
 ## Cross-cutting, every phase
 

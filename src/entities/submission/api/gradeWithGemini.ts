@@ -14,7 +14,14 @@ export type GeminiClient = {
   };
 };
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+// gemini-2.5-flash was retired for new API keys sometime after FSD_TingXieHero.md
+// was written (confirmed live: 404 NOT_FOUND, "no longer available to new
+// users"). Its suggested replacement, gemini-3.6-flash, was itself hitting
+// consistent 503 UNAVAILABLE ("high demand") on live testing. Using the
+// "-latest" alias Google maintains instead of a dated version pin, so this
+// doesn't need another manual bump the next time a specific version is
+// deprecated or overloaded.
+const GEMINI_MODEL = "gemini-flash-latest";
 
 function buildPrompt(vocabList: string[]): string {
   return `Compare the handwriting in this Tian Zige grid against the expected spelling list [${vocabList.join(", ")}]. Return which words were written correctly or incorrectly.`;

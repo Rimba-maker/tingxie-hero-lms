@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import type { Lesson } from "@/entities/lesson/model/types";
+import { pluralize } from "@/shared/lib/pluralize";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { AppHeader } from "@/widgets/app-header/ui/AppHeader";
 import { BottomNav } from "@/widgets/bottom-nav/ui/BottomNav";
@@ -67,7 +68,9 @@ export function SyllabusScreen({ parentName, studentName, moeLevel, lessons }: S
 
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">MOE {LEVEL_FULL_NAME[level]} Syllabus</span>
-        <span className="text-xs text-muted-foreground">{lessonsForLevel.length} Lessons Total</span>
+        <span className="text-xs text-muted-foreground">
+          {lessonsForLevel.length} {pluralize(lessonsForLevel.length, "Lesson")} Total
+        </span>
       </div>
 
       <div className="flex flex-col gap-3">

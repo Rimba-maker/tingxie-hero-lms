@@ -1,5 +1,6 @@
 import { BookOpen, CircleCheck } from "lucide-react";
 
+import { pluralize } from "@/shared/lib/pluralize";
 import { Card, CardContent } from "@/shared/ui/card";
 
 type MasteryStatsProps = {
@@ -33,8 +34,12 @@ export function MasteryStats({
             Practiced
             <BookOpen className="size-3.5 text-warning" />
           </div>
-          <p className="text-xl font-semibold">{charactersPracticed} Characters</p>
-          <span className="text-xs text-muted-foreground">{listsCovered} lists covered</span>
+          <p className="text-xl font-semibold">
+            {charactersPracticed} {pluralize(charactersPracticed, "Character")}
+          </p>
+          <span className="text-xs text-muted-foreground">
+            {listsCovered} {pluralize(listsCovered, "list")} covered
+          </span>
         </CardContent>
       </Card>
     </div>

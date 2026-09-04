@@ -1,3 +1,4 @@
+import { pluralize } from "@/shared/lib/pluralize";
 import { Card, CardContent } from "@/shared/ui/card";
 
 type ScoreHeaderProps = {
@@ -42,7 +43,7 @@ export function ScoreHeader({ score, totalPossible, gradedAt, charactersMissed }
           <p className="text-xs text-muted-foreground">Graded on {gradedDate}</p>
           {charactersMissed > 0 && (
             <p className="text-xs text-destructive">
-              {charactersMissed} character{charactersMissed === 1 ? "" : "s"} missed
+              {charactersMissed} {pluralize(charactersMissed, "character")} missed
             </p>
           )}
         </div>

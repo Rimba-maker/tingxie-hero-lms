@@ -12,6 +12,8 @@ Junior Back-End Developer role. Product requirements and implementation spec liv
 `docs/reference/` (gitignored) holds the original JD and assignment PDFs — client-
 sensitive source material, not part of the submission.
 
+@AGENTS.md
+
 ## Agent skills
 
 ### Issue tracker

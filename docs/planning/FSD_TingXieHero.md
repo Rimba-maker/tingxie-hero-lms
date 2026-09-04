@@ -117,6 +117,11 @@ src/
 
 ## 3. Database Schema (Supabase / PostgreSQL DDL)
 
+**Applied version:** `supabase/schema.sql` + `supabase/seed.sql` — reviewed against
+the `supabase-postgres-best-practices` skill (RLS policies, FK indexes, status
+check constraints, `numeric(4,1)` for scores, storage bucket policy added). The
+sketch below is the original design intent; the files are the source of truth.
+
 ```sql
 -- lessons: syllabus content
 create table lessons (

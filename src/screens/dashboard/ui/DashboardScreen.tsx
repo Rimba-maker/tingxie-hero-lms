@@ -51,7 +51,7 @@ export function DashboardScreen({
       <div>
         <div className="mb-2 flex items-center justify-between">
           <span className="text-sm font-medium">Upcoming Ting Xie</span>
-          <Link href="/syllabus" className="text-xs text-primary">
+          <Link href="/syllabus" className="text-xs font-medium text-primary">
             View All
           </Link>
         </div>
@@ -59,7 +59,7 @@ export function DashboardScreen({
       </div>
 
       {upcomingLesson && (
-        <div className="flex items-center gap-3 rounded-xl bg-accent p-4">
+        <div className="flex items-center gap-3 rounded-r-xl rounded-l-sm border-l-4 border-primary bg-accent p-4">
           <Bell className="size-4 shrink-0 text-primary" />
           <p className="text-sm">
             Week {upcomingLesson.weekNumber}: <span className="font-medium">《{upcomingLesson.title}》</span>{" "}
@@ -74,7 +74,7 @@ export function DashboardScreen({
 
       <Link
         href={upcomingLesson ? `/scan?lessonId=${upcomingLesson.id}` : "/scan"}
-        className={buttonVariants({ size: "lg", className: "w-full" })}
+        className={buttonVariants({ size: "lg", className: "self-center px-6 text-base [&_svg:not([class*='size-'])]:size-5" })}
       >
         <Camera data-icon="inline-start" />
         Scan &amp; Grade Worksheet

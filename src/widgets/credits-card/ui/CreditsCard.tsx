@@ -17,9 +17,7 @@ export function CreditsCard({ used, total, expiresOn }: CreditsCardProps) {
           Prepaid Lesson Credits
         </CardTitle>
         <CardAction>
-          <Button size="sm" variant="secondary">
-            Top Up
-          </Button>
+          <Button size="sm">Top Up</Button>
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

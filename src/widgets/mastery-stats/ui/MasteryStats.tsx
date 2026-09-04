@@ -21,7 +21,7 @@ export function MasteryStats({
         <CardContent className="flex flex-col gap-1">
           <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground">
             Mastery Rate
-            <CircleCheck className="size-3.5" />
+            <CircleCheck className="size-3.5 text-success" />
           </div>
           <p className="text-xl font-semibold">{masteryRatePercent}%</p>
           <span className="text-xs text-success">+{masteryRateDeltaThisMonth}% this month</span>
@@ -31,7 +31,7 @@ export function MasteryStats({
         <CardContent className="flex flex-col gap-1">
           <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted-foreground">
             Practiced
-            <BookOpen className="size-3.5" />
+            <BookOpen className="size-3.5 text-warning" />
           </div>
           <p className="text-xl font-semibold">{charactersPracticed} Characters</p>
           <span className="text-xs text-muted-foreground">{listsCovered} lists covered</span>

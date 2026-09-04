@@ -324,9 +324,9 @@ Prioritized for a **Back-End Developer candidate** — backend robustness gets m
 - [ ] Test this pipeline directly via Postman/curl before wiring any UI — **this is the highest-value, highest-risk part of the assignment** — *blocked on real Supabase/Gemini credentials (deferred above); unit coverage exists but no live end-to-end run yet*
 
 ### Phase 3 (Day 3) — Camera + Upload Flow (Screen 3)
-- [ ] `getUserMedia` camera access, live preview
-- [ ] Capture → Blob conversion → call `/api/upload` → `/api/grade`
-- [ ] Uploading/loading states
+- [x] `getUserMedia` camera access, live preview — code complete (`useCameraCapture`), layout/error-path verified via Playwright; live-streaming happy path needs a real browser/device (headless Chromium's fake camera isn't working in this dev environment)
+- [x] Capture → Blob conversion → call `/api/upload` → `/api/grade` — chained in `useUploadSubmission`, TDD'd
+- [x] Uploading/loading states — `uploading`/`grading`/`error` states shown in `ScanScreen`
 
 ### Phase 4 (Day 4) — Results, Dashboard, Syllabus (Screens 1, 2, 4)
 - [ ] Results screen — score header, correction overlay (per PRD §6 assumption), historical matrix

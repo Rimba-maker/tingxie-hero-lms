@@ -35,7 +35,7 @@ export function SyllabusScreen({ parentName, studentName, moeLevel, lessons }: S
       <AppHeader parentName={parentName} studentName={studentName} moeLevel={moeLevel} />
 
       <Tabs value={level} onValueChange={(value) => setLevel(value as MoeLevel)}>
-        <TabsList className="h-auto justify-center gap-1.5 bg-transparent p-0">
+        <TabsList className="mx-auto h-auto gap-2 bg-transparent p-0">
           {MOE_LEVELS.map((l) => (
             <TabsTrigger
               key={l}

@@ -37,7 +37,7 @@ export function LessonCard({ lesson, expanded, onToggle }: LessonCardProps) {
         >
           <CardTitle className="flex items-center justify-between gap-2 text-sm">
             <span>
-              Week {lesson.weekNumber}
+              <span className="text-primary">Week {lesson.weekNumber}</span>
               <br />
               <span className="text-base font-medium">《{lesson.title}》</span>
             </span>
@@ -67,7 +67,7 @@ export function LessonCard({ lesson, expanded, onToggle }: LessonCardProps) {
             </div>
             <button
               type="button"
-              className="flex items-center justify-between rounded-md text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="flex items-center justify-between rounded-md text-sm text-primary outline-none hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <span className="flex items-center gap-1.5">
                 <Printer className="size-4" />

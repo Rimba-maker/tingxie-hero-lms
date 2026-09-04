@@ -329,9 +329,11 @@ Prioritized for a **Back-End Developer candidate** — backend robustness gets m
 - [x] Uploading/loading states — `uploading`/`grading`/`error` states shown in `ScanScreen`
 
 ### Phase 4 (Day 4) — Results, Dashboard, Syllabus (Screens 1, 2, 4)
-- [ ] Results screen — score header, correction overlay (per PRD §6 assumption), historical matrix
-- [ ] Dashboard screen — hardcoded/derived stats, calendar strip, CTA routing
-- [ ] Syllabus screen — tabs, expandable lesson cards, seed data rendering
+- [x] Results screen — score header, correction overlay (per PRD §6 assumption), historical matrix. Code complete, matches mockup (verified via a throwaway Playwright preview with fake data — deleted, never committed); live data unverified until Supabase is connected.
+- [x] Dashboard screen — hardcoded/derived stats, calendar strip, CTA routing. Same verification status.
+- [x] Syllabus screen — tabs, expandable lesson cards, seed data rendering. Same verification status.
+- Design tokens (colors, font) extracted from `docs/reference/mockups/*.png` directly — see `src/app/globals.css` header comment for why (the `ui-ux-pro-max` design-system search didn't have a matching palette in its database after two tries).
+- Screens are React Server Components fetching entity functions directly (`export const dynamic = "force-dynamic"`), not going through separate GET API routes — simpler than FSD §4's GET /api/submissions/:id sketch and avoids an unnecessary network hop; the client-observable "flow" the assignment grades (upload → grade → overlay) is unaffected since that's entirely POST /api/upload + POST /api/grade.
 
 ### Phase 5 (Day 5) — PWA, Polish, Deployment
 - [ ] Serwist (`@serwist/next`) manifest + service worker + icons

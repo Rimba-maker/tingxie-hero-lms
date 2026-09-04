@@ -25,10 +25,11 @@ export function CorrectionOverlay({ results }: CorrectionOverlayProps) {
           )}
         >
           {result.isCorrect ? (
-            <Check className="size-4 text-success" />
+            <Check className="size-4 text-success" aria-hidden="true" />
           ) : (
-            <X className="size-4 text-destructive" />
+            <X className="size-4 text-destructive" aria-hidden="true" />
           )}
+          <span className="sr-only">{result.isCorrect ? "Correct: " : "Incorrect, correct answer: "}</span>
           <span className={result.isCorrect ? undefined : "font-medium text-destructive"}>
             {result.character}
           </span>

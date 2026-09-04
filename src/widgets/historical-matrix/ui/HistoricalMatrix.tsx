@@ -31,11 +31,13 @@ export function HistoricalMatrix({ matrix }: HistoricalMatrixProps) {
             {matrix.dates.map((date) => (
               <TableCell key={date} className="text-center">
                 {row.resultsByDate[date] === undefined ? (
-                  <span className="text-muted-foreground">—</span>
+                  <span className="text-muted-foreground" aria-label="Not attempted">
+                    —
+                  </span>
                 ) : row.resultsByDate[date] ? (
-                  <Check className="mx-auto size-4 text-success" />
+                  <Check className="mx-auto size-4 text-success" aria-label="Correct" role="img" />
                 ) : (
-                  <X className="mx-auto size-4 text-destructive" />
+                  <X className="mx-auto size-4 text-destructive" aria-label="Incorrect" role="img" />
                 )}
               </TableCell>
             ))}

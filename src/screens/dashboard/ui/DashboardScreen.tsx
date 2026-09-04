@@ -29,7 +29,7 @@ const CALENDAR_DAYS = [
 
 export function DashboardScreen({ studentName, moeLevel, upcomingLesson }: DashboardScreenProps) {
   return (
-    <div className="flex flex-col gap-4 p-4 pb-24">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-24">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">Welcome back,</p>

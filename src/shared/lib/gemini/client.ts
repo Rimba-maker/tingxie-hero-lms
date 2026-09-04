@@ -2,6 +2,15 @@ import "server-only";
 
 import { GoogleGenAI } from "@google/genai";
 
-import { serverEnv } from "@/shared/config/env.server";
+import { getServerEnv } from "@/shared/config/env.server";
 
-export const gemini = new GoogleGenAI({ apiKey: serverEnv.geminiApiKey });
+// Lazily created on first use (see env.client.ts for why).
+let client: GoogleGenAI | undefined;
+
+export function getGeminiClient(): GoogleGenAI {
+  if (!client) {
+    const { geminiApiKey } = getServerEnv();
+    client = new GoogleGenAI({ apiKey: geminiApiKey });
+  }
+  return client;
+}

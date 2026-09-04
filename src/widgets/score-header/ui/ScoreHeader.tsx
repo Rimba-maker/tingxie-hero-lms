@@ -41,7 +41,9 @@ export function ScoreHeader({ score, totalPossible, gradedAt, charactersMissed }
           </p>
           <p className="text-xs text-muted-foreground">Graded on {gradedDate}</p>
           {charactersMissed > 0 && (
-            <p className="text-xs text-destructive">{charactersMissed} characters missed</p>
+            <p className="text-xs text-destructive">
+              {charactersMissed} character{charactersMissed === 1 ? "" : "s"} missed
+            </p>
           )}
         </div>
       </CardContent>

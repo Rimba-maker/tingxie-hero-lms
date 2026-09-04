@@ -304,6 +304,8 @@ const parsed = JSON.parse(response.text); // schema-enforced, but keep a try/cat
 
 Prioritized for a **Back-End Developer candidate** — backend robustness gets more polish time; frontend gets "clean and functional" but not pixel-perfect.
 
+**Before each phase below, check `docs/agents/build-skills.md`** — it maps installed Claude Code skills to these phases, in invocation order.
+
 ### Phase 1 (Day 1) — Foundation
 - [ ] Next.js project scaffold, FSD folder structure, Tailwind + Shadcn setup
 - [ ] Supabase project, run schema DDL + seed data (Section 3)

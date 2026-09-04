@@ -314,14 +314,14 @@ Prioritized for a **Back-End Developer candidate** — backend robustness gets m
 
 ### Phase 1 (Day 1) — Foundation
 - [x] Next.js project scaffold, FSD folder structure, Tailwind + Shadcn setup
-- [ ] Supabase project, run schema DDL + seed data (Section 3) — *DDL/seed files ready in `supabase/`, actual project creation deferred (Supabase had an active outage on project creation as of 2026-09-04); resume with `supabase login` once available*
-- [ ] Env vars configured (Section 7), deploy empty skeleton to Vercel immediately — *deferred deliberately: Vercel auto-deploys on every push, and this repo's commit cadence is deliberately granular (see commit history) — connecting Vercel now would burn free-tier deploys on every WIP commit. Will connect once the app is further along.*
+- [x] Supabase project, run schema DDL + seed data (Section 3) — project `tingxie-hero-lms` (ap-southeast-1) created via CLI 2026-09-04, `schema.sql`/`seed.sql` applied and verified, 3 lessons + `worksheet-photos` bucket confirmed live
+- [ ] Env vars configured (Section 7), deploy empty skeleton to Vercel immediately — *Supabase + Gemini env vars are configured locally (`.env.local`, gitignored); Vercel still deferred deliberately: it auto-deploys on every push, and this repo's commit cadence is deliberately granular (see commit history) — connecting it now would burn free-tier deploys on every WIP commit. Will connect once the app is further along.*
 - [x] Git repo initialized with meaningful first commit (submission timestamp is verified via GitHub)
 
 ### Phase 2 (Day 2) — Core Backend Pipeline
 - [x] `POST /api/upload` — Supabase Storage upload + submission record creation (code complete, TDD'd against a fake Supabase client — see `src/entities/submission/api/*.test.ts`)
 - [x] `POST /api/grade` — Gemini integration, prompt, JSON parsing, `character_results` writes (same — TDD'd against a fake Gemini/Supabase client)
-- [ ] Test this pipeline directly via Postman/curl before wiring any UI — **this is the highest-value, highest-risk part of the assignment** — *blocked on real Supabase/Gemini credentials (deferred above); unit coverage exists but no live end-to-end run yet*
+- [x] Test this pipeline directly via Postman/curl before wiring any UI — **this is the highest-value, highest-risk part of the assignment** — *run live via curl once Supabase/Gemini credentials were connected (2026-09-04): real upload → real Gemini call → real Supabase write → real Results page render, confirmed via SQL query against the actual rows. Surfaced and fixed 2 real bugs along the way — `gemini-2.5-flash` retired for new API keys (now `gemini-flash-latest`), and `totalPossible` was computed from `vocabList.length` instead of the actual result count (Gemini can grade per-character rather than per-word). Test submissions cleaned up afterward.*
 
 ### Phase 3 (Day 3) — Camera + Upload Flow (Screen 3)
 - [x] `getUserMedia` camera access, live preview — code complete (`useCameraCapture`), layout/error-path verified via Playwright; live-streaming happy path needs a real browser/device (headless Chromium's fake camera isn't working in this dev environment)

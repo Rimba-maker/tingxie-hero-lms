@@ -106,7 +106,8 @@ src/
     │       └── client.ts                 # @google/genai client instance
     ├── ui/                                # Shadcn primitives (Button, Card, Badge, Tabs, Table)
     ├── config/
-    │   └── env.ts                        # typed env var access
+    │   ├── env.client.ts                 # typed access to NEXT_PUBLIC_* vars only, safe anywhere
+    │   └── env.server.ts                 # typed access to service-role/Gemini keys, `server-only`-guarded
     └── types/
         └── api.ts                        # shared API request/response types
 ```

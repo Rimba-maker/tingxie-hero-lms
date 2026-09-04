@@ -33,7 +33,6 @@ product requirements and the assumptions made where the brief was ambiguous
    | Variable | Where to get it |
    |---|---|
    | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project → Settings → Data API |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase project → Settings → API Keys |
    | `SUPABASE_SERVICE_ROLE_KEY` | Supabase project → Settings → API Keys (server-only, never expose to the client) |
    | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) (server-only) |
 

@@ -1,9 +1,6 @@
 import "server-only";
 
-function requireEnv(name: string, value: string | undefined): string {
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
-}
+import { requireEnv } from "./requireEnv";
 
 // See env.client.ts for why this is a function rather than a module-scope const.
 export function getServerEnv() {

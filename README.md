@@ -7,6 +7,12 @@ focus.
 
 **Live URL:** _pending deployment_
 
+## Screenshots
+
+| Dashboard | Syllabus | Results |
+|---|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Syllabus](docs/screenshots/syllabus.png) | ![Results](docs/screenshots/results.png) |
+
 ## Stack
 
 Next.js 16 (App Router, Turbopack) · TypeScript (strict) · Tailwind CSS v4 +
@@ -55,9 +61,10 @@ product requirements and the assumptions made where the brief was ambiguous
 ## Testing
 
 ```bash
-npm run test    # Vitest — entity/business-logic unit tests
-npm run lint    # ESLint
-npm run build   # production build, also runs `serwist build`
+npm run test       # Vitest — entity/business-logic unit tests
+npm run test:e2e   # Playwright — dashboard, syllabus, navigation (needs `npm run dev` reachable)
+npm run lint       # ESLint
+npm run build      # production build, also runs `serwist build`
 ```
 
 ## Architecture notes
@@ -75,3 +82,34 @@ npm run build   # production build, also runs `serwist build`
   (the flow the assignment evaluates) remain real API routes.
 - Design tokens in `src/app/globals.css` were sampled directly from the
   client's mockup images rather than a generic template, converted to OKLCH.
+
+## Known limitations
+
+Scoped out deliberately, not oversights:
+
+- **"Top Up," "Share Report," and "Retest Missed" are decorative.** They
+  match the mockups pixel-for-pixel but have no handler — the assignment's
+  evaluation focus is the scan → upload → grade → feedback flow, not billing
+  or report sharing.
+- **Mobile-only, by design.** The assignment brief only ever shows mobile
+  mockups and never mentions desktop/tablet layouts (re-verified against the
+  source PDF, not just the mockup images) — no responsive breakpoints were
+  built.
+- **Dark mode tokens exist but aren't mockup-verified.** `globals.css`
+  defines a `.dark` palette so the app doesn't break under
+  `prefers-color-scheme: dark`, but no dark-mode mockup was supplied and it
+  hasn't had a dedicated visual pass.
+- **History and Results start empty on a fresh database** — intentionally;
+  see the empty state on `/history`. No demo data is seeded into the
+  reviewer's database, since fabricated `submitted_at` history would misrepresent
+  real usage.
+
+## Deployment
+
+Not deployed yet — pending final review. When ready:
+
+1. Create a Vercel project linked to this repo.
+2. Set the same three variables from `.env.example` in the Vercel dashboard
+   (Project → Settings → Environment Variables): `NEXT_PUBLIC_SUPABASE_URL`,
+   `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`.
+3. Deploy, then update the **Live URL** at the top of this README.

@@ -313,15 +313,15 @@ Prioritized for a **Back-End Developer candidate** — backend robustness gets m
 **Before each phase below, check `docs/agents/build-skills.md`** — it maps installed Claude Code skills to these phases, in invocation order.
 
 ### Phase 1 (Day 1) — Foundation
-- [ ] Next.js project scaffold, FSD folder structure, Tailwind + Shadcn setup
-- [ ] Supabase project, run schema DDL + seed data (Section 3)
-- [ ] Env vars configured (Section 7), deploy empty skeleton to Vercel immediately
-- [ ] Git repo initialized with meaningful first commit (submission timestamp is verified via GitHub)
+- [x] Next.js project scaffold, FSD folder structure, Tailwind + Shadcn setup
+- [ ] Supabase project, run schema DDL + seed data (Section 3) — *DDL/seed files ready in `supabase/`, actual project creation deferred (Supabase had an active outage on project creation as of 2026-09-04); resume with `supabase login` once available*
+- [ ] Env vars configured (Section 7), deploy empty skeleton to Vercel immediately — *deferred deliberately: Vercel auto-deploys on every push, and this repo's commit cadence is deliberately granular (see commit history) — connecting Vercel now would burn free-tier deploys on every WIP commit. Will connect once the app is further along.*
+- [x] Git repo initialized with meaningful first commit (submission timestamp is verified via GitHub)
 
 ### Phase 2 (Day 2) — Core Backend Pipeline
-- [ ] `POST /api/upload` — Supabase Storage upload + submission record creation
-- [ ] `POST /api/grade` — Gemini integration, prompt, JSON parsing, `character_results` writes
-- [ ] Test this pipeline directly via Postman/curl before wiring any UI — **this is the highest-value, highest-risk part of the assignment**
+- [x] `POST /api/upload` — Supabase Storage upload + submission record creation (code complete, TDD'd against a fake Supabase client — see `src/entities/submission/api/*.test.ts`)
+- [x] `POST /api/grade` — Gemini integration, prompt, JSON parsing, `character_results` writes (same — TDD'd against a fake Gemini/Supabase client)
+- [ ] Test this pipeline directly via Postman/curl before wiring any UI — **this is the highest-value, highest-risk part of the assignment** — *blocked on real Supabase/Gemini credentials (deferred above); unit coverage exists but no live end-to-end run yet*
 
 ### Phase 3 (Day 3) — Camera + Upload Flow (Screen 3)
 - [ ] `getUserMedia` camera access, live preview

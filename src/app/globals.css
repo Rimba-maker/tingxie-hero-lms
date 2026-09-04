@@ -74,7 +74,7 @@
   --muted-foreground: oklch(0.526 0.011 106.8);
   --accent: oklch(0.937 0.012 170.3); /* light green tint, hover/selected surfaces */
   --accent-foreground: oklch(0.457 0.047 179.9);
-  --destructive: oklch(0.578 0.163 23.8); /* red X / Needs Revision */
+  --destructive: oklch(0.495 0.154 24.8); /* red X / Needs Revision — darkened from the raw mockup sample (#c84848) so text-destructive on a tinted destructive surface clears 4.5:1 (was 4.03:1) */
   --destructive-foreground: oklch(1 0 0);
   --success: oklch(0.525 0.086 166.3); /* green checkmarks / Completed */
   --success-foreground: oklch(1 0 0);

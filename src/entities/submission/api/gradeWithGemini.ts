@@ -76,5 +76,9 @@ export async function gradeWithGemini(
   }
   const score = results.filter((result) => result.isCorrect).length;
 
-  return { results, score, totalPossible: params.vocabList.length };
+  // Not params.vocabList.length: Gemini sometimes grades each character
+  // individually rather than treating a multi-character word as one unit
+  // (confirmed live), so the two counts can diverge. totalPossible must
+  // match what was actually graded.
+  return { results, score, totalPossible: results.length };
 }

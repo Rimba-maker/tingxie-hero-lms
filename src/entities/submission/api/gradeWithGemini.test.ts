@@ -30,6 +30,35 @@ describe("gradeWithGemini", () => {
     ]);
   });
 
+  test("totalPossible reflects the actual result count, not the vocab list length", async () => {
+    // Real behavior observed live: Gemini sometimes grades each individual
+    // character rather than treating each 2-character word as one unit, so
+    // a 3-word vocabList can come back as 6 results. totalPossible must
+    // track what was actually graded, not what we assumed going in.
+    const fakeGemini: GeminiClient = {
+      models: {
+        generateContent: async () => ({
+          text: JSON.stringify([
+            { character: "校", isCorrect: false },
+            { character: "园", isCorrect: false },
+            { character: "礼", isCorrect: false },
+            { character: "堂", isCorrect: false },
+            { character: "老", isCorrect: false },
+            { character: "师", isCorrect: false },
+          ]),
+        }),
+      },
+    };
+
+    const result = await gradeWithGemini(fakeGemini, {
+      imageBase64: "fake-base64-image-data",
+      vocabList: ["校园", "礼堂", "老师"],
+    });
+
+    expect(result.results).toHaveLength(6);
+    expect(result.totalPossible).toBe(6);
+  });
+
   test("throws a clear error when Gemini's response isn't valid JSON", async () => {
     const brokenGemini: GeminiClient = {
       models: {

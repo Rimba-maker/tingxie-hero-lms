@@ -74,7 +74,25 @@ describe("gradeWithGemini", () => {
     ).rejects.toThrow("Gemini returned invalid JSON");
   });
 
-  test("throws a clear error when Gemini returns no text (e.g. blocked by safety filters)", async () => {
+  test("throws a specific error naming the reason when Gemini blocks the image", async () => {
+    const blockedGemini: GeminiClient = {
+      models: {
+        generateContent: async () => ({
+          text: undefined,
+          promptFeedback: { blockReason: "SAFETY" },
+        }),
+      },
+    };
+
+    await expect(
+      gradeWithGemini(blockedGemini, {
+        imageBase64: "fake-base64-image-data",
+        vocabList: ["校园"],
+      }),
+    ).rejects.toThrow("Gemini blocked this image: SAFETY");
+  });
+
+  test("throws the generic invalid-JSON error when text is empty with no block reason", async () => {
     const emptyGemini: GeminiClient = {
       models: {
         generateContent: async () => ({ text: undefined }),

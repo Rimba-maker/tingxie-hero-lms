@@ -10,7 +10,10 @@ export type GradeResult = {
 // on purpose so tests can inject a fake without pulling in the real SDK.
 export type GeminiClient = {
   models: {
-    generateContent(args: unknown): Promise<{ text: string | undefined }>;
+    generateContent(args: unknown): Promise<{
+      text: string | undefined;
+      promptFeedback?: { blockReason?: string };
+    }>;
   };
 };
 
@@ -50,6 +53,19 @@ export async function gradeWithGemini(
       // detail that even a human grader would struggle. Verified via
       // Context7, not assumed.
       mediaResolution: "MEDIA_RESOLUTION_HIGH",
+      // Content here is always a child's handwriting worksheet — benign by
+      // construction. Google's default safety thresholds are tuned for
+      // open-ended user content and can false-positive on ordinary photos
+      // (paper texture, handwriting strokes read as something else); relax
+      // to BLOCK_ONLY_HIGH so a legitimate worksheet photo doesn't get
+      // silently blocked. Verified via Context7 (SafetySetting/
+      // HarmBlockThreshold), not assumed.
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+      ],
       responseMimeType: "application/json",
       responseSchema: {
         type: "array",
@@ -64,6 +80,14 @@ export async function gradeWithGemini(
       },
     },
   });
+
+  const blockReason = response.promptFeedback?.blockReason;
+  if (blockReason) {
+    // Distinct from the generic parse-failure error below: this is a known,
+    // named condition (not an unexpected shape), so surface the reason
+    // rather than a vague "invalid JSON".
+    throw new Error(`Gemini blocked this image: ${blockReason}`);
+  }
 
   let results: CharacterResult[];
   try {

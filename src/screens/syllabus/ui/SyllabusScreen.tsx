@@ -1,21 +1,30 @@
 "use client";
 
-import { Bell } from "lucide-react";
-
 import type { Lesson } from "@/entities/lesson/model/types";
 import { useExpandLesson } from "@/features/expand-lesson/model/useExpandLesson";
 import { MOE_LEVELS, useLevelTab, type MoeLevel } from "@/features/select-level-tab/model/useLevelTab";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { AppHeader } from "@/widgets/app-header/ui/AppHeader";
 import { BottomNav } from "@/widgets/bottom-nav/ui/BottomNav";
 import { LessonCard } from "@/widgets/lesson-card/ui/LessonCard";
 
+const LEVEL_FULL_NAME: Record<MoeLevel, string> = {
+  P1: "Primary 1",
+  P2: "Primary 2",
+  P3: "Primary 3",
+  P4: "Primary 4",
+  P5: "Primary 5",
+  P6: "Primary 6",
+};
+
 type SyllabusScreenProps = {
+  parentName: string;
   studentName: string;
   moeLevel: MoeLevel;
   lessons: Lesson[];
 };
 
-export function SyllabusScreen({ studentName, moeLevel, lessons }: SyllabusScreenProps) {
+export function SyllabusScreen({ parentName, studentName, moeLevel, lessons }: SyllabusScreenProps) {
   const { level, setLevel } = useLevelTab(moeLevel);
   const { isExpanded, toggle } = useExpandLesson(lessons.map((lesson) => lesson.id));
 
@@ -23,18 +32,16 @@ export function SyllabusScreen({ studentName, moeLevel, lessons }: SyllabusScree
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-24">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">Welcome back,</p>
-          <p className="font-semibold">{studentName}</p>
-        </div>
-        <Bell className="size-5 text-muted-foreground" />
-      </div>
+      <AppHeader parentName={parentName} studentName={studentName} moeLevel={moeLevel} />
 
       <Tabs value={level} onValueChange={(value) => setLevel(value as MoeLevel)}>
-        <TabsList>
+        <TabsList className="h-auto justify-start gap-1 bg-transparent p-0">
           {MOE_LEVELS.map((l) => (
-            <TabsTrigger key={l} value={l}>
+            <TabsTrigger
+              key={l}
+              value={l}
+              className="rounded-full border-none px-4 py-1.5 text-muted-foreground data-active:bg-primary data-active:text-primary-foreground data-active:shadow-none"
+            >
               {l}
             </TabsTrigger>
           ))}
@@ -42,7 +49,7 @@ export function SyllabusScreen({ studentName, moeLevel, lessons }: SyllabusScree
       </Tabs>
 
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">MOE {level} Syllabus</span>
+        <span className="text-sm font-medium">MOE {LEVEL_FULL_NAME[level]} Syllabus</span>
         <span className="text-xs text-muted-foreground">{lessonsForLevel.length} Lessons Total</span>
       </div>
 

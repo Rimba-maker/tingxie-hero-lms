@@ -11,5 +11,12 @@ export default async function DashboardPage() {
   const lessons = await getLessons(supabaseLessonsDb(getSupabaseServer()));
   const upcomingLesson = lessons.find((lesson) => lesson.status === "pending") ?? lessons[0] ?? null;
 
-  return <DashboardScreen studentName="Sarah" moeLevel="Primary 2" upcomingLesson={upcomingLesson} />;
+  return (
+    <DashboardScreen
+      parentName="Sarah"
+      studentName="Lucas"
+      moeLevel="Primary 2"
+      upcomingLesson={upcomingLesson}
+    />
+  );
 }

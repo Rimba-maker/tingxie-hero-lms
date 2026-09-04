@@ -27,10 +27,14 @@ test("bottom nav moves between dashboard and syllabus", async ({ page }) => {
   await expect(page).toHaveURL(/\/syllabus/);
 });
 
-test("history tab redirects instead of 404ing", async ({ page }) => {
-  const response = await page.goto("/history");
-  expect(response?.status()).toBeLessThan(400);
-  await expect(page).not.toHaveURL(/\/history$/);
+test("history tab shows past results and links into each one", async ({ page }) => {
+  await page.goto("/history");
+  await expect(page.getByText(/past ting xie results/i)).toBeVisible();
+
+  const firstResult = page.getByRole("link", { name: /week \d+/i }).first();
+  await expect(firstResult).toBeVisible();
+  await firstResult.click();
+  await expect(page).toHaveURL(/\/results\//);
 });
 
 test("premium tab renders a stub instead of 404ing", async ({ page }) => {

@@ -1,0 +1,65 @@
+import type { CharacterResult } from "@/entities/character-result/model/types";
+
+export type GradeResult = {
+  results: CharacterResult[];
+  score: number;
+  totalPossible: number;
+};
+
+// Minimal shape of the @google/genai client this function needs — narrow
+// on purpose so tests can inject a fake without pulling in the real SDK.
+export type GeminiClient = {
+  models: {
+    generateContent(args: unknown): Promise<{ text: string }>;
+  };
+};
+
+const GEMINI_MODEL = "gemini-2.5-flash";
+
+function buildPrompt(vocabList: string[]): string {
+  return `Compare the handwriting in this Tian Zige grid against the expected spelling list [${vocabList.join(", ")}]. Return which words were written correctly or incorrectly.`;
+}
+
+export async function gradeWithGemini(
+  geminiClient: GeminiClient,
+  params: { imageBase64: string; vocabList: string[] },
+): Promise<GradeResult> {
+  const response = await geminiClient.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { text: buildPrompt(params.vocabList) },
+          { inlineData: { mimeType: "image/jpeg", data: params.imageBase64 } },
+        ],
+      },
+    ],
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            character: { type: "string" },
+            isCorrect: { type: "boolean" },
+          },
+          required: ["character", "isCorrect"],
+        },
+      },
+    },
+  });
+
+  let results: CharacterResult[];
+  try {
+    results = JSON.parse(response.text);
+  } catch {
+    // responseSchema constrains the shape when Gemini succeeds, but the API
+    // is still an untrusted external boundary — never trust it blindly.
+    throw new Error("Gemini returned invalid JSON");
+  }
+  const score = results.filter((result) => result.isCorrect).length;
+
+  return { results, score, totalPossible: params.vocabList.length };
+}

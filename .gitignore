@@ -1,0 +1,29 @@
+# --- Client/assignment-sensitive source material (do not share publicly) ---
+# JD PDF contains compensation figures + client identity; the assignment PDF
+# is the client's IP. Neither should be redistributed even in a private repo
+# meant for the reviewer only — see docs/planning/PRD_TingXieHero.md NDA note.
+docs/reference/
+
+# --- Node / Next.js (repo will hold the app at root per FSD Phase 1) ---
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# --- Env / secrets ---
+.env
+.env.local
+.env.*.local
+
+# --- Editor / OS ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log

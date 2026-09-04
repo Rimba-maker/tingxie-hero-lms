@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, Zap } from "lucide-react";
+import { QrCode, X, Zap } from "lucide-react";
 
 import { useCameraCapture } from "@/features/capture-worksheet/model/useCameraCapture";
 import { ShutterButton } from "@/features/capture-worksheet/ui/ShutterButton";
@@ -57,6 +57,13 @@ export function CameraViewfinder({ onClose, onCapture, capturing }: CameraViewfi
           <span className="absolute right-0 top-0 size-8 border-r-2 border-t-2 border-white" />
           <span className="absolute bottom-0 left-0 size-8 border-b-2 border-l-2 border-white" />
           <span className="absolute bottom-0 right-0 size-8 border-b-2 border-r-2 border-white" />
+
+          {/* QR target box — static visual element only, no functional QR
+              scanning (per PRD_TingXieHero.md §5: no QR-scanning requirement
+              appears anywhere in the assignment's Technical Requirements). */}
+          <span className="absolute right-2 top-12 flex size-10 items-center justify-center rounded border border-dashed border-white/70 bg-black/20">
+            <QrCode className="size-5 text-white/70" />
+          </span>
         </div>
       </div>
 

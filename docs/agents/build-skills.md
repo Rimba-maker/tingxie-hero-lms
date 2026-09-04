@@ -33,6 +33,10 @@ what else is installed.
 
 ## Phase 3 — Camera + Upload Flow (Screen 3)
 
+Reference: `docs/reference/mockups/screen3-camera.png` — viewfinder overlay
+with corner brackets, "Align Worksheet" header, "Keep page flat and inside
+the brackets" hint, white shutter button, "Capture & Grade" label.
+
 6. **`vercel-react-best-practices`** — client state/data-fetching patterns for
    the `useCameraCapture` + `useUploadSubmission` (Zustand) flow.
 7. **`webapp-testing`** (Playwright) — verify camera permission prompt,
@@ -40,6 +44,15 @@ what else is installed.
    type-check.
 
 ## Phase 4 — Results, Dashboard, Syllabus (Screens 1, 2, 4)
+
+Reference: `docs/reference/mockups/` — `screen1-dashboard.png` (credits card +
+Top Up, mastery rate/practiced stat pair, weekly calendar strip, upcoming
+Ting Xie banner, "Scan & Grade Worksheet" CTA), `screen2-syllabus.png` (P1–P6
+pill tabs, lesson cards with status tags, "Print A4 Worksheet (PDF)" link
+per card), `screen4-results.png` (score ring + percentage, results-over-time
+character × date table, Share Report / Retest Missed buttons). Assignment
+brief says to match these "as closely as possible" — treat them as the
+spec, not loose inspiration.
 
 8. **`ui-ux-pro-max`** — concrete palette/typography/spacing decisions across
    the 4 screens before writing markup, so components aren't restyled twice.

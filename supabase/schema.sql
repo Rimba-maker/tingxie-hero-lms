@@ -51,6 +51,16 @@ create index idx_submissions_submitted_at on submissions(submitted_at);
 create index idx_submissions_lesson_id on submissions(lesson_id);
 create index idx_character_results_submission_id on character_results(submission_id);
 
+-- Explicit grants
+-- This project has "Automatically expose new tables" turned off at creation
+-- time (least-privilege default), so anon/authenticated get no table access
+-- until granted here. RLS policies below then restrict which *rows* those
+-- roles can see — GRANT and RLS are two separate layers, both required.
+grant usage on schema public to anon, authenticated;
+grant select on public.lessons to anon, authenticated;
+grant select on public.submissions to anon, authenticated;
+grant select on public.character_results to anon, authenticated;
+
 -- Row Level Security
 -- No end-user auth in this assignment (PRD §2), so there's no auth.uid() to scope
 -- policies by. All three tables are read by the client with the anon key (dashboard,

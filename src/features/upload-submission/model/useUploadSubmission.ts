@@ -2,12 +2,16 @@ import { create } from "zustand";
 
 export type UploadSubmissionApi = {
   uploadSubmission(params: { file: Blob; lessonId: string }): Promise<{ submissionId: string }>;
+  gradeSubmission(
+    submissionId: string,
+  ): Promise<{ score: number; totalPossible: number }>;
 };
 
 export type UploadState =
   | { status: "idle" }
   | { status: "uploading" }
-  | { status: "success"; submissionId: string }
+  | { status: "grading"; submissionId: string }
+  | { status: "success"; submissionId: string; score: number; totalPossible: number }
   | { status: "error"; message: string };
 
 export type UploadStore = UploadState & {
@@ -22,7 +26,9 @@ export function createUploadSubmissionStore(api: UploadSubmissionApi) {
       set({ status: "uploading" });
       try {
         const { submissionId } = await api.uploadSubmission(params);
-        set({ status: "success", submissionId });
+        set({ status: "grading", submissionId });
+        const { score, totalPossible } = await api.gradeSubmission(submissionId);
+        set({ status: "success", submissionId, score, totalPossible });
       } catch (err) {
         set({ status: "error", message: err instanceof Error ? err.message : "Upload failed" });
       }
@@ -33,7 +39,7 @@ export function createUploadSubmissionStore(api: UploadSubmissionApi) {
   }));
 }
 
-// Real API-backed instance — talks to POST /api/upload.
+// Real API-backed instance — talks to POST /api/upload then POST /api/grade.
 const realApi: UploadSubmissionApi = {
   async uploadSubmission({ file, lessonId }) {
     const formData = new FormData();
@@ -43,6 +49,17 @@ const realApi: UploadSubmissionApi = {
     const response = await fetch("/api/upload", { method: "POST", body: formData });
     if (!response.ok) {
       throw new Error(`Upload failed: ${response.status}`);
+    }
+    return response.json();
+  },
+  async gradeSubmission(submissionId) {
+    const response = await fetch("/api/grade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ submissionId }),
+    });
+    if (!response.ok) {
+      throw new Error(`Grading failed: ${response.status}`);
     }
     return response.json();
   },

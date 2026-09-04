@@ -35,7 +35,7 @@ export function LessonCard({ lesson, expanded, onToggle }: LessonCardProps) {
           aria-expanded={expanded}
           className="w-full cursor-pointer rounded-t-xl px-(--card-spacing) py-(--card-spacing) text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <CardTitle className="flex items-center justify-between gap-2 text-sm">
+          <CardTitle className="flex items-start justify-between gap-2 text-sm">
             <span>
               <span className="text-primary">Week {lesson.weekNumber}</span>
               <br />
@@ -65,6 +65,7 @@ export function LessonCard({ lesson, expanded, onToggle }: LessonCardProps) {
                 </div>
               ))}
             </div>
+            <div className="border-t border-border" />
             <button
               type="button"
               className="flex items-center justify-between rounded-md text-sm text-primary outline-none hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50"

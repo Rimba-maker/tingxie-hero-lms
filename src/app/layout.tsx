@@ -6,7 +6,7 @@ import "./globals.css";
 const APP_NAME = "TingXie HERO";
 
 // Renders Chinese vocabulary and Latin UI chrome from one family — avoids
-// font-fallback mismatches in mixed strings like "第十课 – 我的校园".
+// font-fallback mismatches in mixed strings like "第十课 – 我们的校园".
 const notoSansSC = Noto_Sans_SC({
   variable: "--font-sans",
   subsets: ["latin"],

@@ -39,7 +39,7 @@ export function LessonCard({ lesson, expanded, onToggle }: LessonCardProps) {
             <span>
               Week {lesson.weekNumber}
               <br />
-              <span className="text-base font-medium">{lesson.title}</span>
+              <span className="text-base font-medium">《{lesson.title}》</span>
             </span>
             <Badge variant={STATUS_VARIANT[lesson.status]}>{STATUS_LABEL[lesson.status]}</Badge>
           </CardTitle>

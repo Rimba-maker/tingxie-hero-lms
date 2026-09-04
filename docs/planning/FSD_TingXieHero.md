@@ -128,7 +128,7 @@ sketch below is the original design intent; the files are the source of truth.
 create table lessons (
   id uuid primary key default gen_random_uuid(),
   week_number int not null,
-  title text not null,               -- e.g. "第十课 – 我的校园"
+  title text not null,               -- e.g. "第十课 – 我们的校园"
   moe_level text not null,           -- e.g. "P2"
   status text not null default 'pending', -- 'pending' | 'completed' | 'needs_revision'
   vocabulary jsonb not null,         -- [{ "character": "校园", "pinyin": "xiào yuán" }, ...]
@@ -165,7 +165,7 @@ create index idx_submissions_submitted_at on submissions(submitted_at);
 **Seed data** (insert on setup, matches PRD §6 Screen 2 table):
 ```sql
 insert into lessons (week_number, title, moe_level, status, vocabulary) values
-(4, '第十课 – 我的校园', 'P2', 'pending',
+(4, '第十课 – 我们的校园', 'P2', 'pending',
   '[{"character":"校园","pinyin":"xiào yuán"},{"character":"礼堂","pinyin":"lǐ táng"},{"character":"老师","pinyin":"lǎo shī"}]'),
 (3, '第九课 – 我爱我的家', 'P2', 'completed',
   '[{"character":"爸爸","pinyin":"bà ba"},{"character":"妈妈","pinyin":"mā ma"},{"character":"温暖","pinyin":"wēn nuǎn"}]'),

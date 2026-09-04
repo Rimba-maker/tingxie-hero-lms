@@ -102,7 +102,7 @@ This assignment scopes only the **Paper Test Scan → AI Grading → Feedback** 
 - P1–P6 tab/pill selector (P2 active by default, matching student's grade)
 - Header text: "MOE Primary 2 Syllabus · 24 Lessons Total"
 - Expandable lesson cards, each showing:
-  - Week number + lesson title (Chinese + pinyin/translation), e.g. "Week 4 《第十课 – 我的校园》"
+  - Week number + lesson title (Chinese + pinyin/translation), e.g. "Week 4 《第十课 – 我们的校园》"
   - Status badge: **Pending Practice** / **Completed (80%)** / **Needs Revision** (hardcoded per mockup data)
   - Vocabulary list on expand: character + pinyin pairs (e.g. 校园 xiào yuán, 礼堂 lǐ táng, 老师 lǎo shī)
   - "Print A4 Worksheet (PDF)" link (can be a stub link / placeholder — PDF generation is not in this assignment's technical requirements)
@@ -110,7 +110,7 @@ This assignment scopes only the **Paper Test Scan → AI Grading → Feedback** 
 **Seed data required (hardcode or seed into `lessons` table):**
 | Week | Title | Status | Vocabulary |
 |---|---|---|---|
-| 4 | 第十课 – 我的校园 | Pending Practice | 校园 (xiào yuán), 礼堂 (lǐ táng), 老师 (lǎo shī) |
+| 4 | 第十课 – 我们的校园 | Pending Practice | 校园 (xiào yuán), 礼堂 (lǐ táng), 老师 (lǎo shī) |
 | 3 | 第九课 – 我爱我的家 | Completed (80%) | 爸爸 (bà ba), 妈妈 (mā ma), 温暖 (wēn nuǎn) |
 | 2 | 第八课 – 快乐的周末 | Needs Revision | 玩耍 (wán shuǎ), 公园 (gōng yuán) |
 

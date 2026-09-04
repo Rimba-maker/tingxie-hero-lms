@@ -12,7 +12,7 @@
 create table lessons (
   id uuid primary key default gen_random_uuid(),
   week_number int not null,
-  title text not null,               -- e.g. "第十课 – 我的校园"
+  title text not null,               -- e.g. "第十课 – 我们的校园"
   moe_level text not null,           -- e.g. "P2"
   status text not null default 'pending'
     constraint lessons_status_check check (status in ('pending', 'completed', 'needs_revision')),

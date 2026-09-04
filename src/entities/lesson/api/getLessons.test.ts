@@ -9,7 +9,7 @@ describe("getLessons", () => {
         {
           id: "lesson-1",
           week_number: 4,
-          title: "第十课 – 我的校园",
+          title: "第十课 – 我们的校园",
           moe_level: "P2",
           status: "pending",
           vocabulary: [
@@ -26,7 +26,7 @@ describe("getLessons", () => {
       {
         id: "lesson-1",
         weekNumber: 4,
-        title: "第十课 – 我的校园",
+        title: "第十课 – 我们的校园",
         moeLevel: "P2",
         status: "pending",
         vocabulary: [

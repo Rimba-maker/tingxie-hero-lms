@@ -7,6 +7,7 @@ import {
   supabaseWorksheetImageStorage,
   uploadWorksheetImage,
 } from "@/entities/submission/api/uploadWorksheetImage";
+import { validateWorksheetImage } from "@/entities/submission/api/validateWorksheetImage";
 import { getSupabaseServer } from "@/shared/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
@@ -16,6 +17,11 @@ export async function POST(request: NextRequest) {
 
   if (!(file instanceof Blob) || typeof lessonId !== "string" || !lessonId) {
     return NextResponse.json({ error: "image and lessonId are required" }, { status: 400 });
+  }
+
+  const validationError = validateWorksheetImage(file);
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
   }
 
   const supabaseServer = getSupabaseServer();

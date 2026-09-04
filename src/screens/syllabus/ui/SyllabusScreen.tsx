@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
+
 import type { Lesson } from "@/entities/lesson/model/types";
-import { useExpandLesson } from "@/features/expand-lesson/model/useExpandLesson";
-import { MOE_LEVELS, useLevelTab, type MoeLevel } from "@/features/select-level-tab/model/useLevelTab";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { AppHeader } from "@/widgets/app-header/ui/AppHeader";
 import { BottomNav } from "@/widgets/bottom-nav/ui/BottomNav";
 import { LessonCard } from "@/widgets/lesson-card/ui/LessonCard";
+
+const MOE_LEVELS = ["P1", "P2", "P3", "P4", "P5", "P6"] as const;
+type MoeLevel = (typeof MOE_LEVELS)[number];
 
 const LEVEL_FULL_NAME: Record<MoeLevel, string> = {
   P1: "Primary 1",
@@ -25,8 +28,22 @@ type SyllabusScreenProps = {
 };
 
 export function SyllabusScreen({ parentName, studentName, moeLevel, lessons }: SyllabusScreenProps) {
-  const { level, setLevel } = useLevelTab(moeLevel);
-  const { isExpanded, toggle } = useExpandLesson(lessons.map((lesson) => lesson.id));
+  const [level, setLevel] = useState<MoeLevel>(moeLevel);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(
+    () => new Set(lessons.map((lesson) => lesson.id)),
+  );
+
+  function toggleExpanded(lessonId: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(lessonId)) {
+        next.delete(lessonId);
+      } else {
+        next.add(lessonId);
+      }
+      return next;
+    });
+  }
 
   const lessonsForLevel = lessons.filter((lesson) => lesson.moeLevel === level);
 
@@ -58,8 +75,8 @@ export function SyllabusScreen({ parentName, studentName, moeLevel, lessons }: S
           <LessonCard
             key={lesson.id}
             lesson={lesson}
-            expanded={isExpanded(lesson.id)}
-            onToggle={() => toggle(lesson.id)}
+            expanded={expandedIds.has(lesson.id)}
+            onToggle={() => toggleExpanded(lesson.id)}
           />
         ))}
         {lessonsForLevel.length === 0 && (

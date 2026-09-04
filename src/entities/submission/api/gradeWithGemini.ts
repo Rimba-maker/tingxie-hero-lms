@@ -10,7 +10,7 @@ export type GradeResult = {
 // on purpose so tests can inject a fake without pulling in the real SDK.
 export type GeminiClient = {
   models: {
-    generateContent(args: unknown): Promise<{ text: string }>;
+    generateContent(args: unknown): Promise<{ text: string | undefined }>;
   };
 };
 
@@ -53,6 +53,7 @@ export async function gradeWithGemini(
 
   let results: CharacterResult[];
   try {
+    if (!response.text) throw new Error("empty response");
     results = JSON.parse(response.text);
   } catch {
     // responseSchema constrains the shape when Gemini succeeds, but the API

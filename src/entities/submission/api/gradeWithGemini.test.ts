@@ -44,4 +44,19 @@ describe("gradeWithGemini", () => {
       }),
     ).rejects.toThrow("Gemini returned invalid JSON");
   });
+
+  test("throws a clear error when Gemini returns no text (e.g. blocked by safety filters)", async () => {
+    const emptyGemini: GeminiClient = {
+      models: {
+        generateContent: async () => ({ text: undefined }),
+      },
+    };
+
+    await expect(
+      gradeWithGemini(emptyGemini, {
+        imageBase64: "fake-base64-image-data",
+        vocabList: ["校园"],
+      }),
+    ).rejects.toThrow("Gemini returned invalid JSON");
+  });
 });

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 
-import { Button } from "@/shared/ui/button";
+import { Button, buttonVariants } from "@/shared/ui/button";
 
 export default function ResultsError({
   error,
@@ -29,9 +29,9 @@ export default function ResultsError({
           : error.message || "Something went wrong. Please try again."}
       </p>
       {isNotFound ? (
-        <Button render={<Link href="/" />} nativeButton={false}>
+        <Link href="/" className={buttonVariants()}>
           Back to Dashboard
-        </Button>
+        </Link>
       ) : (
         <Button onClick={reset}>Try again</Button>
       )}

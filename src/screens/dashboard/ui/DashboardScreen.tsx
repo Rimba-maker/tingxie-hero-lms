@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bell, Camera } from "lucide-react";
 
 import type { Lesson } from "@/entities/lesson/model/types";
-import { Button } from "@/shared/ui/button";
+import { buttonVariants } from "@/shared/ui/button";
 import { AppHeader } from "@/widgets/app-header/ui/AppHeader";
 import { CreditsCard } from "@/widgets/credits-card/ui/CreditsCard";
 import { MasteryStats } from "@/widgets/mastery-stats/ui/MasteryStats";
@@ -72,15 +72,13 @@ export function DashboardScreen({
         </div>
       )}
 
-      <Button
-        render={<Link href={upcomingLesson ? `/scan?lessonId=${upcomingLesson.id}` : "/scan"} />}
-        nativeButton={false}
-        size="lg"
-        className="w-full"
+      <Link
+        href={upcomingLesson ? `/scan?lessonId=${upcomingLesson.id}` : "/scan"}
+        className={buttonVariants({ size: "lg", className: "w-full" })}
       >
         <Camera data-icon="inline-start" />
         Scan &amp; Grade Worksheet
-      </Button>
+      </Link>
 
       <BottomNav />
     </div>

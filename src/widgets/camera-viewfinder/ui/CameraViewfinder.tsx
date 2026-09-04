@@ -39,7 +39,7 @@ export function CameraViewfinder({ onClose, onCapture, capturing }: CameraViewfi
           type="button"
           onClick={onClose}
           aria-label="Close camera"
-          className="flex size-10 items-center justify-center rounded-full bg-black/40"
+          className="flex size-10 items-center justify-center rounded-full bg-black/40 outline-none focus-visible:ring-3 focus-visible:ring-white"
         >
           <X className="size-5" />
         </button>
@@ -63,7 +63,11 @@ export function CameraViewfinder({ onClose, onCapture, capturing }: CameraViewfi
       {state === "error" && (
         <div className="relative z-10 mx-4 mb-4 rounded-md bg-red-950/80 p-3 text-center text-sm">
           {error ?? "Could not access the camera."}{" "}
-          <button type="button" onClick={start} className="underline">
+          <button
+            type="button"
+            onClick={start}
+            className="rounded underline outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
             Retry
           </button>
         </div>

@@ -17,24 +17,26 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t bg-card py-2">
-      {ITEMS.map((item) => {
-        const isActive = pathname === item.href;
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex flex-col items-center gap-1 px-3 py-1 text-xs",
-              isActive ? "text-primary" : "text-muted-foreground",
-            )}
-          >
-            <Icon className="size-5" />
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav className="fixed inset-x-0 bottom-0 border-t bg-card py-2">
+      <div className="mx-auto flex w-full max-w-md justify-around">
+        {ITEMS.map((item) => {
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-md px-3 py-1 text-xs outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                isActive ? "text-primary" : "text-muted-foreground",
+              )}
+            >
+              <Icon className="size-5" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

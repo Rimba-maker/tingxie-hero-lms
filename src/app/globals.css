@@ -78,7 +78,7 @@
   --destructive-foreground: oklch(1 0 0);
   --success: oklch(0.525 0.086 166.3); /* green checkmarks / Completed */
   --success-foreground: oklch(1 0 0);
-  --warning: oklch(0.715 0.112 78.6); /* amber / Pending Practice */
+  --warning: oklch(0.54 0.112 78.6); /* amber / Pending Practice — darkened from the raw mockup sample (0.715 L) so text-warning on a tinted warning surface clears 4.5:1 (was 2.26:1), matching how --destructive was already darkened for the identical reason */
   --warning-foreground: oklch(0.235 0 0);
   --border: oklch(0.911 0.013 82.4);
   --input: oklch(0.911 0.013 82.4);

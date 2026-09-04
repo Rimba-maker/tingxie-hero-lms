@@ -329,14 +329,14 @@ Prioritized for a **Back-End Developer candidate** — backend robustness gets m
 - [x] Uploading/loading states — `uploading`/`grading`/`error` states shown in `ScanScreen`
 
 ### Phase 4 (Day 4) — Results, Dashboard, Syllabus (Screens 1, 2, 4)
-- [x] Results screen — score header, correction overlay (per PRD §6 assumption), historical matrix. Code complete, matches mockup (verified via a throwaway Playwright preview with fake data — deleted, never committed); live data unverified until Supabase is connected.
-- [x] Dashboard screen — hardcoded/derived stats, calendar strip, CTA routing. Same verification status.
-- [x] Syllabus screen — tabs, expandable lesson cards, seed data rendering. Same verification status.
+- [x] Results screen — score header, correction overlay (per PRD §6 assumption), historical matrix. Matches mockup (verified via a throwaway Playwright preview with fake data, then again with a real graded submission once Supabase/Gemini were connected — see Phase 2).
+- [x] Dashboard screen — hardcoded/derived stats, calendar strip, CTA routing. Verified live with real Supabase data (real lesson IDs, real status).
+- [x] Syllabus screen — tabs, expandable lesson cards, seed data rendering. Verified live with real Supabase data.
 - Design tokens (colors, font) extracted from `docs/reference/mockups/*.png` directly — see `src/app/globals.css` header comment for why (the `ui-ux-pro-max` design-system search didn't have a matching palette in its database after two tries).
 - Screens are React Server Components fetching entity functions directly (`export const dynamic = "force-dynamic"`), not going through separate GET API routes — simpler than FSD §4's GET /api/submissions/:id sketch and avoids an unnecessary network hop; the client-observable "flow" the assignment grades (upload → grade → overlay) is unaffected since that's entirely POST /api/upload + POST /api/grade.
 
 ### Phase 5 (Day 5) — PWA, Polish, Deployment
-- [ ] Serwist (`@serwist/next`) manifest + service worker + icons
+- [x] Serwist manifest + service worker + icons — Configurator mode (`@serwist/next` + `@serwist/turbopack` + `@serwist/cli`, bundler-agnostic, verified via Context7 since this project runs Turbopack, not webpack). Service worker registration confirmed live via Playwright (registers → installs → activates → controls the page, zero console errors); manifest, icons, and `/sw.js` all confirmed reachable.
 - [ ] End-to-end test: real photo → real grading → real results, on both desktop and mobile browser
 - [ ] README with setup instructions + live Vercel URL
 - [ ] Final deploy, verify GitHub last-updated timestamp is well before deadline (Tue Sep 8, 3:00 AM WIB)

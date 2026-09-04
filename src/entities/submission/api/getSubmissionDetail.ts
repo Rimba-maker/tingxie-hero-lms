@@ -8,6 +8,7 @@ export type SubmissionDetail = {
   totalPossible: number;
   submittedAt: string;
   imageUrl: string;
+  lessonWeekNumber: number | null;
   characterResults: CharacterResult[];
 };
 
@@ -32,6 +33,7 @@ type SubmissionRow = {
   total_possible: number;
   submitted_at: string;
   image_url: string;
+  lessons: { week_number: number } | null;
   character_results: { character: string; is_correct: boolean }[];
 };
 
@@ -42,7 +44,7 @@ export function supabaseSubmissionDetailDb(supabase: SupabaseClient): Submission
       const { data, error } = await supabase
         .from("submissions")
         .select(
-          "id, total_score, total_possible, submitted_at, image_url, character_results(character, is_correct)",
+          "id, total_score, total_possible, submitted_at, image_url, lessons(week_number), character_results(character, is_correct)",
         )
         .eq("id", submissionId)
         .maybeSingle();
@@ -56,6 +58,7 @@ export function supabaseSubmissionDetailDb(supabase: SupabaseClient): Submission
         totalPossible: row.total_possible,
         submittedAt: row.submitted_at,
         imageUrl: row.image_url,
+        lessonWeekNumber: row.lessons?.week_number ?? null,
         characterResults: row.character_results.map((r) => ({
           character: r.character,
           isCorrect: r.is_correct,

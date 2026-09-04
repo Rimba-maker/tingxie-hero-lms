@@ -9,12 +9,20 @@ type ScoreHeaderProps = {
 
 export function ScoreHeader({ score, totalPossible, gradedAt, charactersMissed }: ScoreHeaderProps) {
   const percent = Math.round((score / totalPossible) * 100);
-  const gradedDate = new Date(gradedAt).toLocaleString("en-SG", {
-    day: "numeric",
-    month: "short",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  // Ring/text color follows whether anything was missed, not a percentage
+  // threshold — matches docs/reference/mockups/screen4-results.png, where an
+  // 8/10 (80%) result still renders in the destructive color because 2
+  // characters were wrong.
+  const isPerfect = charactersMissed === 0;
+  const gradedDate = new Date(gradedAt)
+    .toLocaleString("en-SG", {
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })
+    .replace(/\b(am|pm)\b/i, (match) => match.toUpperCase());
 
   return (
     <Card>
@@ -22,7 +30,7 @@ export function ScoreHeader({ score, totalPossible, gradedAt, charactersMissed }
         <div
           className={
             "flex size-16 shrink-0 items-center justify-center rounded-full border-4 text-lg font-semibold " +
-            (percent >= 70 ? "border-success text-success" : "border-destructive text-destructive")
+            (isPerfect ? "border-success text-success" : "border-destructive text-destructive")
           }
         >
           {percent}%

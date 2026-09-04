@@ -2,8 +2,8 @@ import { RotateCcw, Share2 } from "lucide-react";
 
 import type { CharacterHistoryMatrix } from "@/entities/character-result/api/buildCharacterHistoryMatrix";
 import type { SubmissionDetail } from "@/entities/submission/api/getSubmissionDetail";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { CorrectionOverlay } from "@/widgets/correction-overlay/ui/CorrectionOverlay";
 import { HistoricalMatrix } from "@/widgets/historical-matrix/ui/HistoricalMatrix";
 import { ScoreHeader } from "@/widgets/score-header/ui/ScoreHeader";
 
@@ -14,11 +14,22 @@ type ResultsScreenProps = {
 
 export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps) {
   const charactersMissed = submission.characterResults.filter((r) => !r.isCorrect).length;
+  const needsRevision = charactersMissed > 0;
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-24">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Test Feedback</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Test Feedback</p>
+          <p className="text-lg font-semibold">
+            {submission.lessonWeekNumber !== null
+              ? `Week ${submission.lessonWeekNumber} Syllabus Test`
+              : "Syllabus Test"}
+          </p>
+        </div>
+        <Badge variant={needsRevision ? "destructive" : "success"}>
+          {needsRevision ? "Needs Revision" : "Completed"}
+        </Badge>
       </div>
 
       <ScoreHeader
@@ -27,11 +38,6 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
         gradedAt={submission.submittedAt}
         charactersMissed={charactersMissed}
       />
-
-      <div>
-        <p className="mb-2 text-sm font-medium">Results</p>
-        <CorrectionOverlay results={submission.characterResults} />
-      </div>
 
       <div>
         <p className="mb-2 text-sm font-medium">Results over time</p>

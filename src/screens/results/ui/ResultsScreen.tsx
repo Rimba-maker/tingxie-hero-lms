@@ -3,6 +3,7 @@ import { RotateCcw, Share2 } from "lucide-react";
 
 import type { CharacterHistoryMatrix } from "@/entities/character-result/api/buildCharacterHistoryMatrix";
 import type { SubmissionDetail } from "@/entities/submission/api/getSubmissionDetail";
+import { StrokeOrderCard } from "@/features/practice-stroke-order/ui/StrokeOrderCard";
 import { Badge } from "@/shared/ui/badge";
 import { Button, buttonVariants } from "@/shared/ui/button";
 import { HistoricalMatrix } from "@/widgets/historical-matrix/ui/HistoricalMatrix";
@@ -21,6 +22,7 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
   const pinyinByCharacter = Object.fromEntries(
     submission.vocabulary.map((entry) => [entry.character, entry.pinyin]),
   );
+  const missedCharacters = submission.characterResults.filter((r) => !r.isCorrect);
 
   return (
     <ScreenShell>
@@ -51,6 +53,21 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
         <p className="mb-2 text-sm font-medium">Results over time</p>
         <HistoricalMatrix matrix={historyMatrix} pinyinByCharacter={pinyinByCharacter} />
       </div>
+
+      {missedCharacters.length > 0 && (
+        <div>
+          <p className="mb-2 text-sm font-medium">Practice writing</p>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {missedCharacters.map((r) => (
+              <StrokeOrderCard
+                key={r.character}
+                character={r.character}
+                pinyin={pinyinByCharacter[r.character]}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-2">
         <Button variant="secondary" className="flex-1">

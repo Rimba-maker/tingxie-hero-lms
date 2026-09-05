@@ -1,7 +1,6 @@
 "use client";
 
-import { ChevronDown, Printer } from "lucide-react";
-
+import { PrintWorksheetButton } from "@/features/print-worksheet/ui/PrintWorksheetButton";
 import type { Lesson } from "@/entities/lesson/model/types";
 import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -62,16 +61,7 @@ export function LessonCard({ lesson, expanded, onToggle }: LessonCardProps) {
               ))}
             </div>
             <div className="border-t border-border" />
-            <button
-              type="button"
-              className="flex items-center justify-between rounded-md text-sm text-primary outline-none hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <span className="flex items-center gap-1.5">
-                <Printer className="size-4" />
-                Print A4 Worksheet (PDF)
-              </span>
-              <ChevronDown className="size-4 -rotate-90" />
-            </button>
+            <PrintWorksheetButton lesson={lesson} />
           </CardContent>
         </div>
       </div>

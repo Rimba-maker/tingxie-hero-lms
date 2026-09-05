@@ -49,8 +49,21 @@ export function createUploadSubmissionStore(api: UploadSubmissionApi) {
   }));
 }
 
+// Both API routes return { error: string } on failure — read it instead of
+// discarding the body and showing the user a bare status code.
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = await response.json();
+    return typeof body?.error === "string" ? body.error : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 // Real API-backed instance — talks to POST /api/upload then POST /api/grade.
-const realApi: UploadSubmissionApi = {
+// Exported so its error-message extraction can be tested against a mocked
+// fetch without dragging the whole store through it.
+export const realApi: UploadSubmissionApi = {
   async uploadSubmission({ file, lessonId }) {
     const formData = new FormData();
     formData.append("image", file);
@@ -58,7 +71,7 @@ const realApi: UploadSubmissionApi = {
 
     const response = await fetch("/api/upload", { method: "POST", body: formData });
     if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status}`);
+      throw new Error(await readErrorMessage(response, `Upload failed: ${response.status}`));
     }
     return response.json();
   },
@@ -69,7 +82,7 @@ const realApi: UploadSubmissionApi = {
       body: JSON.stringify({ submissionId }),
     });
     if (!response.ok) {
-      throw new Error(`Grading failed: ${response.status}`);
+      throw new Error(await readErrorMessage(response, `Grading failed: ${response.status}`));
     }
     return response.json();
   },

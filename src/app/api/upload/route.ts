@@ -26,15 +26,19 @@ export async function POST(request: NextRequest) {
 
   const supabaseServer = getSupabaseServer();
 
-  const { imageUrl } = await uploadWorksheetImage(supabaseWorksheetImageStorage(supabaseServer), {
-    file,
-    path: `${randomUUID()}.jpg`,
-  });
+  try {
+    const { imageUrl } = await uploadWorksheetImage(supabaseWorksheetImageStorage(supabaseServer), {
+      file,
+      path: `${randomUUID()}.jpg`,
+    });
 
-  const submission = await createSubmission(supabaseSubmissionsDb(supabaseServer), {
-    lessonId,
-    imageUrl,
-  });
+    const submission = await createSubmission(supabaseSubmissionsDb(supabaseServer), {
+      lessonId,
+      imageUrl,
+    });
 
-  return NextResponse.json({ submissionId: submission.id, status: "pending" });
+    return NextResponse.json({ submissionId: submission.id, status: "pending" });
+  } catch {
+    return NextResponse.json({ error: "Upload failed, please try again" }, { status: 500 });
+  }
 }

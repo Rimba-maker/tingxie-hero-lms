@@ -174,6 +174,38 @@ originally sketched above.
 
 ---
 
+## 6. Stroke-order animation for missed characters — `hanzi-writer`
+
+**Current (at time of research):** a missed character on Results shows only a red mark and its
+pinyin — no guidance on how to actually write it correctly.
+
+**Found:** [hanzi-writer](https://hanziwriter.org/) ([npm](https://www.npmjs.com/package/hanzi-writer))
+— MIT-licensed, ~35KB (10KB gzipped), actively maintained (v3.7.3), stroke-order animation + quiz
+data for 9000+ simplified/traditional characters sourced from the Make Me a Hanzi project.
+
+**Side-by-side:**
+| | Now | With hanzi-writer |
+|---|---|---|
+| Missed character | Red mark + pinyin, no writing guidance | Animated correct stroke order, replayable |
+| Dependency | None | +1 (`hanzi-writer`, dynamically imported like `pdf-lib`) |
+| Scope | — | Directly overlaps `PRD_TingXieHero.md` §4's excluded "Stroke-order tracing/practice screen" |
+
+**Recommendation (first pass):** don't build — not a research gap, a scope one. The library is
+genuinely good, but its only real use here is exactly the screen the PRD already excludes as
+belonging to a different phase of the product's own learning loop.
+
+**Status: built anyway, at explicit request (2026-09-05).** Raised during a self-answered
+`/grill-me` session; the honest recommendation above was overridden by the user, who asked for a
+narrower version — a view-only stroke-order animation (not the excluded interactive trace/quiz
+screen) for each missed character, on Results. Built as
+`features/practice-stroke-order/ui/StrokeOrderCard.tsx`. One real bug found during live
+verification: `hanzi-writer`'s stroke data is keyed per single character, not per multi-character
+word — passing a whole word like `"温暖"` silently 404'd and fell back to static text. Fixed by
+splitting each word into individual characters and animating each one. See `FSD_TingXieHero.md` §6
+Phase 16 for the full writeup and `PRD_TingXieHero.md` §4 for the scope-override note.
+
+---
+
 ## Item 2 status: done (2026-09-05)
 
 `generateWorksheetPdf` (`src/entities/lesson/api`) + `PrintWorksheetButton`
@@ -197,6 +229,7 @@ Worked the list in ranked order, per the user's instruction:
 | 4 | Auto-pinyin (`pinyin-pro`) | **Audited, not integrated.** Verified all 8 seeded entries are already correct; no dependency added since nothing consumes it yet. |
 | 1 | Document-scanner capture (`jscanify`) | **Investigated further, not integrating.** Real browser cost turned out to be OpenCV.js (~8-10MB), not a modest WASM add-on — far worse than the ceiling flagged when this was first ranked. The existing corner-bracket guide already solves the same problem for free. |
 | 3 | Real Mastery Rate (`ts-fsrs`) | **Skipped, as recommended above.** Scope creep relative to the assignment's actual Technical Requirements. |
+| 6 | Stroke-order animation (`hanzi-writer`) | **Built, overriding the first recommendation.** Correctly flagged as scope creep against PRD §4's excluded stroke-practice screen; built anyway at the user's explicit request, narrowed to a view-only animation rather than the excluded interactive quiz. |
 
 Two of five shipped as real, working features; two were checked seriously and correctly not built
 once the real cost/benefit was known (not just skipped on a hunch); one was deliberately out of

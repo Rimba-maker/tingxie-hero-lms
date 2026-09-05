@@ -747,6 +747,36 @@ gaps found, both fixed and re-verified live, not just asserted:
   one default, one `reduced_motion: "reduce"` — confirming the Replay button count (1 vs 0) and the
   glyphs rendering fully-drawn instantly under reduced motion, not just that the code compiled.
 
+### Phase 18 (beyond the original plan) — security-review + code-review of Phases 15-17
+
+Three parallel sub-agent passes against the diff from the last-reviewed commit (`7f3cebf`, end of
+Phase 14) to HEAD — the pinyin fix, the stroke-order feature, and its a11y follow-up, none of which
+had been through a Standards+Spec code-review or a security-review since landing.
+
+- **`security-review`** — one real bug found and fixed, not just a theoretical concern: the pinyin
+  lookup built via `Object.fromEntries` was a plain object indexed with `character_results.character`
+  — a string written from Gemini's parsed grading JSON with no server-side charset/enum validation.
+  `plainObject["__proto__"]` resolves `Object.prototype` (a truthy object) instead of `undefined`,
+  confirmed live (`node -e`), which would crash the Results page's render (`Objects are not valid as
+  a React child`) for that submission indefinitely, until manually cleaned from the DB. Fixed by
+  extracting a `buildPinyinLookup` selector (`entities/lesson/model/`) that returns a `Map` instead —
+  `Map#get` has no prototype-chain lookup surface — with a unit test asserting `__proto__`/
+  `constructor` keys correctly return `undefined`. Two other findings were reported but not code-fixed
+  after review: a URL-encoding gap inside `hanzi-writer` itself (third-party library internals, no
+  viable exploit chain found — a single Unicode code point can't construct a path-traversal sequence
+  in one URL segment) and `hanzi-writer`'s default CDN fetch revealing, per missed character, which
+  word a specific student struggled with to a third party (`cdn.jsdelivr.net`) via the request URL —
+  a real but low-severity privacy trade-off of using the library's default loader rather than a
+  self-hosted `charDataLoader`, judged not worth the added complexity for this assignment's scope but
+  worth a conscious, written call rather than a silent one.
+- **`mattpocock-skills:code-review`** (Standards axis) — one minor smell: `ResultsScreen` computed
+  `characterResults.filter((r) => !r.isCorrect)` twice (once for a count, once for the array).
+  Deduped to a single `missedCharacters` value feeding both.
+- **`mattpocock-skills:code-review`** (Spec axis) — clean. Verified every claim in this document's
+  own Phase 15-17 entries against the actual code line-by-line (the join, the pinyin rendering, the
+  per-glyph splitting, the `useSyncExternalStore` usage, the per-card aria-labels) — no gaps, no
+  undocumented scope creep, no claim that didn't match what the code actually does.
+
 ---
 
 ## 7. Environment Variables

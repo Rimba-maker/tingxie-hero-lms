@@ -108,6 +108,30 @@ of these actually found.
     mockup-fidelity pass on the Results screen, which caught a real
     pluralization bug ("1 characters missed").
 
+## Phase 13-14 — second maturity/audit pass (beyond Phase 6, beyond the original plan)
+
+Run once Phase 6's audit itself started to look dated against a codebase that had kept growing
+(credits top-up, the correction overlay, the grading-pipeline refactor). Reference: FSD §6 Phase 13
+and Phase 14 document what each of these actually found.
+
+17. **`vercel-react-best-practices`** — audited before touching anything, not the other way around.
+    Most of the 70 rules already matched; two real gaps closed (a missing `history/loading.tsx` +
+    `error.tsx` pair, `PrintWorksheetButton` not preloading its dynamic import on hover).
+18. **`security-review`** (built-in) — re-run now that the upload path had grown past Phase 5's
+    original shape. One real hardening fix found (hardcode `contentType` on the Storage upload
+    instead of trusting the client); everything else correctly filtered as non-exploitable.
+19. **`mattpocock-skills:code-review`** — two-axis review (Standards + Spec) against a fixed point
+    from before this batch. Standards caught a real duplicated layout across all four screens
+    (collapsed into a `ScreenShell` widget); Spec caught a real header-text bug (`"P2"` instead of
+    `"Primary 2"`) by checking the diff against the actual mockup image, not just the PRD prose.
+20. **`mattpocock-skills:domain-modeling`** — first real run on this repo. Produced `CONTEXT.md`
+    (repo root) and two ADRs under `docs/adr/` for decisions two separate audits had already
+    independently reached, worth not re-litigating a third time.
+21. **`archify`** — two interactive HTML diagrams under `docs/architecture/`: system architecture
+    and the scan-to-grade sequence. Useful specifically *because* the codebase had grown past what
+    a paragraph of prose in the FSD comfortably conveys — a genuine documentation gap, not a
+    box-ticking exercise.
+
 ## Cross-cutting, every phase
 
 - **`ponytail`** (already active) — keep it on. 5-day scope, no room for

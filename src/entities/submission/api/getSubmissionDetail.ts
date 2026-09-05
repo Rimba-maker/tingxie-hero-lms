@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { BoundingBox, CharacterResult } from "@/entities/character-result/model/types";
+import type { VocabEntry } from "@/entities/lesson/model/types";
 
 export type SubmissionDetail = {
   id: string;
@@ -11,6 +12,7 @@ export type SubmissionDetail = {
   lessonId: string | null;
   lessonWeekNumber: number | null;
   characterResults: CharacterResult[];
+  vocabulary: VocabEntry[];
 };
 
 export type SubmissionDetailDb = {
@@ -35,7 +37,7 @@ type SubmissionRow = {
   submitted_at: string;
   image_url: string;
   lesson_id: string | null;
-  lessons: { week_number: number } | null;
+  lessons: { week_number: number; vocabulary: VocabEntry[] } | null;
   character_results: { character: string; is_correct: boolean; bounding_box: BoundingBox | null }[];
 };
 
@@ -46,7 +48,7 @@ export function supabaseSubmissionDetailDb(supabase: SupabaseClient): Submission
       const { data, error } = await supabase
         .from("submissions")
         .select(
-          "id, total_score, total_possible, submitted_at, image_url, lesson_id, lessons(week_number), character_results(character, is_correct, bounding_box)",
+          "id, total_score, total_possible, submitted_at, image_url, lesson_id, lessons(week_number, vocabulary), character_results(character, is_correct, bounding_box)",
         )
         .eq("id", submissionId)
         .maybeSingle();
@@ -67,6 +69,7 @@ export function supabaseSubmissionDetailDb(supabase: SupabaseClient): Submission
           isCorrect: r.is_correct,
           ...(r.bounding_box && { boundingBox: r.bounding_box }),
         })),
+        vocabulary: row.lessons?.vocabulary ?? [],
       };
     },
   };

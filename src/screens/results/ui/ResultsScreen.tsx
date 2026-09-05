@@ -18,6 +18,9 @@ type ResultsScreenProps = {
 export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps) {
   const charactersMissed = submission.characterResults.filter((r) => !r.isCorrect).length;
   const needsRevision = charactersMissed > 0;
+  const pinyinByCharacter = Object.fromEntries(
+    submission.vocabulary.map((entry) => [entry.character, entry.pinyin]),
+  );
 
   return (
     <ScreenShell>
@@ -46,7 +49,7 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
 
       <div>
         <p className="mb-2 text-sm font-medium">Results over time</p>
-        <HistoricalMatrix matrix={historyMatrix} />
+        <HistoricalMatrix matrix={historyMatrix} pinyinByCharacter={pinyinByCharacter} />
       </div>
 
       <div className="flex gap-2">

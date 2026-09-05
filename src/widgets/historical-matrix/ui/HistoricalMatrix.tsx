@@ -5,9 +5,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 type HistoricalMatrixProps = {
   matrix: CharacterHistoryMatrix;
+  pinyinByCharacter?: Record<string, string>;
 };
 
-export function HistoricalMatrix({ matrix }: HistoricalMatrixProps) {
+export function HistoricalMatrix({ matrix, pinyinByCharacter }: HistoricalMatrixProps) {
   if (matrix.rows.length === 0) {
     return <p className="text-sm text-muted-foreground">No history yet.</p>;
   }
@@ -27,7 +28,14 @@ export function HistoricalMatrix({ matrix }: HistoricalMatrixProps) {
       <TableBody>
         {matrix.rows.map((row) => (
           <TableRow key={row.character}>
-            <TableCell className="font-medium">{row.character}</TableCell>
+            <TableCell className="font-medium">
+              {row.character}
+              {pinyinByCharacter?.[row.character] && (
+                <span className="block text-xs font-normal text-muted-foreground">
+                  {pinyinByCharacter[row.character]}
+                </span>
+              )}
+            </TableCell>
             {matrix.dates.map((date) => (
               <TableCell key={date} className="text-center">
                 {row.resultsByDate[date] === undefined ? (

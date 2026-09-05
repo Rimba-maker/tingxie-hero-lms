@@ -17,6 +17,10 @@ describe("getSubmissionDetail", () => {
           { character: "校园", isCorrect: true },
           { character: "礼堂", isCorrect: false },
         ],
+        vocabulary: [
+          { character: "校园", pinyin: "xiào yuán" },
+          { character: "礼堂", pinyin: "lǐ táng" },
+        ],
       }),
     };
 
@@ -33,6 +37,10 @@ describe("getSubmissionDetail", () => {
       characterResults: [
         { character: "校园", isCorrect: true },
         { character: "礼堂", isCorrect: false },
+      ],
+      vocabulary: [
+        { character: "校园", pinyin: "xiào yuán" },
+        { character: "礼堂", pinyin: "lǐ táng" },
       ],
     });
   });

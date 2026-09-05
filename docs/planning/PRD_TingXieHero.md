@@ -78,7 +78,7 @@ anywhere broken.
 | "QR code target box" in camera overlay (Screen 3) | Treated as a **static UI element only** (visual guide box in the viewfinder), not an active QR-scanning feature | No functional QR-scanning requirement appears anywhere in the Technical Requirements section |
 | Gemini 1.5 Flash specified, but this model is being deprecated | Substitute with the Google-maintained `gemini-flash-latest` alias via the current `@google/genai` SDK | Assignment explicitly allows "equivalent substitutions... as long as core functionality remains identical." `gemini-2.5-flash` (the initially-planned substitute) was itself retired for new API keys mid-build, and its suggested replacement `gemini-3.6-flash` hit consistent 503s live — the `-latest` alias avoids needing another manual bump on the next retirement. |
 | No auth mentioned | No login/auth implemented; student profile hardcoded as instructed | Matches explicit instruction: "Hardcode student profile details (Lucas – Primary 2)" |
-| "Prepaid Lesson Credits" (12/20) and "Top Up" button | Displayed as static/hardcoded data; "Top Up" button present in UI but non-functional (or shows a disabled/toast state) | Not covered by any Technical Requirement bullet — UI-reference only |
+| "Prepaid Lesson Credits" (12/20) and "Top Up" button; weekly calendar strip | The Technical Requirements section only says "Hardcode" for the student profile bullet — the credits card and calendar strip bullets are phrased as "Display"/"Include," not "Hardcode." Built as **real, DB-backed data**: a new `students` table (`credits_total`, `credits_expire_at`); "used" is derived from the student's actual `submissions` count (no separately-maintained counter to drift out of sync); "Top Up" calls `POST /api/credits/topup` and actually increments `credits_total`; the calendar strip computes the real current week (native `Date`, no library needed) and highlights whichever day is genuinely today | Re-read closely at your prompt: only one bullet in the source PDF's Dashboard section says "Hardcode," and it names only the student profile. The mockup's "12/20" is the example value shown in the mockup screenshot, not an instruction to freeze that literal number in code. |
 
 ---
 
@@ -88,11 +88,17 @@ anywhere broken.
 **User story:** As a parent, I want to see my child's progress summary and quickly start a new worksheet scan.
 
 - Header: "Welcome back, Sarah" with student switcher showing "Lucas — Primary 2" (hardcoded, switcher can be visual-only/disabled)
-- Prepaid Lesson Credits card: "12 of 20 Remaining", "Top Up" button (non-functional stub), expiry note ("Credits expire on 30 Nov 2026")
-- Mastery Rate stat: "82.4%", delta indicator ("+3.1% this month") — can be computed from `character_results` if data exists, otherwise hardcoded per mockup
-- Practiced stat: "48 Characters", "8 lists covered" — same as above
-- Upcoming Ting Xie: weekly calendar strip (Mon–Sat), current/selected day highlighted
-- Upcoming test card: "Week 4 (第十课) Spelling Test — Wednesday, 14 Oct at 3:00 PM · P2 MOE Syllabus"
+- Prepaid Lesson Credits card: real `{used} of {total} Remaining` from the `students` table (used
+  derived from actual `submissions` count) and a working "Top Up" button (`POST
+  /api/credits/topup`, +10 credits), expiry note from `students.credits_expire_at`
+- Mastery Rate stat: "82.4%", delta indicator ("+3.1% this month") — hardcoded; not named in the
+  assignment's Technical Requirements section at all (mockup-only), unlike the two items above
+- Practiced stat: "48 Characters", "8 lists covered" — same as above, hardcoded
+- Upcoming Ting Xie: weekly calendar strip (Mon–Sat) computed from the real current date (native
+  `Date`, no calendar library needed for this), today genuinely highlighted
+- Upcoming test card: pulls the pending lesson's real `test_scheduled_at` from `lessons`, formatted
+  in Asia/Singapore time regardless of server locale (e.g. "Week 4 (第十课) Spelling Test —
+  Wednesday, 14 Oct at 3:00 PM · P2 MOE Syllabus")
 - Primary CTA: **"Scan & Grade Worksheet"** button → navigates to Camera screen (Screen 3)
 - Bottom navigation: Dashboard, Syllabus, History, Premium (only Dashboard and Syllabus need to be functional destinations; History can route to Results screen; Premium can be a stub)
 
@@ -103,6 +109,11 @@ anywhere broken.
 - [x] Responsive on mobile viewport (this is a PWA, mobile-first) — verified at 375/390/414/430px
   widths; no desktop/tablet layout, which matches the brief (re-verified directly against the
   source PDF, not just the mockup images — no responsive requirement appears anywhere in it)
+- [x] Credits card and calendar strip pull real data, not hardcoded mockup values — verified
+  end-to-end against the live `students`/`lessons` tables: the real current week renders (correctly
+  rolling across a month boundary), today is genuinely highlighted, the test-schedule banner shows
+  the right time in Asia/Singapore regardless of server locale, and clicking "Top Up" actually
+  increments `students.credits_total` in Supabase and the UI reflects it after `router.refresh()`
 
 ---
 
@@ -192,10 +203,13 @@ anywhere broken.
 - [x] Correction feedback clearly shows correct vs. incorrect characters with the correct answer
   visible for mistakes — via both the Historical Matrix's current-date column and the
   `WorksheetOverlay` red/green marks on the graded photo (see above)
-- [ ] `WorksheetOverlay` verified against a real Gemini-graded submission end-to-end — verified so
-  far only via a throwaway preview route with fake bounding boxes (screenshotted, then deleted);
-  the live `character_results` table still needs its `bounding_box` column added (one `alter
-  table` statement, see `supabase/schema.sql`) before a real upload can be replayed through it
+- [x] `WorksheetOverlay` verified against real Supabase data end-to-end — the live
+  `bounding_box` column and a temp submission (with real bounding boxes) were inserted directly,
+  `/results/[id]` was rendered and screenshotted for real, then the temp rows were deleted and
+  confirmed gone (0 rows remaining), not just the throwaway-preview check the initial commit
+  shipped with. A real Gemini-graded submission (not a temp row) still hasn't gone through this
+  path — that only happens on an actual `/scan` upload, which needs the real-device camera test
+  below.
 - [x] Historical matrix reflects real historical `character_results` rows from Supabase, not mock
   data
 - [x] Page is reachable both immediately after a new scan and via a "History" entry point — History

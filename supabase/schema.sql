@@ -17,7 +17,23 @@ create table lessons (
   status text not null default 'pending'
     constraint lessons_status_check check (status in ('pending', 'completed', 'needs_revision')),
   vocabulary jsonb not null,         -- [{ "character": "校园", "pinyin": "xiào yuán" }, ...]
+  -- When this lesson's spelling test is scheduled — drives the Dashboard's
+  -- "Upcoming Ting Xie" banner and the weekly calendar strip's event dot.
+  -- Nullable: not every lesson has a scheduled test yet.
+  test_scheduled_at timestamptz,
   created_at timestamptz not null default now()
+);
+
+-- Single hardcoded student (no auth in scope — matches submissions.student_id's
+-- default below). Owns the prepaid lesson credits shown on the Dashboard;
+-- "used" is derived from the student's actual submissions count rather than
+-- a separately-maintained counter (nothing to keep in sync).
+create table students (
+  id text primary key,               -- e.g. "lucas-p2"
+  name text not null,
+  moe_level text not null,
+  credits_total int not null default 20,
+  credits_expire_at timestamptz not null
 );
 
 create table submissions (
@@ -67,6 +83,7 @@ grant usage on schema public to anon, authenticated;
 grant select on public.lessons to anon, authenticated;
 grant select on public.submissions to anon, authenticated;
 grant select on public.character_results to anon, authenticated;
+grant select on public.students to anon, authenticated;
 
 -- Row Level Security
 -- No end-user auth in this assignment (PRD §2), so there's no auth.uid() to scope
@@ -77,6 +94,7 @@ grant select on public.character_results to anon, authenticated;
 alter table lessons enable row level security;
 alter table submissions enable row level security;
 alter table character_results enable row level security;
+alter table students enable row level security;
 
 create policy lessons_public_read on lessons
   for select
@@ -89,6 +107,14 @@ create policy submissions_public_read on submissions
   using (true);
 
 create policy character_results_public_read on character_results
+  for select
+  to anon, authenticated
+  using (true);
+
+-- No insert/update/delete policy for anon/authenticated: credits_total is
+-- only ever written server-side (POST /api/credits/topup) via the service
+-- role key, same pattern as every other write in this schema.
+create policy students_public_read on students
   for select
   to anon, authenticated
   using (true);

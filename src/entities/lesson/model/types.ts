@@ -10,4 +10,5 @@ export type Lesson = {
   moeLevel: string;
   status: "pending" | "completed" | "needs_revision";
   vocabulary: VocabEntry[];
+  testScheduledAt: string | null; // ISO timestamp — null when no test date is set yet
 };

@@ -153,14 +153,19 @@ relevant layer — never bolt unrelated logic onto an existing entity/widget fil
 constraints, `numeric(4,1)` for scores, storage bucket policy). Read those files directly for the
 authoritative, fully-commented version; the summary below is for orientation only.
 
-**Tables:** `lessons` (syllabus content + vocabulary jsonb), `submissions` (one graded worksheet
-scan, FK to `lessons`), `character_results` (per-character grading outcome, FK to `submissions`,
-cascade delete; `bounding_box` jsonb, nullable — Gemini's `box_2d`, drives the Results screen's
-photo overlay, see §5).
+**Tables:** `lessons` (syllabus content + vocabulary jsonb; `test_scheduled_at` timestamptz,
+nullable — drives the Dashboard's "Upcoming Ting Xie" banner and calendar-strip event dot),
+`submissions` (one graded worksheet scan, FK to `lessons`), `character_results` (per-character
+grading outcome, FK to `submissions`, cascade delete; `bounding_box` jsonb, nullable — Gemini's
+`box_2d`, drives the Results screen's photo overlay, see §5), `students` (single hardcoded row —
+no auth in scope — owning `credits_total`/`credits_expire_at`; "used" credits are derived from the
+student's actual `submissions` count, not a separately-maintained counter).
 
-**Live-DB migration note:** the live Supabase table predates the `bounding_box` column above —
-run `alter table character_results add column bounding_box jsonb;` in the SQL editor before
-replaying a real upload through `WorksheetOverlay` end-to-end (existing rows just get `null`).
+Applied directly to the live Supabase project via the linked `supabase` CLI (`supabase db query
+--linked`) — confirmed authenticated and linked to this exact project (`project-ref` file matches
+`NEXT_PUBLIC_SUPABASE_URL`) before every DDL statement, each one run only after explicit
+per-migration confirmation. All migrations so far are additive (new nullable column, new table) —
+nothing dropped or overwritten.
 
 **RLS:** No end-user auth in scope, so no `auth.uid()`-scoped policies. All three tables get a
 public-read policy for `anon`/`authenticated`; writes only ever happen server-side via the service
@@ -356,17 +361,36 @@ before showcase" pass:
   (confirmed as a supported `generateContent` output shape via Context7, not assumed), added the
   `bounding_box` column, and built `WorksheetOverlay` to render the graded photo with red-bordered
   "correct word" marks over misses and green check marks over hits. The Historical Matrix Table
-  stays — Section 5 names it explicitly by name, so this is additive, not a replacement.
+  stays — Section 5 names it explicitly by name, so this is additive, not a replacement. Verified
+  by inserting a real temp submission (with bounding boxes) into the live DB, rendering the actual
+  `/results/[id]` route, screenshotting it, then deleting the temp rows and confirming 0 remain —
+  not just the throwaway-preview check the initial commit shipped with.
+- **Live DDL access, corrected** — initially told you the service-role key couldn't run schema
+  migrations and asked you to hand-run one in the SQL editor. You pushed back; the linked
+  `supabase` CLI (`npx supabase db query --linked`) can run arbitrary SQL against the linked
+  project directly, confirmed authenticated and pointed at this exact project before use. Used for
+  every schema change from here on, always after an explicit per-migration confirmation (Claude
+  Code's own auto-approval classifier blocks live DDL from running unattended, correctly).
+- **Credits card + calendar strip made real, not hardcoded.** Re-read the Dashboard's Technical
+  Requirements bullets closely at your prompt: only the student-profile bullet says "Hardcode" —
+  the credits card and calendar strip bullets say "Display"/"Include," which reads as a
+  requirement for real, functioning UI, not frozen mockup numbers. Added a `students` table
+  (`credits_total`, `credits_expire_at`) with "used" credits derived from the student's actual
+  `submissions` count (nothing to keep in sync), a working `POST /api/credits/topup` (+10, wired
+  to a real "Top Up" button via `router.refresh()`), and `getCurrentWeekDays` — a small pure
+  function computing the real current Mon-Sat week from `Date` (no calendar library needed for
+  this). Caught and fixed a real timezone bug in the process: the "Upcoming Ting Xie" banner
+  initially showed 10:00 PM instead of the intended 3:00 PM, because the schedule formatter used
+  the server's ambient local timezone instead of the product's actual one (Singapore, MOE
+  curriculum) — `formatTestSchedule` now pins `Asia/Singapore` explicitly via `Intl`, independent
+  of wherever the server happens to run. Verified end-to-end against live data, including clicking
+  the real Top Up button and confirming the DB and UI both updated.
 
 **Deliberately still open**, tracked rather than silently left:
 - [ ] Vercel env vars set, deploy triggered, live URL added to README — deferred pending your
   explicit go-ahead (standing instruction from earlier in this project).
 - [ ] Real-device camera test (`/scan`) — cannot be done from this sandbox; needs a human on an
   actual phone/browser.
-- [ ] Live `character_results.bounding_box` column — schema.sql has it, but the already-created
-  Supabase table doesn't; needs one `alter table` run in the SQL editor (can't be done from here —
-  no DDL access via the service-role key, same reason the original schema setup needed a human)
-  before a real upload can be replayed through `WorksheetOverlay` end-to-end.
 
 ---
 

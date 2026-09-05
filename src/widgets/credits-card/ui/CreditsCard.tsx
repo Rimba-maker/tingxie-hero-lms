@@ -1,4 +1,4 @@
-import { Button } from "@/shared/ui/button";
+import { TopUpButton } from "@/features/top-up-credits/ui/TopUpButton";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 
 type CreditsCardProps = {
@@ -17,7 +17,7 @@ export function CreditsCard({ used, total, expiresOn }: CreditsCardProps) {
           Prepaid Lesson Credits
         </CardTitle>
         <CardAction>
-          <Button size="sm">Top Up</Button>
+          <TopUpButton />
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

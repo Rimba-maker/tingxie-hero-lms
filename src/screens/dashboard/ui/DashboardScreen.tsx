@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Bell, Camera } from "lucide-react";
 
 import type { Lesson } from "@/entities/lesson/model/types";
+import type { StudentCredits } from "@/entities/student/model/types";
+import { formatTestSchedule } from "@/shared/lib/formatTestSchedule";
+import { getCurrentWeekDays } from "@/shared/lib/getCurrentWeekDays";
 import { buttonVariants } from "@/shared/ui/button";
 import { AppHeader } from "@/widgets/app-header/ui/AppHeader";
 import { CreditsCard } from "@/widgets/credits-card/ui/CreditsCard";
@@ -13,33 +16,37 @@ type DashboardScreenProps = {
   parentName: string;
   studentName: string;
   moeLevel: string;
+  credits: StudentCredits;
   upcomingLesson: Lesson | null;
 };
 
-// Stats below are hardcoded per FSD_TingXieHero.md Phase 4 ("Dashboard
-// screen — hardcoded/derived stats") — this assignment has no auth/history
-// aggregation in scope, only the upcoming-lesson banner and CTA link are
-// derived from real lesson data.
-const CALENDAR_DAYS = [
-  { label: "Mon", date: 12 },
-  { label: "Tue", date: 13 },
-  { label: "Wed", date: 14, hasEvent: true },
-  { label: "Thu", date: 15 },
-  { label: "Fri", date: 16 },
-  { label: "Sat", date: 17 },
-];
-
+// Mastery rate / characters-practiced stats are hardcoded — the assignment's
+// Technical Requirements section never mentions them (only the mockup image
+// does), so unlike the credits card and calendar strip below, there's no
+// requirement to back them with real data.
 export function DashboardScreen({
   parentName,
   studentName,
   moeLevel,
+  credits,
   upcomingLesson,
 }: DashboardScreenProps) {
+  const testDate = upcomingLesson?.testScheduledAt ? new Date(upcomingLesson.testScheduledAt) : null;
+  const calendarDays = getCurrentWeekDays(new Date(), testDate);
+
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-24">
       <AppHeader parentName={parentName} studentName={studentName} moeLevel={moeLevel} />
 
-      <CreditsCard used={12} total={20} expiresOn="30 Nov 2026" />
+      <CreditsCard
+        used={credits.used}
+        total={credits.total}
+        expiresOn={new Date(credits.expiresOn).toLocaleDateString("en-US", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })}
+      />
 
       <MasteryStats
         masteryRatePercent={82.4}
@@ -55,7 +62,7 @@ export function DashboardScreen({
             View All
           </Link>
         </div>
-        <WeeklyCalendarStrip days={CALENDAR_DAYS} selectedDate={14} />
+        <WeeklyCalendarStrip days={calendarDays} />
       </div>
 
       {upcomingLesson && (
@@ -66,7 +73,8 @@ export function DashboardScreen({
             Spelling Test
             <br />
             <span className="text-muted-foreground">
-              Wednesday, 14 Oct at 3:00 PM · {upcomingLesson.moeLevel} MOE Syllabus
+              {testDate ? formatTestSchedule(testDate) : "Date to be scheduled"} · {upcomingLesson.moeLevel}{" "}
+              MOE Syllabus
             </span>
           </p>
         </div>

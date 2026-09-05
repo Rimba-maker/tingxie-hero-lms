@@ -16,6 +16,7 @@ describe("getLessons", () => {
             { character: "校园", pinyin: "xiào yuán" },
             { character: "礼堂", pinyin: "lǐ táng" },
           ],
+          test_scheduled_at: "2026-10-14T15:00:00Z",
         },
       ],
     };
@@ -33,7 +34,28 @@ describe("getLessons", () => {
           { character: "校园", pinyin: "xiào yuán" },
           { character: "礼堂", pinyin: "lǐ táng" },
         ],
+        testScheduledAt: "2026-10-14T15:00:00Z",
       },
     ]);
+  });
+
+  test("testScheduledAt is null when the DB column is null", async () => {
+    const fakeDb: LessonsDb = {
+      listLessons: async () => [
+        {
+          id: "lesson-2",
+          week_number: 3,
+          title: "第九课",
+          moe_level: "P2",
+          status: "completed",
+          vocabulary: [],
+          test_scheduled_at: null,
+        },
+      ],
+    };
+
+    const result = await getLessons(fakeDb);
+
+    expect(result[0].testScheduledAt).toBeNull();
   });
 });

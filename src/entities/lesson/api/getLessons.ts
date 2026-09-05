@@ -9,6 +9,7 @@ type LessonRow = {
   moe_level: string;
   status: string;
   vocabulary: VocabEntry[];
+  test_scheduled_at: string | null;
 };
 
 function mapLessonRow(row: LessonRow): Lesson {
@@ -19,6 +20,7 @@ function mapLessonRow(row: LessonRow): Lesson {
     moeLevel: row.moe_level,
     status: row.status as Lesson["status"],
     vocabulary: row.vocabulary,
+    testScheduledAt: row.test_scheduled_at,
   };
 }
 
@@ -37,7 +39,7 @@ export function supabaseLessonsDb(supabase: SupabaseClient): LessonsDb {
     async listLessons() {
       const { data, error } = await supabase
         .from("lessons")
-        .select("id, week_number, title, moe_level, status, vocabulary")
+        .select("id, week_number, title, moe_level, status, vocabulary, test_scheduled_at")
         .order("week_number", { ascending: false });
       if (error) throw error;
       return data;

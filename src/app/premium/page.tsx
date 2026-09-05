@@ -9,7 +9,7 @@ export default function PremiumPage() {
     <ScreenShell viewer={{ parentName: "Sarah", studentName: "Lucas", moeLevel: "Primary 2" }}>
       <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center">
         <Sparkles className="size-8 text-primary" />
-        <p className="text-lg font-semibold">Premium is coming soon</p>
+        <h1 className="text-lg font-semibold">Premium is coming soon</h1>
         <p className="max-w-xs text-sm text-muted-foreground">
           Unlock extra worksheets, priority grading, and more syllabus levels.
         </p>

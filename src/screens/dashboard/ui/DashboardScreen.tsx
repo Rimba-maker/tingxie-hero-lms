@@ -28,6 +28,11 @@ export function DashboardScreen({ viewer, credits, upcomingLesson }: DashboardSc
 
   return (
     <ScreenShell viewer={viewer}>
+      {/* AppHeader's "Welcome back" greeting repeats identically on every
+          nav-tab screen, so it doesn't distinguish this page for a
+          screen-reader user navigating by heading — a visually-hidden,
+          page-specific h1 does that instead without changing the mockup. */}
+      <h1 className="sr-only">Dashboard</h1>
 
       <CreditsCard
         used={credits.used}

@@ -23,7 +23,7 @@ export function ScanScreen({ lessonId }: ScanScreenProps) {
   const isBusy = upload.status === "uploading" || upload.status === "grading";
 
   return (
-    <div className="relative">
+    <main className="relative">
       <CameraViewfinder onClose={() => router.back()} onCapture={handleCapture} capturing={isBusy} />
 
       {isBusy && (
@@ -40,6 +40,6 @@ export function ScanScreen({ lessonId }: ScanScreenProps) {
           </button>
         </div>
       )}
-    </div>
+    </main>
   );
 }

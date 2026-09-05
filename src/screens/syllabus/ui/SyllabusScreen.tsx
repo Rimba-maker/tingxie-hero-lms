@@ -64,7 +64,7 @@ export function SyllabusScreen({ viewer, moeLevel, lessons }: SyllabusScreenProp
       </Tabs>
 
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">MOE {LEVEL_FULL_NAME[level]} Syllabus</span>
+        <h1 className="text-sm font-medium">MOE {LEVEL_FULL_NAME[level]} Syllabus</h1>
         <span className="text-xs text-muted-foreground">
           {lessonsForLevel.length} {pluralize(lessonsForLevel.length, "Lesson")} Total
         </span>

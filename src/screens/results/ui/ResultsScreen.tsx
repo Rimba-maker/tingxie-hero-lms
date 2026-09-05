@@ -27,11 +27,11 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Test Feedback</p>
-          <p className="text-lg font-semibold">
+          <h1 className="text-lg font-semibold">
             {submission.lessonWeekNumber !== null
               ? `Week ${submission.lessonWeekNumber} Syllabus Test`
               : "Syllabus Test"}
-          </p>
+          </h1>
         </div>
         <Badge variant={needsRevision ? "destructive" : "success"}>
           {needsRevision ? "Needs Revision" : "Completed"}

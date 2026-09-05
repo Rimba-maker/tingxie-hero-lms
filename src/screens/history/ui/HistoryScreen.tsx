@@ -15,7 +15,7 @@ type HistoryScreenProps = {
 export function HistoryScreen({ viewer, submissions }: HistoryScreenProps) {
   return (
     <ScreenShell viewer={viewer}>
-      <p className="text-sm font-medium">Past Ting Xie Results</p>
+      <h1 className="text-sm font-medium">Past Ting Xie Results</h1>
 
       {submissions.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-24 text-center">

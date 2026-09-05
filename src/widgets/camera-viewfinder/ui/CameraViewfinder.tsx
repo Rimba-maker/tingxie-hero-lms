@@ -45,7 +45,7 @@ export function CameraViewfinder({ onClose, onCapture, capturing }: CameraViewfi
         >
           <X className="size-5" />
         </button>
-        <span className="text-sm font-medium">Align Worksheet</span>
+        <h1 className="text-sm font-medium">Align Worksheet</h1>
         {/* Real torch toggle where the device/browser supports it (Chromium
             only — MDN confirms no Safari/Firefox support, verified via
             Context7). Disabled rather than hidden elsewhere, so the design

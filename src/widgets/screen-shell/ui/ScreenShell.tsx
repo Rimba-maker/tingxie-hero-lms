@@ -21,7 +21,7 @@ export function ScreenShell({ viewer, children }: ScreenShellProps) {
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-24">
       {viewer && <AppHeader viewer={viewer} />}
-      {children}
+      <main className="contents">{children}</main>
       {viewer && <BottomNav />}
     </div>
   );

@@ -50,6 +50,20 @@ a slow-loading OpenCV.js WASM blob on first camera open could hurt the exact "fl
 evaluated. Not free — this is the one candidate here that's a genuine feature build, not a small
 wiring job.
 
+**Status: investigated further, not integrating (2026-09-05).** Checked exactly the risk flagged
+above before writing any code: `npm view jscanify` shows the npm package's own dependencies are
+`canvas` and `jsdom` — both Node.js-only (a native binding and a DOM emulator, neither runs in a
+browser). Confirmed via the project's README that real browser usage needs **OpenCV.js loaded
+separately via `<script src="https://docs.opencv.org/4.7.0/opencv.js">`** — a well-known ~8-10MB
+WASM/JS library, not the modest "OpenCV.js WASM" weight estimated above. That's roughly 6x the
+entire rest of this app's current service-worker precache (1.47MB), for a feature whose actual
+payoff — better recognition accuracy on a skewed photo — improves a criterion the assignment
+explicitly excludes from evaluation (see `ocr-alternatives.md`), and duplicates a problem the app
+already solves for free: the existing corner-bracket alignment guide asks the user to align the
+worksheet themselves, which is the zero-dependency answer to the same underlying issue. Checking
+first, as asked, found the honest answer: what's already shipped is the better choice here. Not
+built.
+
 ---
 
 ## 2. Real "Print A4 Worksheet (PDF)" — `pdf-lib`
@@ -128,6 +142,15 @@ multiple valid readings depending on context) better than the older `pinyin` pac
 maintains lesson content — but there's no user-facing bug today (the 8 seeded pinyin strings are
 already correct), so this is a "nice for scaling past the assignment" item, not an urgent fix.
 
+**Status: audited, not integrated (2026-09-05).** Rather than force this into the runtime app with
+no live consumer — exactly the kind of unrequested dependency this project's own `ponytail`
+discipline exists to catch — ran a one-time verification instead: temp-installed `pinyin-pro`,
+derived pinyin for all 8 seeded vocabulary entries, diffed against the hand-typed strings in
+`supabase/seed.sql`. **All 8 matched exactly, zero diffs.** The existing data has no bug to fix, so
+`pinyin-pro` was removed again (never added to `package.json`) rather than shipped as a dependency
+with nothing depending on it. Worth reaching for again only when there's an actual new-lesson-entry
+workflow (a CMS, an admin form) for it to plug into.
+
 ---
 
 ## 5. "Retest Missed" — no new dependency, just wiring
@@ -143,14 +166,38 @@ a same-session wiring job like `TopUpButton`, not a research finding.
 (same category of fix as "Top Up" and the Syllabus percentage this session) — flagged here for
 completeness since it came up during the audit, not because it needed research.
 
+**Status: done (2026-09-05).** Retesting a worksheet means physically handing the child a new copy
+of the same lesson's page — there's no meaningful way to "retest only 2 of 3 words" on paper — so
+this became a real `Link` to `/scan?lessonId=<id>` (added `lessonId` to `SubmissionDetail`, which
+already joined `lessons` but never selected the FK itself) rather than the filtered-re-grade idea
+originally sketched above.
+
 ---
 
-## Overall recommendation
+## Item 2 status: done (2026-09-05)
 
-Ranked by "worth doing for this assignment": **#5 (Retest Missed) > #2 (Print PDF) > #4 (pinyin-pro)
-> #1 (jscanify) > #3 (ts-fsrs)**. The first three are small, low-risk, and turn something
-already-named-in-the-brief from fake/decorative into real. #1 is the most exciting technically but
-carries real mobile-performance risk that needs checking before committing. #3 is a good idea for
-a real product roadmap, not for this 5-day assignment's actual grading criteria.
+`generateWorksheetPdf` (`src/entities/lesson/api`) + `PrintWorksheetButton`
+(`src/features/print-worksheet`) ship a real Tian Zige practice-sheet PDF via `pdf-lib` +
+`@pdf-lib/fontkit`. One addition beyond the original plan: the full Noto Sans SC font is 10MB, so
+it's subset (via `subset-font`/HarfBuzz) down to 26KB — scanning every `.ts`/`.tsx` file plus
+`seed.sql` for non-ASCII characters, not just the vocab data, after a first attempt that only
+scanned `seed.sql` silently dropped the 《 》 brackets the UI adds in code. `pdf-lib`/`fontkit`
+(~1.1MB) are dynamically imported on click and excluded from the service worker's precache
+(`serwist.config.js`'s `maximumFileSizeToCacheInBytes`, lowered from Serwist's ~2MB default to
+500KB) so this feature doesn't cost anything for someone who never uses it.
 
-Waiting on the user to say which (if any) to build.
+## Overall recommendation — final status (2026-09-05)
+
+Worked the list in ranked order, per the user's instruction:
+
+| # | Item | Outcome |
+|---|---|---|
+| 5 | Retest Missed | **Built.** Real `Link` to `/scan?lessonId=<id>`. |
+| 2 | Print A4 Worksheet PDF | **Built.** Real Tian Zige PDF via `pdf-lib`, subset font, code-split + excluded from precache. |
+| 4 | Auto-pinyin (`pinyin-pro`) | **Audited, not integrated.** Verified all 8 seeded entries are already correct; no dependency added since nothing consumes it yet. |
+| 1 | Document-scanner capture (`jscanify`) | **Investigated further, not integrating.** Real browser cost turned out to be OpenCV.js (~8-10MB), not a modest WASM add-on — far worse than the ceiling flagged when this was first ranked. The existing corner-bracket guide already solves the same problem for free. |
+| 3 | Real Mastery Rate (`ts-fsrs`) | **Skipped, as recommended above.** Scope creep relative to the assignment's actual Technical Requirements. |
+
+Two of five shipped as real, working features; two were checked seriously and correctly not built
+once the real cost/benefit was known (not just skipped on a hunch); one was deliberately out of
+scope from the start. This is the point of doing the research before writing code either way.

@@ -59,6 +59,15 @@ destinations — a **History** screen (list of past graded submissions, linking 
 assignment's evaluated flow; both exist purely so the mockup's own bottom nav doesn't lead
 anywhere broken.
 
+**Added beyond scope, by explicit request (not an assumption — you asked for this one directly):**
+Results now has a small "Practice writing" section showing a stroke-order animation for each
+character missed in that submission, via `hanzi-writer` (MIT, ~10KB gzipped, view-only — no
+tracing/quiz interaction). This was raised during a `/grill-me` session weighing further upgrades:
+the honest first answer was "don't build it, it's the excluded 'Stroke-order tracing/practice
+screen' below" — you overrode that and asked for it anyway. Recorded here as a deliberate scope
+change you made, not something inferred from the source PDF. See FSD §6 Phase 16 for the build
+notes and `docs/research/feature-ideas-audit.md` item 6 for how the library was found.
+
 ### Out of scope (explicitly excluded)
 - User authentication / login (not mentioned in assignment; hardcoded profile only)
 - Real-time sync between parent's phone and a separate "student device" (belongs to the broader product JD, not this assignment)
@@ -70,7 +79,11 @@ anywhere broken.
   real payment to do so.
 - Multi-student / multi-child account management
 - WhatsApp reminder scheduler (belongs to broader product JD, not this assignment)
-- Stroke-order tracing/practice screen (belongs to a different phase of the learning loop — "Stroke Practice" — not this assignment's scope, which starts at "Paper Test Scan")
+- **A full stroke-order tracing/practice screen** — the interactive, quiz-style practice belonging
+  to the product's separate "Stroke Practice" phase of the learning loop stays out of scope, same
+  reasoning as always: this assignment starts at "Paper Test Scan." A much narrower, view-only
+  stroke-order *animation* (not a trace-it quiz) was added to Results anyway, at your explicit
+  request — see the "Added beyond scope, by explicit request" note above and §6 Screen 4.
 
 ---
 
@@ -228,6 +241,13 @@ anywhere broken.
   dates; cells show green check (✓) or red cross (✗) per historical `character_results` records for
   that character. Required by name in the assignment's Section 5 ("Results Matrix"); kept alongside
   the overlay above, not replaced by it.
+- **Practice writing** (added beyond scope, by explicit request — see §4): a small section listing
+  every character missed in this submission, each rendered as a `hanzi-writer` stroke-order
+  animation (view-only, with a "Replay" button) plus its pinyin. Vocabulary words are split into
+  their individual characters for this — `hanzi-writer`'s stroke data is keyed per single character,
+  not per multi-character word, which a first pass got wrong (silently fell back to static text for
+  every 2+ character word until fixed and re-verified). Only shown when at least one character was
+  missed.
 - Actions: "Share Report" (can be a stub — e.g. copy link or share sheet trigger), "Retest Missed" (can route back to camera flow, or be a stub if out of time)
 
 **Acceptance criteria:**
@@ -245,6 +265,10 @@ anywhere broken.
   below.
 - [x] Historical matrix reflects real historical `character_results` rows from Supabase, not mock
   data
+- [x] Practice writing section renders one correct stroke-order animation per missed character
+  (multi-character words split into individual glyphs, not one broken animation per word) —
+  verified against a real temp submission with a 2-character missed word ("温暖"), screenshotted,
+  temp rows deleted after
 - [x] Page is reachable both immediately after a new scan and via a "History" entry point — History
   screen lists past graded submissions and links into each one's Results page
 

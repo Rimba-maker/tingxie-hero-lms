@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "TingXie HERO — System Architecture",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "system-architecture.html",
+    "views": [
+      { "id": "grading-flow", "label": "Grading flow", "focus": ["parent", "pwa", "server", "storage", "gemini"], "note": "A parent photographs a worksheet; the server fetches it back from Storage to send to Gemini for grading." },
+      { "id": "data-layer", "label": "Data layer", "focus": ["server", "postgres", "storage"], "note": "Every write and every read passes through the Next.js server — the browser never talks to Supabase directly." }
+    ]
+  },
+  "components": [
+    { "id": "parent", "type": "external", "label": "Parent", "sublabel": "phone camera", "pos": [40, 300], "size": [130, 60] },
+    { "id": "pwa", "type": "frontend", "label": "TingXie HERO", "sublabel": "Next.js PWA · Serwist", "pos": [260, 300], "size": [150, 64], "tag": "installable" },
+    { "id": "server", "type": "backend", "label": "App Router Server", "sublabel": "3 API routes + RSC screens", "pos": [540, 300], "size": [160, 64] },
+    { "id": "postgres", "type": "database", "label": "Postgres", "sublabel": "lessons · submissions · students", "pos": [820, 195], "size": [160, 60] },
+    { "id": "storage", "type": "cloud", "label": "Supabase Storage", "sublabel": "worksheet-photos (public)", "pos": [820, 300], "size": [160, 60] },
+    { "id": "gemini", "type": "external", "label": "Gemini", "sublabel": "vision grading", "pos": [820, 405], "size": [160, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Supabase Project", "wraps": ["postgres", "storage"] },
+    { "kind": "security-group", "label": "service-role + Gemini keys — server-only", "wraps": ["server"] }
+  ],
+  "connections": [
+    { "id": "parent-to-pwa", "from": "parent", "to": "pwa", "label": "scans worksheet", "variant": "emphasis" },
+    { "id": "pwa-to-server", "from": "pwa", "to": "server", "label": "HTTPS" },
+    { "id": "server-to-postgres", "from": "server", "to": "postgres", "label": "read / write", "fromSide": "top", "toSide": "left" },
+    { "id": "server-to-storage", "from": "server", "to": "storage", "label": "upload + fetch photo" },
+    { "id": "server-to-gemini", "from": "server", "to": "gemini", "label": "grade photo", "fromSide": "bottom", "toSide": "left" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Client", "items": ["Installable PWA (Serwist service worker)", "Camera capture with torch + ImageCapture fallback", "Never calls Supabase directly — every request goes through the server"] },
+    { "dot": "cyan", "title": "Server", "items": ["3 real API routes: upload, grade, credits top-up", "Everything else is a Server Component reading data directly", "Service-role key guarded by a server-only import at build time"] },
+    { "dot": "rose", "title": "Data", "items": ["RLS: public read, service-role write only", "Storage bucket public — worksheet photos, not sensitive PII", "Gemini returns a bounding box per character, drawn back as a red-pen overlay"] }
+  ]
+}

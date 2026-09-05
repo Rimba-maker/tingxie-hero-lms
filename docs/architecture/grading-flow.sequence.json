@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "TingXie HERO — Scan-to-Grade Sequence",
+    "locale": "en",
+    "output": "grading-flow.html",
+    "viewBox": [1000, 555],
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "views": [
+      { "id": "upload", "label": "Upload", "focus": ["parent", "pwa", "server", "storage"], "note": "The photo is captured client-side and uploaded to Storage, which returns a submission id." },
+      { "id": "grading", "label": "Grading", "focus": ["server", "storage", "postgres", "gemini"], "note": "The server fetches the vocab list and its own uploaded photo back to send to Gemini." },
+      { "id": "overlay", "label": "Correction overlay", "focus": ["gemini", "server", "pwa", "parent"], "note": "The assignment's own key evaluation point: correction sent back to the frontend as a red-pen overlay." }
+    ]
+  },
+  "participants": [
+    { "id": "parent", "type": "external", "label": "Parent", "sublabel": "phone camera" },
+    { "id": "pwa", "type": "frontend", "label": "TingXie HERO", "sublabel": "camera + upload store" },
+    { "id": "server", "type": "backend", "label": "App Router", "sublabel": "/api/upload + /api/grade" },
+    { "id": "storage", "type": "cloud", "label": "Supabase Storage", "sublabel": "worksheet-photos" },
+    { "id": "postgres", "type": "database", "label": "Postgres", "sublabel": "submissions" },
+    { "id": "gemini", "type": "external", "label": "Gemini", "sublabel": "vision grading" }
+  ],
+  "segments": [
+    { "from": 145, "to": 258, "label": "Upload" },
+    { "from": 262, "to": 370, "label": "Grading" },
+    { "from": 372, "to": 455, "label": "Persist + overlay" }
+  ],
+  "messages": [
+    { "id": "scan", "from": "parent", "to": "pwa", "y": 160, "label": "scan worksheet", "variant": "emphasis" },
+    { "id": "upload-req", "from": "pwa", "to": "server", "y": 188, "label": "POST /api/upload", "variant": "emphasis" },
+    { "id": "upload-store", "from": "server", "to": "storage", "y": 216, "label": "upload photo" },
+    { "id": "upload-res", "from": "server", "to": "pwa", "y": 244, "label": "201 { submissionId }", "variant": "return" },
+    { "id": "grade-req", "from": "pwa", "to": "server", "y": 272, "label": "POST /api/grade", "variant": "emphasis" },
+    { "id": "fetch-vocab", "from": "server", "to": "postgres", "y": 300, "label": "fetch image_url + vocab" },
+    { "id": "fetch-photo", "from": "server", "to": "storage", "y": 328, "label": "fetch + base64-encode photo" },
+    { "id": "gemini-call", "from": "server", "to": "gemini", "y": 356, "label": "grade(photo, vocab)", "variant": "emphasis" },
+    { "id": "gemini-result", "from": "gemini", "to": "server", "y": 384, "label": "per-character + box_2d", "variant": "return" },
+    { "id": "grade-res", "from": "server", "to": "pwa", "y": 412, "label": "200 { score, results }", "variant": "return" },
+    { "id": "render-overlay", "from": "pwa", "to": "parent", "y": 440, "label": "red-pen overlay on photo", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "pwa", "from": 183, "to": 450, "type": "frontend" },
+    { "participant": "server", "from": 188, "to": 427, "type": "backend" },
+    { "participant": "storage", "from": 213, "to": 223, "type": "cloud" },
+    { "participant": "storage", "from": 325, "to": 335, "type": "cloud" },
+    { "participant": "postgres", "from": 297, "to": 307, "type": "database" },
+    { "participant": "gemini", "from": 353, "to": 389, "type": "external" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Two real API routes", "items": ["POST /api/upload creates a pending submission", "POST /api/grade turns it into a graded one"] },
+    { "dot": "cyan", "title": "The photo is fetched twice", "items": ["Uploaded by the client, then fetched back server-side for Gemini", "Same public Storage URL both times"] },
+    { "dot": "rose", "title": "The key evaluation point", "items": ["Gemini returns a bounding box per character", "The client draws it back as a red-pen overlay"] }
+  ]
+}

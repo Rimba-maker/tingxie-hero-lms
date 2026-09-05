@@ -777,6 +777,29 @@ had been through a Standards+Spec code-review or a security-review since landing
   per-glyph splitting, the `useSyncExternalStore` usage, the per-card aria-labels) — no gaps, no
   undocumented scope creep, no claim that didn't match what the code actually does.
 
+### Phase 19 (beyond the original plan) — a genuinely broken E2E test, found by running it
+
+Widened the audit beyond the recent diff to areas never re-checked this pass. Ran `npx playwright
+test` directly instead of trusting the PRD's own coverage claim, and found a real, currently-failing
+test: **"history tab shows past results and links into each one"** asserted a `/week \d+/i` link
+existed on `/history`, but the shipped database has no permanent seed data (deliberately — see
+README's Known Limitations) and genuinely had zero submissions at the time this ran. The test only
+ever passed by accident, whenever some leftover row from a manual verification pass happened to
+still be in the database when it ran — a non-deterministic dependency on external state, not a real
+fixture. It was also never actually testing the empty state PRD §8 claims E2E coverage includes
+("both History states (empty and populated)") — no test asserted "No results yet" anywhere.
+
+Fixed by splitting into `test.describe.serial("history states", ...)`: one test asserting the real
+empty state first, one test that inserts its own temporary submission via a direct Supabase client
+(env vars hand-parsed from `.env.local` — Playwright doesn't auto-load it the way Next.js does, and
+adding a `dotenv` dependency for one file wasn't worth it), asserts the populated state and the
+click-through to `/results/[id]`, then deletes the row and confirms 0 remain — the same
+insert-verify-delete-confirm rhythm used for every manual live-data check throughout this project.
+`serial`, not parallel, since both tests hit the same shared `/history` route and would otherwise
+race. Verified by running the suite for real (not just reading the diff): 6/6 pass, and an
+independent follow-up query confirmed the fixture's cleanup left 0 rows, matching the test's own
+assertion rather than just trusting it.
+
 ---
 
 ## 7. Environment Variables

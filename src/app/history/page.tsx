@@ -8,6 +8,9 @@ export default async function HistoryPage() {
   const submissions = await listSubmissionHistory(supabaseSubmissionHistoryDb(getSupabaseServer()));
 
   return (
-    <HistoryScreen parentName="Sarah" studentName="Lucas" moeLevel="P2" submissions={submissions} />
+    <HistoryScreen
+      viewer={{ parentName: "Sarah", studentName: "Lucas", moeLevel: "Primary 2" }}
+      submissions={submissions}
+    />
   );
 }

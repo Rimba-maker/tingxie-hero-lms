@@ -7,5 +7,11 @@ export const dynamic = "force-dynamic";
 export default async function SyllabusPage() {
   const lessons = await getLessons(supabaseLessonsDb(getSupabaseServer()));
 
-  return <SyllabusScreen parentName="Sarah" studentName="Lucas" moeLevel="P2" lessons={lessons} />;
+  return (
+    <SyllabusScreen
+      viewer={{ parentName: "Sarah", studentName: "Lucas", moeLevel: "Primary 2" }}
+      moeLevel="P2"
+      lessons={lessons}
+    />
+  );
 }

@@ -4,21 +4,17 @@ import { ChevronRight, ClipboardList } from "lucide-react";
 import type { SubmissionSummary } from "@/entities/submission/api/listSubmissionHistory";
 import { Card, CardContent } from "@/shared/ui/card";
 import { buttonVariants } from "@/shared/ui/button";
-import { AppHeader } from "@/widgets/app-header/ui/AppHeader";
-import { BottomNav } from "@/widgets/bottom-nav/ui/BottomNav";
+import type { Viewer } from "@/widgets/app-header/model/types";
+import { ScreenShell } from "@/widgets/screen-shell/ui/ScreenShell";
 
 type HistoryScreenProps = {
-  parentName: string;
-  studentName: string;
-  moeLevel: string;
+  viewer: Viewer;
   submissions: SubmissionSummary[];
 };
 
-export function HistoryScreen({ parentName, studentName, moeLevel, submissions }: HistoryScreenProps) {
+export function HistoryScreen({ viewer, submissions }: HistoryScreenProps) {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-24">
-      <AppHeader parentName={parentName} studentName={studentName} moeLevel={moeLevel} />
-
+    <ScreenShell viewer={viewer}>
       <p className="text-sm font-medium">Past Ting Xie Results</p>
 
       {submissions.length === 0 ? (
@@ -70,8 +66,6 @@ export function HistoryScreen({ parentName, studentName, moeLevel, submissions }
           })}
         </div>
       )}
-
-      <BottomNav />
-    </div>
+    </ScreenShell>
   );
 }

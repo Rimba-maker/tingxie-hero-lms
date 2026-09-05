@@ -7,6 +7,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Button, buttonVariants } from "@/shared/ui/button";
 import { HistoricalMatrix } from "@/widgets/historical-matrix/ui/HistoricalMatrix";
 import { ScoreHeader } from "@/widgets/score-header/ui/ScoreHeader";
+import { ScreenShell } from "@/widgets/screen-shell/ui/ScreenShell";
 import { WorksheetOverlay } from "@/widgets/worksheet-overlay/ui/WorksheetOverlay";
 
 type ResultsScreenProps = {
@@ -19,7 +20,7 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
   const needsRevision = charactersMissed > 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-24">
+    <ScreenShell>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Test Feedback</p>
@@ -61,6 +62,6 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
           Retest Missed
         </Link>
       </div>
-    </div>
+    </ScreenShell>
   );
 }

@@ -5,9 +5,9 @@ import { useState } from "react";
 import type { Lesson } from "@/entities/lesson/model/types";
 import { pluralize } from "@/shared/lib/pluralize";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import { AppHeader } from "@/widgets/app-header/ui/AppHeader";
-import { BottomNav } from "@/widgets/bottom-nav/ui/BottomNav";
+import type { Viewer } from "@/widgets/app-header/model/types";
 import { LessonCard } from "@/widgets/lesson-card/ui/LessonCard";
+import { ScreenShell } from "@/widgets/screen-shell/ui/ScreenShell";
 
 const MOE_LEVELS = ["P1", "P2", "P3", "P4", "P5", "P6"] as const;
 type MoeLevel = (typeof MOE_LEVELS)[number];
@@ -22,13 +22,12 @@ const LEVEL_FULL_NAME: Record<MoeLevel, string> = {
 };
 
 type SyllabusScreenProps = {
-  parentName: string;
-  studentName: string;
+  viewer: Viewer;
   moeLevel: MoeLevel;
   lessons: Lesson[];
 };
 
-export function SyllabusScreen({ parentName, studentName, moeLevel, lessons }: SyllabusScreenProps) {
+export function SyllabusScreen({ viewer, moeLevel, lessons }: SyllabusScreenProps) {
   const [level, setLevel] = useState<MoeLevel>(moeLevel);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
     () => new Set(lessons.map((lesson) => lesson.id)),
@@ -49,9 +48,7 @@ export function SyllabusScreen({ parentName, studentName, moeLevel, lessons }: S
   const lessonsForLevel = lessons.filter((lesson) => lesson.moeLevel === level);
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-24">
-      <AppHeader parentName={parentName} studentName={studentName} moeLevel={moeLevel} />
-
+    <ScreenShell viewer={viewer}>
       <Tabs value={level} onValueChange={(value) => setLevel(value as MoeLevel)}>
         <TabsList className="mx-auto h-auto gap-2 bg-transparent p-0">
           {MOE_LEVELS.map((l) => (
@@ -88,8 +85,6 @@ export function SyllabusScreen({ parentName, studentName, moeLevel, lessons }: S
           </p>
         )}
       </div>
-
-      <BottomNav />
-    </div>
+    </ScreenShell>
   );
 }

@@ -6,16 +6,14 @@ import type { StudentCredits } from "@/entities/student/model/types";
 import { formatTestSchedule } from "@/shared/lib/formatTestSchedule";
 import { getCurrentWeekDays } from "@/shared/lib/getCurrentWeekDays";
 import { buttonVariants } from "@/shared/ui/button";
-import { AppHeader } from "@/widgets/app-header/ui/AppHeader";
+import type { Viewer } from "@/widgets/app-header/model/types";
 import { CreditsCard } from "@/widgets/credits-card/ui/CreditsCard";
 import { MasteryStats } from "@/widgets/mastery-stats/ui/MasteryStats";
+import { ScreenShell } from "@/widgets/screen-shell/ui/ScreenShell";
 import { WeeklyCalendarStrip } from "@/widgets/weekly-calendar-strip/ui/WeeklyCalendarStrip";
-import { BottomNav } from "@/widgets/bottom-nav/ui/BottomNav";
 
 type DashboardScreenProps = {
-  parentName: string;
-  studentName: string;
-  moeLevel: string;
+  viewer: Viewer;
   credits: StudentCredits;
   upcomingLesson: Lesson | null;
 };
@@ -24,19 +22,12 @@ type DashboardScreenProps = {
 // Technical Requirements section never mentions them (only the mockup image
 // does), so unlike the credits card and calendar strip below, there's no
 // requirement to back them with real data.
-export function DashboardScreen({
-  parentName,
-  studentName,
-  moeLevel,
-  credits,
-  upcomingLesson,
-}: DashboardScreenProps) {
+export function DashboardScreen({ viewer, credits, upcomingLesson }: DashboardScreenProps) {
   const testDate = upcomingLesson?.testScheduledAt ? new Date(upcomingLesson.testScheduledAt) : null;
   const calendarDays = getCurrentWeekDays(new Date(), testDate);
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-24">
-      <AppHeader parentName={parentName} studentName={studentName} moeLevel={moeLevel} />
+    <ScreenShell viewer={viewer}>
 
       <CreditsCard
         used={credits.used}
@@ -87,8 +78,6 @@ export function DashboardScreen({
         <Camera data-icon="inline-start" />
         Scan &amp; Grade Worksheet
       </Link>
-
-      <BottomNav />
-    </div>
+    </ScreenShell>
   );
 }

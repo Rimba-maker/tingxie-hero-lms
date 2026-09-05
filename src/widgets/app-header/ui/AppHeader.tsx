@@ -1,17 +1,18 @@
 import { Bell, ChevronDown } from "lucide-react";
 
+import type { Viewer } from "@/widgets/app-header/model/types";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 
 type AppHeaderProps = {
-  studentName: string;
-  parentName: string;
-  moeLevel: string;
+  viewer: Viewer;
 };
 
-// Shared by Dashboard and Syllabus — matches
+// Shared by Dashboard, Syllabus, and History — matches
 // docs/reference/mockups/screen1-dashboard.png and screen2-syllabus.png,
 // both of which repeat this exact header.
-export function AppHeader({ studentName, parentName, moeLevel }: AppHeaderProps) {
+export function AppHeader({ viewer }: AppHeaderProps) {
+  const { studentName, parentName, moeLevel } = viewer;
+
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">

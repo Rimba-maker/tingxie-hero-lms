@@ -19,9 +19,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardScreen
-      parentName="Sarah"
-      studentName="Lucas"
-      moeLevel="Primary 2"
+      viewer={{ parentName: "Sarah", studentName: "Lucas", moeLevel: "Primary 2" }}
       credits={credits}
       upcomingLesson={upcomingLesson}
     />

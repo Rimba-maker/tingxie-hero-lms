@@ -26,31 +26,32 @@ export function HistoricalMatrix({ matrix, pinyinByCharacter }: HistoricalMatrix
         </TableRow>
       </TableHeader>
       <TableBody>
-        {matrix.rows.map((row) => (
-          <TableRow key={row.character}>
-            <TableCell className="font-medium">
-              {row.character}
-              {pinyinByCharacter?.get(row.character) && (
-                <span className="block text-xs font-normal text-muted-foreground">
-                  {pinyinByCharacter.get(row.character)}
-                </span>
-              )}
-            </TableCell>
-            {matrix.dates.map((date) => (
-              <TableCell key={date} className="text-center">
-                {row.resultsByDate[date] === undefined ? (
-                  <span className="text-muted-foreground" aria-label="Not attempted">
-                    —
-                  </span>
-                ) : row.resultsByDate[date] ? (
-                  <Check className="mx-auto size-4 text-success" aria-label="Correct" role="img" />
-                ) : (
-                  <X className="mx-auto size-4 text-destructive" aria-label="Incorrect" role="img" />
+        {matrix.rows.map((row) => {
+          const pinyin = pinyinByCharacter?.get(row.character);
+          return (
+            <TableRow key={row.character}>
+              <TableCell className="font-medium">
+                {row.character}
+                {pinyin && (
+                  <span className="block text-xs font-normal text-muted-foreground">{pinyin}</span>
                 )}
               </TableCell>
-            ))}
-          </TableRow>
-        ))}
+              {matrix.dates.map((date) => (
+                <TableCell key={date} className="text-center">
+                  {row.resultsByDate[date] === undefined ? (
+                    <span className="text-muted-foreground" aria-label="Not attempted">
+                      —
+                    </span>
+                  ) : row.resultsByDate[date] ? (
+                    <Check className="mx-auto size-4 text-success" aria-label="Correct" role="img" />
+                  ) : (
+                    <X className="mx-auto size-4 text-destructive" aria-label="Incorrect" role="img" />
+                  )}
+                </TableCell>
+              ))}
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

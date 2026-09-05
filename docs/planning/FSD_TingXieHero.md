@@ -134,7 +134,9 @@ src/
 │   │       ├── mapGradeError.ts            # instanceof-matches gradingErrors.ts to an HTTP status
 │   │       ├── saveGradingResult.ts        # write character_results, update
 │   │       │                               # submissions.status/graded_at
-│   │       ├── getSubmissionDetail.ts      # Results screen data (join lessons for week_number)
+│   │       ├── getSubmissionDetail.ts      # Results screen data (joins lessons for week_number
+│   │       │                               # + vocabulary, the latter driving the historical
+│   │       │                               # matrix's per-character pinyin, Phase 15)
 │   │       └── listSubmissionHistory.ts    # History screen data (graded submissions only)
 │   ├── character-result/
 │   │   ├── model/

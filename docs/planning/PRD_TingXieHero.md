@@ -63,7 +63,11 @@ anywhere broken.
 - User authentication / login (not mentioned in assignment; hardcoded profile only)
 - Real-time sync between parent's phone and a separate "student device" (belongs to the broader product JD, not this assignment)
 - Actual accurate AI handwriting recognition (explicitly de-prioritized by client)
-- Payment / credits top-up functionality (UI display only, "Top Up" button can be non-functional or a stub)
+- Real payment processing (no Stripe/payment gateway integration — no actual money changes hands
+  anywhere in this app). **Not the same as the "Top Up" button itself**, which was re-scoped mid-build
+  into real, DB-backed functionality once the source PDF was re-read (see §5's credits assumption
+  row and §6 Screen 1) — it increments `students.credits_total` for real, it just doesn't take a
+  real payment to do so.
 - Multi-student / multi-child account management
 - WhatsApp reminder scheduler (belongs to broader product JD, not this assignment)
 - Stroke-order tracing/practice screen (belongs to a different phase of the learning loop — "Stroke Practice" — not this assignment's scope, which starts at "Paper Test Scan")
@@ -219,10 +223,11 @@ anywhere broken.
   camera-to-photo step), the two requirements are complementary, not redundant — the matrix tracks
   history across dates, the overlay is the single-submission correction the client explicitly
   calls out. Both now ship.
-- Historical Matrix Table: rows = tested Chinese characters/words, columns = test dates; cells show
-  green check (✓) or red cross (✗) per historical `character_results` records for that character.
-  Required by name in the assignment's Section 5 ("Results Matrix"); kept alongside the overlay
-  above, not replaced by it.
+- Historical Matrix Table: rows = tested Chinese characters/words (with pinyin shown underneath
+  each one, matching the mockup — pulled from the submission's lesson `vocabulary`), columns = test
+  dates; cells show green check (✓) or red cross (✗) per historical `character_results` records for
+  that character. Required by name in the assignment's Section 5 ("Results Matrix"); kept alongside
+  the overlay above, not replaced by it.
 - Actions: "Share Report" (can be a stub — e.g. copy link or share sheet trigger), "Retest Missed" (can route back to camera flow, or be a stub if out of time)
 
 **Acceptance criteria:**
@@ -255,6 +260,13 @@ Represents one graded worksheet scan: which student, when submitted, the uploade
 
 **`character_results`**
 Represents the per-character grading outcome of a single submission: which character, correct or incorrect, linked back to its parent submission.
+
+**`students`**
+The single hardcoded student profile (no auth in scope): owns prepaid lesson credits
+(`credits_total`, `credits_expire_at`). "Used" credits are derived from that student's actual
+`submissions` count rather than a separately-maintained counter. Added during build (see FSD §6
+Phase 7) once the credits card and calendar strip were re-read as real, DB-backed requirements
+rather than hardcoded mockup values — not part of the original 3-table sketch.
 
 ---
 

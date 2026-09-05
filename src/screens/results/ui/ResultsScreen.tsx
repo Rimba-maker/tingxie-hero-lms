@@ -1,9 +1,10 @@
+import Link from "next/link";
 import { RotateCcw, Share2 } from "lucide-react";
 
 import type { CharacterHistoryMatrix } from "@/entities/character-result/api/buildCharacterHistoryMatrix";
 import type { SubmissionDetail } from "@/entities/submission/api/getSubmissionDetail";
 import { Badge } from "@/shared/ui/badge";
-import { Button } from "@/shared/ui/button";
+import { Button, buttonVariants } from "@/shared/ui/button";
 import { HistoricalMatrix } from "@/widgets/historical-matrix/ui/HistoricalMatrix";
 import { ScoreHeader } from "@/widgets/score-header/ui/ScoreHeader";
 import { WorksheetOverlay } from "@/widgets/worksheet-overlay/ui/WorksheetOverlay";
@@ -52,10 +53,13 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
           <Share2 data-icon="inline-start" />
           Share Report
         </Button>
-        <Button className="flex-1">
+        <Link
+          href={submission.lessonId ? `/scan?lessonId=${submission.lessonId}` : "/scan"}
+          className={buttonVariants({ className: "flex-1" })}
+        >
           <RotateCcw data-icon="inline-start" />
           Retest Missed
-        </Button>
+        </Link>
       </div>
     </div>
   );

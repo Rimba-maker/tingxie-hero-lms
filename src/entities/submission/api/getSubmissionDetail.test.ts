@@ -11,6 +11,7 @@ describe("getSubmissionDetail", () => {
         totalPossible: 10,
         submittedAt: "2026-10-14T15:12:00Z",
         imageUrl: "https://example.com/worksheet-photos/abc123.jpg",
+        lessonId: "lesson-4",
         lessonWeekNumber: 4,
         characterResults: [
           { character: "校园", isCorrect: true },
@@ -27,6 +28,7 @@ describe("getSubmissionDetail", () => {
       totalPossible: 10,
       submittedAt: "2026-10-14T15:12:00Z",
       imageUrl: "https://example.com/worksheet-photos/abc123.jpg",
+      lessonId: "lesson-4",
       lessonWeekNumber: 4,
       characterResults: [
         { character: "校园", isCorrect: true },

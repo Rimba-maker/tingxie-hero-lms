@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronDown, Printer } from "lucide-react";
 
 import type { Lesson } from "@/entities/lesson/model/types";
@@ -11,6 +11,19 @@ type PrintWorksheetButtonProps = {
 
 export function PrintWorksheetButton({ lesson }: PrintWorksheetButtonProps) {
   const [loading, setLoading] = useState(false);
+  const preloaded = useRef(false);
+
+  // Warm the dynamic import + font fetch on hover/focus, before the click
+  // actually happens - by the time someone clicks after hovering, the
+  // ~1.1MB chunk is often already in flight or cached. import() and
+  // fetch() are both naturally deduped, so calling this more than once
+  // (hover, then focus, then click) never re-fetches.
+  function preload() {
+    if (preloaded.current) return;
+    preloaded.current = true;
+    void import("@/entities/lesson/api/generateWorksheetPdf");
+    void fetch("/fonts/NotoSansSC-Subset.ttf");
+  }
 
   async function handleClick() {
     setLoading(true);
@@ -47,6 +60,8 @@ export function PrintWorksheetButton({ lesson }: PrintWorksheetButtonProps) {
   return (
     <button
       type="button"
+      onMouseEnter={preload}
+      onFocus={preload}
       onClick={handleClick}
       disabled={loading}
       className="flex items-center justify-between rounded-md text-sm text-primary outline-none hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"

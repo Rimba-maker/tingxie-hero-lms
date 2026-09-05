@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { gradeWithGemini, type GeminiClient } from "./gradeWithGemini";
+import { GeminiGradingError } from "./gradingErrors";
 
 describe("gradeWithGemini", () => {
   test("computes score from the graded characters Gemini returns", async () => {
@@ -132,5 +133,37 @@ describe("gradeWithGemini", () => {
         vocabList: ["校园"],
       }),
     ).rejects.toThrow("Gemini returned invalid JSON");
+  });
+
+  test("wraps an SDK-level failure (e.g. a 503 while Gemini is overloaded) in GeminiGradingError too", async () => {
+    // Confirmed live: generateContent() itself can reject before we ever
+    // see a response shape - the SDK's own ApiError for a 503 "high
+    // demand" failure, not a successful-but-blocked/malformed response.
+    // Previously this fell through to the generic 500 uncaught.
+    const overloadedGemini: GeminiClient = {
+      models: {
+        generateContent: async () => {
+          throw new Error(
+            '{"error":{"code":503,"message":"This model is currently experiencing high demand.","status":"UNAVAILABLE"}}',
+          );
+        },
+      },
+    };
+
+    await expect(
+      gradeWithGemini(overloadedGemini, { imageBase64: "x", vocabList: ["校园"] }),
+    ).rejects.toBeInstanceOf(GeminiGradingError);
+  });
+
+  test("every Gemini-side failure throws the typed GeminiGradingError, not a plain Error", async () => {
+    const blockedGemini: GeminiClient = {
+      models: {
+        generateContent: async () => ({ text: undefined, promptFeedback: { blockReason: "SAFETY" } }),
+      },
+    };
+
+    await expect(
+      gradeWithGemini(blockedGemini, { imageBase64: "x", vocabList: ["校园"] }),
+    ).rejects.toBeInstanceOf(GeminiGradingError);
   });
 });

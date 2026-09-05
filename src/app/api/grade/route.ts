@@ -1,12 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { gradeWithGemini } from "@/entities/submission/api/gradeWithGemini";
-import {
-  getSubmissionForGrading,
-  supabaseGradingDb,
-} from "@/entities/submission/api/getSubmissionForGrading";
+import { fetchImageAsBase64, gradeSubmission } from "@/entities/submission/api/gradeSubmission";
+import { supabaseGradingDb } from "@/entities/submission/api/getSubmissionForGrading";
 import { mapGradeError } from "@/entities/submission/api/mapGradeError";
-import { saveGradingResult, supabaseCharacterResultsDb } from "@/entities/submission/api/saveGradingResult";
+import { supabaseCharacterResultsDb } from "@/entities/submission/api/saveGradingResult";
 import { getGeminiClient } from "@/shared/lib/gemini/client";
 import { getSupabaseServer } from "@/shared/lib/supabase/server";
 
@@ -21,24 +18,16 @@ export async function POST(request: NextRequest) {
   const supabaseServer = getSupabaseServer();
 
   try {
-    const { imageUrl, vocabList } = await getSubmissionForGrading(
-      supabaseGradingDb(supabaseServer),
+    const result = await gradeSubmission(
+      {
+        gradingDb: supabaseGradingDb(supabaseServer),
+        resultsDb: supabaseCharacterResultsDb(supabaseServer),
+        gemini: getGeminiClient(),
+        fetchImageAsBase64,
+      },
       submissionId,
     );
-
-    const imageResponse = await fetch(imageUrl);
-    const imageBase64 = Buffer.from(await imageResponse.arrayBuffer()).toString("base64");
-
-    const grade = await gradeWithGemini(getGeminiClient(), { imageBase64, vocabList });
-
-    await saveGradingResult(supabaseCharacterResultsDb(supabaseServer), submissionId, grade);
-
-    return NextResponse.json({
-      submissionId,
-      score: grade.score,
-      totalPossible: grade.totalPossible,
-      results: grade.results,
-    });
+    return NextResponse.json(result);
   } catch (error) {
     const { message, status } = mapGradeError(error);
     return NextResponse.json({ error: message }, { status });

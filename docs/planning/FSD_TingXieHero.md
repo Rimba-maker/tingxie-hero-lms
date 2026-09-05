@@ -206,15 +206,23 @@ separate GET API layer — see the note at the end of this section for why.
 ### `POST /api/grade`
 **Request:** `{ "submissionId": "uuid" }`
 
-**Server logic:**
-1. Fetch the submission's `image_url` and its lesson's `vocabulary` list (`getSubmissionForGrading`).
-2. Fetch the image, base64-encode it, call Gemini with the prompt + `responseSchema` +
-   `safetySettings` (`BLOCK_ONLY_HIGH` — content is always a benign child's worksheet photo) +
-   `mediaResolution: MEDIA_RESOLUTION_HIGH` (`gradeWithGemini`).
-3. Check `promptFeedback.blockReason` first (a named condition, not a parse failure) before
-   attempting to parse `response.text` as JSON.
+**Server logic** — the route itself is pure HTTP translation (parse body → call the pipeline →
+map error → respond); the sequence below lives entirely in `entities/submission/api/gradeSubmission.ts`
+(`gradeSubmission`), one interface taking the DB adapters, Gemini client, and image-fetcher as
+dependencies (see §6 Phase 10 for why this was pulled out of the route):
+1. Fetch the submission's `image_url` and its lesson's `vocabulary` list (`getSubmissionForGrading`
+   — throws the typed `SubmissionNotFoundError` if the submission doesn't exist).
+2. Fetch the image and base64-encode it (`fetchImageAsBase64`).
+3. Call Gemini with the prompt + `responseSchema` + `safetySettings` (`BLOCK_ONLY_HIGH` — content
+   is always a benign child's worksheet photo) + `mediaResolution: MEDIA_RESOLUTION_HIGH`
+   (`gradeWithGemini`). The SDK call itself, a blocked response, and an unparseable response all
+   throw the typed `GeminiGradingError` — including a live 503 "high demand" case from the model
+   itself, confirmed in Phase 10.
 4. Write `character_results` rows (including `bounding_box` when Gemini returned one), update
    `submissions.status = 'graded'`, `graded_at = now()` (`saveGradingResult`).
+
+`mapGradeError` matches `SubmissionNotFoundError`/`GeminiGradingError` by `instanceof` (404/502
+respectively) — not by string-prefixing `error.message` as it did before Phase 10.
 
 **Response:**
 ```json
@@ -459,6 +467,52 @@ device to see working, same as the rest of the camera flow.
 - [ ] Real-device camera test (`/scan`) — cannot be done from this sandbox; needs a human on an
   actual phone/browser. Now also covers verifying the torch toggle actually lights the flash and
   that `ImageCapture.takePhoto()` produces a visibly higher-res photo than the old canvas path.
+
+### Phase 10 (beyond the original plan) — deepening the grading pipeline
+A `mattpocock-skills:improve-codebase-architecture` pass (explore step run by a fresh sub-agent,
+not the one that wrote the code, specifically so it wouldn't rationalize away its own friction).
+Scoped to the grading pipeline — the hottest area this session — per the codebase-design glossary
+(module/interface/depth/seam/leverage/locality). Two candidates taken, one left alone:
+
+- **Collapsed the grading pipeline's orchestration into one module (Strong).** `POST /api/grade`
+  used to inline the whole sequence — fetch submission → fetch+encode image → call Gemini →
+  persist — directly in the route handler, with the image-fetch-and-encode step untested and
+  unowned by any module (no `route.test.ts` existed anywhere under `src/app/api`; only the
+  individual pieces were tested with fakes, never the orchestration wiring them together). New
+  `entities/submission/api/gradeSubmission.ts` owns the whole sequence as one interface
+  (`gradeSubmission(deps, submissionId)`), taking the two DB adapters, the Gemini client, and an
+  injected `fetchImageAsBase64` as dependencies — genuinely testable now, with fakes for all four.
+  The route is pure HTTP translation: parse body → call the pipeline → map error → respond.
+- **Typed the grading pipeline's error contract (Worth exploring).** The interface between the
+  throw sites and `mapGradeError` used to be an unenforced string-prefix convention
+  (`message.startsWith("Submission not found")`, `message.startsWith("Gemini")`) — renaming a
+  thrown message even slightly would have silently degraded the HTTP status to a generic 500, with
+  no compile error. New `entities/submission/api/gradingErrors.ts` (`SubmissionNotFoundError`,
+  `GeminiGradingError`) replaces the string matching with `instanceof` checks.
+- **Left alone: collapsing the ~4 pass-through DB adapter-pair files** (`createSubmission.ts` et
+  al.) that are an exact one-line body with no real mapping logic. Technically correct per the
+  deletion test, but reopens a decision already made — this file's own §9 records the DI-adapter
+  split as a deliberate repo-wide convention, and Phase 6's own architecture pass already concluded
+  the rest of the codebase was appropriately deep. Consistency across 10 files wasn't worth
+  breaking for a marginal locality win on 4 nobody has had friction with.
+
+**A real, currently-live bug surfaced while verifying the refactor end-to-end, unrelated to the
+refactor itself** — worth recording since it directly affects the assignment's actually-evaluated
+flow. Verified the refactor was behavior-preserving by running the exact same real submission
+through both the old and new code (via `git stash`) before concluding anything: both failed
+identically, proving whatever was wrong predated this session's changes. Root cause, found via
+temporary diagnostic logging of the raw caught error: `gradeWithGemini`'s `generateContent()` call
+itself was throwing an uncaught SDK-level `ApiError` (a live 503 "This model is currently
+experiencing high demand" from `gemini-flash-latest` — the same demand issue already documented
+above for its predecessor model) that fell straight through every existing catch as an untyped
+error, surfacing as the generic "Grading failed, please try again" instead of a clear, accurate
+message. Fixed in the same pass since it's exactly the same class of problem as the typed-errors
+candidate above: `generateContent()` is now wrapped in its own try/catch, converting any SDK-level
+throw into `GeminiGradingError("Gemini is temporarily unavailable, please try again")` — correctly
+mapped to a 502 instead of a 500. Verified live: a real upload through `/api/upload`, graded
+through the real (still-overloaded) Gemini endpoint, now correctly returns 502 with the accurate
+message instead of masking an external outage as our own bug. Test submissions and their Storage
+objects deleted after, confirmed via `select count(*)`.
 
 ---
 

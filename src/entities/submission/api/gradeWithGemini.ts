@@ -1,5 +1,7 @@
 import type { CharacterResult } from "@/entities/character-result/model/types";
 
+import { GeminiGradingError } from "./gradingErrors";
+
 export type GradeResult = {
   results: CharacterResult[];
   score: number;
@@ -42,65 +44,75 @@ export async function gradeWithGemini(
   geminiClient: GeminiClient,
   params: { imageBase64: string; vocabList: string[] },
 ): Promise<GradeResult> {
-  const response = await geminiClient.models.generateContent({
-    model: GEMINI_MODEL,
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { text: buildPrompt(params.vocabList) },
-          { inlineData: { mimeType: "image/jpeg", data: params.imageBase64 } },
-        ],
-      },
-    ],
-    config: {
-      // HIGH costs the same 256 tokens/image as MEDIUM but does "zoomed
-      // reframing" (per @google/genai's MediaResolution docs) — better for
-      // reading individual handwritten strokes in a Tian Zige grid, at no
-      // extra token cost over MEDIUM. LOW (64 tokens) risks losing enough
-      // detail that even a human grader would struggle. Verified via
-      // Context7, not assumed.
-      mediaResolution: "MEDIA_RESOLUTION_HIGH",
-      // Content here is always a child's handwriting worksheet — benign by
-      // construction. Google's default safety thresholds are tuned for
-      // open-ended user content and can false-positive on ordinary photos
-      // (paper texture, handwriting strokes read as something else); relax
-      // to BLOCK_ONLY_HIGH so a legitimate worksheet photo doesn't get
-      // silently blocked. Verified via Context7 (SafetySetting/
-      // HarmBlockThreshold), not assumed.
-      safetySettings: [
-        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+  let response;
+  try {
+    response = await geminiClient.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: buildPrompt(params.vocabList) },
+            { inlineData: { mimeType: "image/jpeg", data: params.imageBase64 } },
+          ],
+        },
       ],
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            character: { type: "string" },
-            isCorrect: { type: "boolean" },
-            box_2d: {
-              type: "array",
-              items: { type: "integer" },
-              description:
-                "[ymin, xmin, ymax, xmax] normalized to 0-1000, bounding this word in the image",
+      config: {
+        // HIGH costs the same 256 tokens/image as MEDIUM but does "zoomed
+        // reframing" (per @google/genai's MediaResolution docs) — better for
+        // reading individual handwritten strokes in a Tian Zige grid, at no
+        // extra token cost over MEDIUM. LOW (64 tokens) risks losing enough
+        // detail that even a human grader would struggle. Verified via
+        // Context7, not assumed.
+        mediaResolution: "MEDIA_RESOLUTION_HIGH",
+        // Content here is always a child's handwriting worksheet — benign by
+        // construction. Google's default safety thresholds are tuned for
+        // open-ended user content and can false-positive on ordinary photos
+        // (paper texture, handwriting strokes read as something else); relax
+        // to BLOCK_ONLY_HIGH so a legitimate worksheet photo doesn't get
+        // silently blocked. Verified via Context7 (SafetySetting/
+        // HarmBlockThreshold), not assumed.
+        safetySettings: [
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+        ],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              character: { type: "string" },
+              isCorrect: { type: "boolean" },
+              box_2d: {
+                type: "array",
+                items: { type: "integer" },
+                description:
+                  "[ymin, xmin, ymax, xmax] normalized to 0-1000, bounding this word in the image",
+              },
             },
+            required: ["character", "isCorrect"],
           },
-          required: ["character", "isCorrect"],
         },
       },
-    },
-  });
+    });
+  } catch (err) {
+    // The SDK call itself can reject before we ever see a response shape -
+    // a 503 while the model is overloaded, a network failure, etc. Confirmed
+    // live (see the -latest alias note above). That's still "Gemini failed",
+    // not a generic 500 - map it the same way as a blocked/malformed response.
+    if (err instanceof GeminiGradingError) throw err;
+    throw new GeminiGradingError("Gemini is temporarily unavailable, please try again");
+  }
 
   const blockReason = response.promptFeedback?.blockReason;
   if (blockReason) {
     // Distinct from the generic parse-failure error below: this is a known,
     // named condition (not an unexpected shape), so surface the reason
     // rather than a vague "invalid JSON".
-    throw new Error(`Gemini blocked this image: ${blockReason}`);
+    throw new GeminiGradingError(`Gemini blocked this image: ${blockReason}`);
   }
 
   let raw: RawGradedCharacter[];
@@ -110,7 +122,7 @@ export async function gradeWithGemini(
   } catch {
     // responseSchema constrains the shape when Gemini succeeds, but the API
     // is still an untrusted external boundary — never trust it blindly.
-    throw new Error("Gemini returned invalid JSON");
+    throw new GeminiGradingError("Gemini returned invalid JSON");
   }
 
   const results: CharacterResult[] = raw.map(({ character, isCorrect, box_2d }) => ({

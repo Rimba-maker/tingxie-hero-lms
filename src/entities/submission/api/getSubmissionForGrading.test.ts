@@ -4,6 +4,7 @@ import {
   getSubmissionForGrading,
   type SubmissionForGradingDb,
 } from "./getSubmissionForGrading";
+import { SubmissionNotFoundError } from "./gradingErrors";
 
 describe("getSubmissionForGrading", () => {
   test("returns the submission's image and its lesson's vocab list", async () => {
@@ -29,6 +30,16 @@ describe("getSubmissionForGrading", () => {
 
     await expect(getSubmissionForGrading(fakeDb, "missing-id")).rejects.toThrow(
       "Submission not found: missing-id",
+    );
+  });
+
+  test("throws the typed SubmissionNotFoundError, not a plain Error", async () => {
+    const fakeDb: SubmissionForGradingDb = {
+      findSubmissionForGrading: async () => null,
+    };
+
+    await expect(getSubmissionForGrading(fakeDb, "missing-id")).rejects.toBeInstanceOf(
+      SubmissionNotFoundError,
     );
   });
 });

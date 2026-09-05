@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { SubmissionNotFoundError } from "./gradingErrors";
+
 export type SubmissionForGradingDb = {
   findSubmissionForGrading(
     submissionId: string,
@@ -12,7 +14,7 @@ export async function getSubmissionForGrading(
 ): Promise<{ imageUrl: string; vocabList: string[] }> {
   const result = await db.findSubmissionForGrading(submissionId);
   if (!result) {
-    throw new Error(`Submission not found: ${submissionId}`);
+    throw new SubmissionNotFoundError(submissionId);
   }
   return result;
 }

@@ -84,7 +84,9 @@ Serwist (PWA) · Zustand · `pdf-lib` (real worksheet PDF export) · Vitest
 
 ```bash
 npm run test       # Vitest — entity/business-logic unit tests
-npm run test:e2e   # Playwright — dashboard, syllabus, navigation (needs `npm run dev` reachable)
+npm run test:e2e   # Playwright — dashboard, syllabus, navigation, History states (auto-starts the
+                    # dev server if one isn't already running; the History-populated case needs a
+                    # real `.env.local` — it inserts and cleans up its own temp Supabase submission)
 npm run lint       # ESLint
 npm run build      # production build, also runs `serwist build`
 ```

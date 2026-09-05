@@ -24,6 +24,7 @@ grading-flow sequence diagrams)
 | Icons | lucide-react | |
 | Utilities | class-variance-authority, clsx, tailwind-merge | shadcn's standard variant/className stack |
 | PDF generation | `pdf-lib` + `@pdf-lib/fontkit` | Real Tian Zige practice-sheet PDF for "Print A4 Worksheet" (Phase 12) — dynamically imported, not in the main bundle |
+| Stroke-order animation | `hanzi-writer` | Results screen's "Practice writing" section (Phase 16) — dynamically imported; per-character stroke data fetched from its default CDN at runtime, not bundled |
 
 ---
 
@@ -104,7 +105,9 @@ src/
 │   │                                        # upload() resolves to the terminal state (not void)
 │   ├── print-worksheet/ui/PrintWorksheetButton.tsx  # Phase 12 — generates the real Tian Zige PDF;
 │   │                                        # preloads the pdf-lib chunk on hover/focus (Phase 13)
-│   └── top-up-credits/ui/TopUpButton.tsx   # Phase 7 — real POST /api/credits/topup, router.refresh()
+│   ├── top-up-credits/ui/TopUpButton.tsx   # Phase 7 — real POST /api/credits/topup, router.refresh()
+│   └── practice-stroke-order/ui/StrokeOrderCard.tsx  # Phase 16 — hanzi-writer animation per missed
+│       # character on Results, one glyph per character in a multi-character word
 │       # No expand-lesson or select-level-tab feature folders — both were single-caller
 │       # (SyllabusScreen only) thin useState wrappers, inlined during a repo-wide
 │       # over-engineering audit (ponytail-audit). MOE_LEVELS/MoeLevel now live as a
@@ -691,6 +694,33 @@ under each hanzi in the Character column; ours showed the hanzi alone. `getSubmi
 joins the submission's lesson `vocabulary` and `ResultsScreen` derives a `character → pinyin` map
 passed into `HistoricalMatrix` — same character/pinyin stacked-text pattern `LessonCard` already
 uses for the Syllabus vocab grid. Verified live against a temporary submission (deleted after).
+
+### Phase 16 (beyond the original plan) — a deliberate scope override, by explicit request
+
+A `mattpocock-skills:grill-me` session, self-answered at your request, weighed three further-upgrade
+avenues: adopting an LMS repo, adopting a Mandarin-writing library, or wireframing a new feature.
+Research (web search, not assumption): no LMS repo was worth adopting (nothing improves on this
+app's intentionally narrow scope); [`hanzi-writer`](https://hanziwriter.org/) (MIT, ~10KB gzipped,
+actively maintained, stroke data for 9000+ characters from the Make Me a Hanzi project) is a strong
+library, but its only real use — showing correct stroke order — is exactly what
+`PRD_TingXieHero.md` §4 already excludes as "Stroke-order tracing/practice screen." The honest
+answer was "don't build it, this isn't the gap it looks like." You overrode that and asked for it
+anyway — recorded as your explicit decision, not a PDF interpretation, in PRD §4.
+
+Built: a "Practice writing" section on Results, shown only when characters were missed, one
+`hanzi-writer` stroke-order animation per missed character plus a "Replay" button
+(`features/practice-stroke-order/ui/StrokeOrderCard.tsx`). `hanzi-writer` itself is dynamically
+imported (same code-split pattern as `pdf-lib` in Phase 12) so it costs nothing for a perfect score;
+its per-character stroke data loads from its default CDN at runtime, not bundled.
+
+**A real bug found during live verification, not just eyeballed:** the first version passed a whole
+vocabulary word (e.g. `"温暖"`) to `HanziWriter.create()` as if it were one character. `hanzi-writer`'s
+stroke data is keyed per single character — the multi-character word silently 404'd and fell back to
+static, unanimated text, with no visible error other than a console 404 caught only by checking
+`page.on("console")` during a Playwright screenshot pass. Fixed by splitting each word into its
+individual characters (`[...character]`, Unicode-codepoint-aware) and rendering one animation per
+glyph, sharing one "Replay" button. Re-verified against a real temp submission with a genuine
+2-character missed word, screenshotted, temp rows deleted after.
 
 ---
 

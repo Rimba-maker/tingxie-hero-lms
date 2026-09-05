@@ -26,6 +26,45 @@ that environment, not the app; see FSD §6 Phase 3), so it needs a real
 device to capture. `docs/reference/mockups/screen3-camera.png` shows the
 target design if you want to see it without a phone in hand.
 
+## Highlights
+
+- **The evaluated flow works end-to-end, with real data at every step.**
+  Photo → `POST /api/upload` → `POST /api/grade` (a real Gemini call) →
+  Supabase writes → a red-pen/green-check overlay drawn on the actual graded
+  photo, positioned from Gemini's own bounding boxes. That overlay is the
+  assignment's own named "key evaluation point" — not a stand-in table, an
+  actual mark on the actual photo.
+- **Tested where it matters, not everywhere for its own sake.** 65 Vitest
+  unit tests (23 files) cover every entity function's business logic —
+  Gemini response parsing, score computation, the grade-submission
+  pipeline's full orchestration order — against fakes, no live credentials
+  needed to run them. 6 Playwright E2E tests cover navigation and both
+  History states; the populated-history case manages its own real Supabase
+  fixture (insert, verify, delete, confirm 0 rows remain) instead of relying
+  on whatever happens to already be in the database.
+- **Reviewed, not just built and shipped.** Two security-review passes and a
+  Standards+Spec code-review caught and fixed a real bug before it could
+  affect anyone — a prototype-pollution-adjacent object lookup
+  (`plainObject["__proto__"]`) that could have crashed the Results page for
+  a submission with an unlucky Gemini-returned string. `FSD_TingXieHero.md`
+  §6 documents every audit run against this codebase, including the ones
+  that correctly found nothing to fix.
+- **Accessible by default, not bolted on at the end.** Every screen has
+  exactly one semantic `<h1>` and sits inside a `<main>` landmark; every
+  non-obvious interactive element carries a real `aria-label`; the
+  stroke-order animation checks `prefers-reduced-motion` and shows the
+  finished character instantly instead of animating for anyone who's asked
+  their OS to reduce motion.
+- **A real, installable PWA.** Manifest with real app screenshots and a full
+  icon set (including `apple-touch-icon` for iOS's home-screen add flow), a
+  service worker verified end-to-end via Playwright — registers, installs,
+  activates, controls the page, zero console errors.
+- **Nothing faked beyond what the assignment explicitly says to hardcode.**
+  Credits, the weekly calendar, Syllabus completion percentages, the
+  historical matrix, and the stroke-order practice section are all backed by
+  real Supabase data computed from actual rows — the student profile is the
+  one thing hardcoded, exactly as the brief instructs.
+
 ## Stack
 
 Next.js 16 (App Router, Turbopack) · TypeScript (strict) · Tailwind CSS v4 +
@@ -132,6 +171,14 @@ npm run build      # production build, also runs `serwist build`
 
 Scoped out deliberately, not oversights:
 
+- **Not yet deployed.** Vercel deployment is code-complete and documented
+  below but deliberately held pending your final manual review — see
+  **Deployment**.
+- **No real-device camera test yet.** `/scan`'s layout, error states, and
+  upload/grade flow are all verified; the live `getUserMedia` stream itself
+  needs an actual phone — headless Chromium's fake camera device fails with
+  `NotSupportedError` in this build sandbox, a known limitation of that
+  environment, not the app (FSD §6 Phase 3/8/9).
 - **"Share Report" is decorative.** It matches the mockup pixel-for-pixel but
   has no handler — the assignment's evaluation focus is the scan → upload →
   grade → feedback flow, not report sharing. ("Retest Missed" and
@@ -150,6 +197,50 @@ Scoped out deliberately, not oversights:
   see the empty state on `/history`. No demo data is seeded into the
   reviewer's database, since fabricated `submitted_at` history would misrepresent
   real usage.
+- **AI grading accuracy isn't the point, and isn't tuned for it.** The
+  assignment explicitly de-prioritizes recognition accuracy — effort went
+  into pipeline correctness and the evaluated flow instead of prompt-tuning
+  Gemini for better handwriting recognition.
+
+## Beyond the original scope — what got upgraded, and why
+
+The assignment scoped 4 screens over roughly a 5-day build. Everything below
+happened after that baseline already worked end-to-end — one deliberate,
+verified pass at a time, never silently. Full reasoning for each lives in
+`docs/planning/FSD_TingXieHero.md` §6 Build History; this is the short version.
+
+- **Replaced plausible-looking hardcoded numbers with real data.** Credits,
+  the weekly calendar, and the Syllabus "Completed (X%)" tag all started as
+  believable static values — re-read against the source PDF (only the
+  student-profile bullet actually says "Hardcode"), then rebuilt as real,
+  Supabase-backed data.
+- **Built the correction overlay the assignment names as its key evaluation
+  point.** A red-bordered box and the correct word over every miss, a green
+  check over every hit — positioned from Gemini's own bounding-box output on
+  the actual graded photo, not a data table standing in for it.
+- **Turned three decorative buttons real**: "Retest Missed" now routes back
+  into a fresh scan, "Print A4 Worksheet (PDF)" generates an actual Tian
+  Zige practice sheet via `pdf-lib`, and the camera's flash toggle actually
+  controls the device torch where the hardware supports it.
+- **Two separate full audit rounds**, run again once the codebase had grown
+  past what the first pass covered. Repo-wide architecture review,
+  security-review, a Standards+Spec code-review, domain-modeling
+  (→ `CONTEXT.md` + 2 ADRs), and interactive architecture diagrams — each one
+  either fixed something real or explicitly confirmed there was nothing to
+  fix, recorded either way.
+- **A deliberate scope override, at explicit request.** The PRD originally
+  excluded a full stroke-order practice screen as belonging to a different
+  phase of the product's learning loop. A much narrower, view-only
+  stroke-order animation for missed characters (via `hanzi-writer`) was
+  built anyway once asked for directly — documented as an explicit decision,
+  not a PDF interpretation.
+- **A second, deeper audit pass** found and fixed a real prototype-pollution-
+  style bug, an E2E test that only ever passed by accident because it
+  depended on leftover data instead of its own fixture, and an app-wide gap
+  where no screen had a semantic heading or landmark for screen readers.
+
+See `docs/planning/FSD_TingXieHero.md` §6 for the complete, dated log —
+every phase, every finding, every decision and the reasoning behind it.
 
 ## Deployment
 

@@ -303,8 +303,10 @@ rather than hardcoded mockup values — not part of the original 3-table sketch.
 - **Test coverage:** 65 unit tests (Vitest, 23 files) covering every entity function's business
   logic — Gemini response parsing, score computation, the pivot logic behind the historical matrix,
   the grade-submission pipeline's orchestration order — against fakes, no live credentials needed to
-  run them. 5 Playwright E2E cases (one spec) covering navigation, tab switching, and both History
-  states (empty and populated). The camera's live video stream is the one thing that can't be
+  run them. 6 Playwright E2E cases (one spec) covering navigation, tab switching, and both History
+  states (empty and populated) — the populated case manages its own real Supabase fixture
+  (insert, verify, delete, confirm 0 rows remain), since the shipped database has no permanent seed
+  data for it to rely on. The camera's live video stream is the one thing that can't be
   exercised this way — headless Chromium's fake camera device doesn't produce a usable stream in
   this environment — so that path is verified structurally (layout, error states) rather than
   end-to-end.

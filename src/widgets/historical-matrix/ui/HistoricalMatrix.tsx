@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 type HistoricalMatrixProps = {
   matrix: CharacterHistoryMatrix;
-  pinyinByCharacter?: Record<string, string>;
+  pinyinByCharacter?: Map<string, string>;
 };
 
 export function HistoricalMatrix({ matrix, pinyinByCharacter }: HistoricalMatrixProps) {
@@ -30,9 +30,9 @@ export function HistoricalMatrix({ matrix, pinyinByCharacter }: HistoricalMatrix
           <TableRow key={row.character}>
             <TableCell className="font-medium">
               {row.character}
-              {pinyinByCharacter?.[row.character] && (
+              {pinyinByCharacter?.get(row.character) && (
                 <span className="block text-xs font-normal text-muted-foreground">
-                  {pinyinByCharacter[row.character]}
+                  {pinyinByCharacter.get(row.character)}
                 </span>
               )}
             </TableCell>

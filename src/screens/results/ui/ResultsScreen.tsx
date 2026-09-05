@@ -2,6 +2,7 @@ import Link from "next/link";
 import { RotateCcw, Share2 } from "lucide-react";
 
 import type { CharacterHistoryMatrix } from "@/entities/character-result/api/buildCharacterHistoryMatrix";
+import { buildPinyinLookup } from "@/entities/lesson/model/buildPinyinLookup";
 import type { SubmissionDetail } from "@/entities/submission/api/getSubmissionDetail";
 import { StrokeOrderCard } from "@/features/practice-stroke-order/ui/StrokeOrderCard";
 import { Badge } from "@/shared/ui/badge";
@@ -17,12 +18,9 @@ type ResultsScreenProps = {
 };
 
 export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps) {
-  const charactersMissed = submission.characterResults.filter((r) => !r.isCorrect).length;
-  const needsRevision = charactersMissed > 0;
-  const pinyinByCharacter = Object.fromEntries(
-    submission.vocabulary.map((entry) => [entry.character, entry.pinyin]),
-  );
   const missedCharacters = submission.characterResults.filter((r) => !r.isCorrect);
+  const needsRevision = missedCharacters.length > 0;
+  const pinyinByCharacter = buildPinyinLookup(submission.vocabulary);
 
   return (
     <ScreenShell>
@@ -44,7 +42,7 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
         score={submission.score ?? 0}
         totalPossible={submission.totalPossible}
         gradedAt={submission.submittedAt}
-        charactersMissed={charactersMissed}
+        charactersMissed={missedCharacters.length}
       />
 
       <WorksheetOverlay imageUrl={submission.imageUrl} characterResults={submission.characterResults} />
@@ -62,7 +60,7 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
               <StrokeOrderCard
                 key={r.character}
                 character={r.character}
-                pinyin={pinyinByCharacter[r.character]}
+                pinyin={pinyinByCharacter.get(r.character)}
               />
             ))}
           </div>

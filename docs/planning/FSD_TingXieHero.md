@@ -421,11 +421,44 @@ Verified against the actual current installability criteria (not a score) via Pl
 worker active/activated/controlling the page, manifest valid JSON with 192+512+maskable icons and
 3 screenshots, `apple-touch-icon` present, correct viewport meta, zero console errors.
 
+### Phase 9 (beyond the original plan) — Camera capture, checked against current platform docs
+Same pattern as Phase 8: checked Screen 3's three sub-requirements (Camera API, UI Overlay, Capture
+Trigger) against current Context7-verified docs (MDN's `MediaStreamTrack.applyConstraints`,
+`ImageCapture`, and constraints guides) before assuming the Phase 3 build was already as good as it
+gets, per your instruction to check whether ours was already better first.
+
+Two of the three were already solid: `getUserMedia({ facingMode: "environment" })` for the rear
+camera, and the corner-bracket/instruction-text/QR-box overlay, both matched the mockup and needed
+no change. The flash toggle button, though, was purely decorative — a `<span>` with a Zap icon, no
+`onClick`, nothing it actually toggled. Made it real: `useCameraCapture` now checks
+`track.getCapabilities().torch` after the stream starts and exposes `torchSupported`/`torchOn`/
+`toggleTorch` (calling `track.applyConstraints({ advanced: [{ torch }] })`); the button in
+`CameraViewfinder` is disabled — not hidden — when the capability isn't there, since `torch` has no
+Safari/Firefox support at all (confirmed via Context7/MDN, a real platform limit, not a bug to
+work around).
+
+Also improved the capture itself: `getUserMedia`'s video constraints now request `width`/`height`
+ideal 1920×1080 (an *ideal* hint, degrades gracefully rather than failing outright on cameras that
+can't do 1080p), and `capture()` now tries `ImageCapture.takePhoto()` first — it captures at the
+camera's full photo resolution, genuinely higher than the video preview stream, where the browser
+supports it (Chromium only) — falling back to the original canvas-snapshot-of-the-video-element
+approach everywhere else, including if `takePhoto()` itself throws on specific hardware.
+
+Verified what this sandbox can verify: build/lint/tests clean, and a Playwright run against
+`/scan` with Chromium's fake camera device confirms the flash button correctly disables (the fake
+device reports no `torch` capability) and nothing throws. Isolated one thing before trusting it:
+the fake device's `getUserMedia` call itself fails with `NotSupportedError` in this Windows
+sandbox — confirmed via a direct `getUserMedia` call that this happens identically with or without
+this phase's constraint changes, so it's the same pre-existing sandbox limitation Phase 3 already
+documented, not a regression. The torch-on and higher-resolution-capture paths still need a real
+device to see working, same as the rest of the camera flow.
+
 **Deliberately still open**, tracked rather than silently left:
 - [ ] Vercel env vars set, deploy triggered, live URL added to README — deferred pending your
   explicit go-ahead (standing instruction from earlier in this project).
 - [ ] Real-device camera test (`/scan`) — cannot be done from this sandbox; needs a human on an
-  actual phone/browser.
+  actual phone/browser. Now also covers verifying the torch toggle actually lights the flash and
+  that `ImageCapture.takePhoto()` produces a visibly higher-res photo than the old canvas path.
 
 ---
 

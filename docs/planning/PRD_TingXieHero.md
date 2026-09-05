@@ -161,11 +161,22 @@ anywhere broken.
 ### Screen 3 — Camera Capture & Live Alignment Viewfinder
 **User story:** As a parent, I want to photograph my child's completed worksheet so it can be graded automatically.
 
-- Full-screen camera view using rear camera (`getUserMedia`, `facingMode: environment`)
-- Header: "Align Worksheet" title, close (X) button, flash toggle button
+- Full-screen camera view using rear camera (`getUserMedia`, `facingMode: environment`, `width`/
+  `height` ideal 1920×1080 — an *ideal* hint, so it degrades gracefully on cameras that can't do
+  1080p instead of failing `getUserMedia` outright)
+- Header: "Align Worksheet" title, close (X) button, **a real flash toggle button** — not just the
+  icon from the mockup. Calls `track.applyConstraints({ advanced: [{ torch }] })` where the camera
+  reports the (non-standard, Chromium-only) `torch` capability; disabled rather than hidden where
+  it isn't supported (Safari/Firefox have no torch API at all — confirmed via Context7/MDN, not
+  assumed), so the design element is always present but never claims a capability the
+  device/browser doesn't have
 - Overlay: centered rectangular guide box with corner brackets, instruction text ("Keep page flat and inside the brackets"), QR target box (static visual element per Section 5 assumption — a dashed-border icon box, positioned clear of the corner brackets)
 - Bottom: circular shutter button — "Capture & Grade"
-- On capture: freeze frame, convert to Blob/File, show uploading state, POST to backend upload endpoint
+- On capture: try `ImageCapture.takePhoto()` first (captures at the camera's full photo resolution,
+  genuinely higher than the video preview stream, where supported — Chromium only, confirmed via
+  Context7/MDN), falling back to the original canvas-snapshot-of-the-video-element approach
+  everywhere else (Safari, Firefox, or if `takePhoto()` itself throws on specific hardware) —
+  convert to Blob/File, show uploading state, POST to backend upload endpoint
 - On successful grading response: navigate to Results screen (Screen 4) with the new submission's ID
 
 **Acceptance criteria:**

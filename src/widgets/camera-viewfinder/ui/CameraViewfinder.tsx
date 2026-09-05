@@ -5,6 +5,7 @@ import { QrCode, X, Zap } from "lucide-react";
 
 import { useCameraCapture } from "@/features/capture-worksheet/model/useCameraCapture";
 import { ShutterButton } from "@/features/capture-worksheet/ui/ShutterButton";
+import { cn } from "@/shared/lib/utils";
 
 type CameraViewfinderProps = {
   onClose: () => void;
@@ -13,7 +14,8 @@ type CameraViewfinderProps = {
 };
 
 export function CameraViewfinder({ onClose, onCapture, capturing }: CameraViewfinderProps) {
-  const { videoRef, state, error, start, capture } = useCameraCapture();
+  const { videoRef, state, error, torchSupported, torchOn, start, toggleTorch, capture } =
+    useCameraCapture();
 
   useEffect(() => {
     start();
@@ -44,9 +46,24 @@ export function CameraViewfinder({ onClose, onCapture, capturing }: CameraViewfi
           <X className="size-5" />
         </button>
         <span className="text-sm font-medium">Align Worksheet</span>
-        <span className="flex size-10 items-center justify-center rounded-full bg-black/40">
+        {/* Real torch toggle where the device/browser supports it (Chromium
+            only — MDN confirms no Safari/Firefox support, verified via
+            Context7). Disabled rather than hidden elsewhere, so the design
+            element from the mockup is always present, it just never claims
+            to do something the hardware/browser can't. */}
+        <button
+          type="button"
+          onClick={toggleTorch}
+          disabled={!torchSupported}
+          aria-label={torchOn ? "Turn off flash" : "Turn on flash"}
+          aria-pressed={torchOn}
+          className={cn(
+            "flex size-10 items-center justify-center rounded-full bg-black/40 outline-none focus-visible:ring-3 focus-visible:ring-white disabled:opacity-40",
+            torchOn && "bg-white text-black",
+          )}
+        >
           <Zap className="size-5" />
-        </span>
+        </button>
       </div>
 
       <div className="relative z-10 flex flex-1 items-center justify-center">

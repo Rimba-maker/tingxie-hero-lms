@@ -722,6 +722,31 @@ individual characters (`[...character]`, Unicode-codepoint-aware) and rendering 
 glyph, sharing one "Replay" button. Re-verified against a real temp submission with a genuine
 2-character missed word, screenshotted, temp rows deleted after.
 
+### Phase 17 (beyond the original plan) — a11y/motion audit of the just-shipped Phase 16 feature
+
+`/wayfinder` was requested for a further-upgrade hunt but is out of fit here (a persistent
+multi-session ticket map for a small, near-complete project) and is blocked from direct invocation
+anyway (`disable-model-invocation`) — ran a focused manual audit of `StrokeOrderCard` instead, the
+one piece of UI shipped in Phase 16 that hadn't been through any accessibility/UX pass yet. Two real
+gaps found, both fixed and re-verified live, not just asserted:
+
+- **No accessible name on the animated glyphs.** A screen reader saw an empty `<div>` with
+  JS-injected SVG and no text alternative. Added `role="img"` + `aria-label="Stroke order for
+  <glyph>"` per glyph, matching the same convention `HistoricalMatrix`'s check/cross icons already
+  use. Also gave the shared "Replay" button a per-card `aria-label` (`"Replay stroke order for
+  <word>"`) — with one card per missed character, several buttons all announcing as bare "Replay"
+  would be ambiguous to a screen-reader user tabbing through.
+- **Ignored `prefers-reduced-motion`**, despite this codebase already having that convention
+  elsewhere (`LessonCard`'s `motion-safe:` expand/collapse). Reads the media query via
+  `useSyncExternalStore` (not a plain `useState`/`useEffect` pair — reading `matchMedia` during
+  render would mismatch SSR's no-`window` render, and the first naive fix using state-set-in-effect
+  hit exactly that: the animation effect closed over the pre-update value, so the very first
+  animation still ignored the preference even though a later render correctly hid the Replay
+  button). When `reduce` is set, `showCharacter()` replaces `animateCharacter()` and the
+  now-pointless Replay button doesn't render. Verified with two real Playwright browser contexts —
+  one default, one `reduced_motion: "reduce"` — confirming the Replay button count (1 vs 0) and the
+  glyphs rendering fully-drawn instantly under reduced motion, not just that the code compiled.
+
 ---
 
 ## 7. Environment Variables

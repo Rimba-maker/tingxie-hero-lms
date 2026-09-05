@@ -514,6 +514,44 @@ through the real (still-overloaded) Gemini endpoint, now correctly returns 502 w
 message instead of masking an external outage as our own bug. Test submissions and their Storage
 objects deleted after, confirmed via `select count(*)`.
 
+### Phase 11 (beyond the original plan) — a second Postgres best-practices pass
+Re-ran `supabase-postgres-best-practices` now that `students` exists and every real query shape in
+the app is known (Phase 1's review only had the original spec to go on). Found real gaps this time:
+
+- **`submissions.student_id` had no foreign key at all** — a bare default-valued `text` column,
+  nothing stopped an invalid value from ever being inserted once `students` existed alongside it.
+  Added `references students(id)`.
+- **Two missing domain-invariant `check` constraints**: `students.credits_total >= 0` (nothing
+  currently decrements it, but the invariant is cheap to enforce at the database rather than trust
+  every future write path) and `submissions.total_score` must be `null` or within
+  `[0, total_possible]` (guaranteed by `gradeWithGemini`'s own arithmetic today, same reasoning).
+- **Indexes replaced, not just added.** `idx_submissions_submitted_at` (bare) and
+  `idx_submissions_lesson_id` (bare) matched neither of the two real query shapes that actually run:
+  `listSubmissionHistory` always filters `status = 'graded'` before ordering by `submitted_at`, and
+  `getLessons` fetches each lesson's single most recent submission via an embedded
+  `.order("submitted_at", { foreignTable: "submissions" }).limit(1, ...)`. Replaced with a partial
+  index (`submitted_at desc where status = 'graded'`) for the first, and a composite index
+  (`lesson_id, submitted_at desc`) for the second — the composite also serves the FK/cascade lookup
+  the old bare `lesson_id` index existed for for free (leftmost-prefix rule), so nothing was lost.
+- Fixed a stale comment on the `worksheet-photos` bucket claiming the Results screen "never
+  actually displays the photo" — Phase 7's `WorksheetOverlay` does exactly that now.
+
+**Three rules deliberately not applied, reasoning kept in `schema.sql` next to each decision:**
+switching UUID primary keys to `bigint identity`/UUIDv7 (submission IDs are exposed in a public URL
+— unguessable is a deliberate security property here, not an oversight, and fragmentation is a
+large-table concern this dataset will never approach); indexing `submissions.student_id` (every row
+has the exact same value in this single-hardcoded-student, no-auth assignment — an index can't
+narrow down a column with one distinct value, the planner would ignore it); wrapping
+`saveGradingResult`'s two writes in a single Postgres transaction (would need an RPC function since
+PostgREST doesn't span a transaction across two separate `.from()` calls — a real gap, but
+low-probability and recoverable, not worth the added surface at this scope).
+
+Verified against live data before applying anything (checked for existing rows that would violate
+the new constraints — found none), applied via the linked `supabase` CLI after explicit
+confirmation, then verified with a real upload through `POST /api/upload` (confirms the new FK
+doesn't block a real insert) and all three data-fetching routes (`/`, `/syllabus`, `/history`)
+still rendering correctly against the new indexes. Test data cleaned up after.
+
 ---
 
 ## 7. Environment Variables

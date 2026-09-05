@@ -679,6 +679,17 @@ before moving to the next:
   showcase composition checks and a real-browser visual check at four viewport sizes in light and
   dark before being committed.
 
+### Phase 15 (beyond the original plan) — Results-matrix mockup fidelity gap
+
+Re-audited Screen 4's "Historical Matrix Table" requirement against
+`docs/reference/mockups/screen4-results.png` directly (not just the PRD prose). Structure already
+matched: rows = tested characters, columns = test dates, ✔/✘ pulled live from `character_results`
+via `HistoricalMatrix`/`buildCharacterHistoryMatrix`. One real gap found: the mockup shows pinyin
+under each hanzi in the Character column; ours showed the hanzi alone. `getSubmissionDetail` now
+joins the submission's lesson `vocabulary` and `ResultsScreen` derives a `character → pinyin` map
+passed into `HistoricalMatrix` — same character/pinyin stacked-text pattern `LessonCard` already
+uses for the Syllabus vocab grid. Verified live against a temporary submission (deleted after).
+
 ---
 
 ## 7. Environment Variables

@@ -38,6 +38,13 @@ create table character_results (
   submission_id uuid references submissions(id) on delete cascade,
   character text not null,           -- e.g. "礼堂"
   is_correct boolean not null,
+  -- { ymin, xmin, ymax, xmax } normalized 0-1000, from Gemini's box_2d —
+  -- drives the Results screen's photo overlay (the assignment's own "key
+  -- evaluation point": correction sent back to the frontend as a red-pen
+  -- overlay on the worksheet photo, not just a table of ticks/crosses).
+  -- Nullable: absent on rows graded before this column existed, or when
+  -- Gemini omits a box for a given character.
+  bounding_box jsonb,
   created_at timestamptz not null default now()
 );
 

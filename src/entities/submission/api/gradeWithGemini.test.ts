@@ -30,6 +30,33 @@ describe("gradeWithGemini", () => {
     ]);
   });
 
+  test("maps Gemini's box_2d array into a boundingBox object per character", async () => {
+    const fakeGemini: GeminiClient = {
+      models: {
+        generateContent: async () => ({
+          text: JSON.stringify([
+            { character: "校园", isCorrect: true, box_2d: [100, 200, 300, 400] },
+            { character: "礼堂", isCorrect: false },
+          ]),
+        }),
+      },
+    };
+
+    const result = await gradeWithGemini(fakeGemini, {
+      imageBase64: "fake-base64-image-data",
+      vocabList: ["校园", "礼堂"],
+    });
+
+    expect(result.results).toEqual([
+      {
+        character: "校园",
+        isCorrect: true,
+        boundingBox: { ymin: 100, xmin: 200, ymax: 300, xmax: 400 },
+      },
+      { character: "礼堂", isCorrect: false },
+    ]);
+  });
+
   test("totalPossible reflects the actual result count, not the vocab list length", async () => {
     // Real behavior observed live: Gemini sometimes grades each individual
     // character rather than treating each 2-character word as one unit, so

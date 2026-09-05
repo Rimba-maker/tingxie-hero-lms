@@ -27,8 +27,16 @@ export type GeminiClient = {
 const GEMINI_MODEL = "gemini-flash-latest";
 
 function buildPrompt(vocabList: string[]): string {
-  return `Compare the handwriting in this Tian Zige grid against the expected spelling list [${vocabList.join(", ")}]. Return which words were written correctly or incorrectly.`;
+  return `Compare the handwriting in this Tian Zige grid against the expected spelling list [${vocabList.join(", ")}]. Return which words were written correctly or incorrectly, and for each word its box_2d bounding box (as [ymin, xmin, ymax, xmax] normalized to 0-1000) around where that word was handwritten in the grid — this drives a red-pen correction overlay on the frontend, the assignment's key evaluation point.`;
 }
+
+// Raw shape Gemini returns, before box_2d (an array) becomes the named
+// BoundingBox object the rest of the app uses.
+type RawGradedCharacter = {
+  character: string;
+  isCorrect: boolean;
+  box_2d?: [number, number, number, number];
+};
 
 export async function gradeWithGemini(
   geminiClient: GeminiClient,
@@ -74,6 +82,12 @@ export async function gradeWithGemini(
           properties: {
             character: { type: "string" },
             isCorrect: { type: "boolean" },
+            box_2d: {
+              type: "array",
+              items: { type: "integer" },
+              description:
+                "[ymin, xmin, ymax, xmax] normalized to 0-1000, bounding this word in the image",
+            },
           },
           required: ["character", "isCorrect"],
         },
@@ -89,15 +103,22 @@ export async function gradeWithGemini(
     throw new Error(`Gemini blocked this image: ${blockReason}`);
   }
 
-  let results: CharacterResult[];
+  let raw: RawGradedCharacter[];
   try {
     if (!response.text) throw new Error("empty response");
-    results = JSON.parse(response.text);
+    raw = JSON.parse(response.text);
   } catch {
     // responseSchema constrains the shape when Gemini succeeds, but the API
     // is still an untrusted external boundary — never trust it blindly.
     throw new Error("Gemini returned invalid JSON");
   }
+
+  const results: CharacterResult[] = raw.map(({ character, isCorrect, box_2d }) => ({
+    character,
+    isCorrect,
+    ...(box_2d && { boundingBox: { ymin: box_2d[0], xmin: box_2d[1], ymax: box_2d[2], xmax: box_2d[3] } }),
+  }));
+
   const score = results.filter((result) => result.isCorrect).length;
 
   // Not params.vocabList.length: Gemini sometimes grades each character

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { CharacterResult } from "@/entities/character-result/model/types";
+import type { BoundingBox, CharacterResult } from "@/entities/character-result/model/types";
 
 export type SubmissionDetail = {
   id: string;
@@ -34,7 +34,7 @@ type SubmissionRow = {
   submitted_at: string;
   image_url: string;
   lessons: { week_number: number } | null;
-  character_results: { character: string; is_correct: boolean }[];
+  character_results: { character: string; is_correct: boolean; bounding_box: BoundingBox | null }[];
 };
 
 // Real Supabase-backed implementation. Untested glue.
@@ -44,7 +44,7 @@ export function supabaseSubmissionDetailDb(supabase: SupabaseClient): Submission
       const { data, error } = await supabase
         .from("submissions")
         .select(
-          "id, total_score, total_possible, submitted_at, image_url, lessons(week_number), character_results(character, is_correct)",
+          "id, total_score, total_possible, submitted_at, image_url, lessons(week_number), character_results(character, is_correct, bounding_box)",
         )
         .eq("id", submissionId)
         .maybeSingle();
@@ -62,6 +62,7 @@ export function supabaseSubmissionDetailDb(supabase: SupabaseClient): Submission
         characterResults: row.character_results.map((r) => ({
           character: r.character,
           isCorrect: r.is_correct,
+          ...(r.bounding_box && { boundingBox: r.bounding_box }),
         })),
       };
     },

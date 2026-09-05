@@ -32,6 +32,7 @@ export function supabaseCharacterResultsDb(supabase: SupabaseClient): CharacterR
           submission_id: submissionId,
           character: result.character,
           is_correct: result.isCorrect,
+          bounding_box: result.boundingBox ?? null,
         })),
       );
       if (error) throw error;

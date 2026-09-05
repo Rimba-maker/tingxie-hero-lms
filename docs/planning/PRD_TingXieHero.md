@@ -74,7 +74,7 @@ anywhere broken.
 
 | Ambiguity in source doc | Assumption made | Rationale |
 |---|---|---|
-| "Overlay of the correct word in red pen" — no coordinate/bounding-box data specified in the Gemini prompt or response schema | Implement as a **structured annotation**, not a pixel-overlay on the photo — see Screen 4 below for exactly what shipped and why it changed from the original plan during build | Gemini prompt in the assignment only returns a JSON array of character correctness, not coordinates. Pixel-exact overlay would require bounding-box data not requested in the spec. |
+| "Overlay of the correct word in red pen" — assignment's example prompt only asks Gemini for a correctness JSON array, no coordinates | Extended the prompt/`responseSchema` to also request a `box_2d` bounding box per character (Gemini's documented object-detection output shape, confirmed via Context7 against the same `generateContent` call already in use) and render a real overlay on the graded photo — see Screen 4 below | The assignment explicitly names this exact flow as "the key evaluation point" (both in Evaluation Focus and again as a parenthetical under the grading-engine requirements) and explicitly says word-recognition *accuracy* is not evaluated — so an inexact but real bounding box, not a data table standing in for it, best matches what's actually being assessed. An earlier build pass had substituted a table-only rendering for this; revisited once the source PDF's wording was reread closely (see below). |
 | "QR code target box" in camera overlay (Screen 3) | Treated as a **static UI element only** (visual guide box in the viewfinder), not an active QR-scanning feature | No functional QR-scanning requirement appears anywhere in the Technical Requirements section |
 | Gemini 1.5 Flash specified, but this model is being deprecated | Substitute with the Google-maintained `gemini-flash-latest` alias via the current `@google/genai` SDK | Assignment explicitly allows "equivalent substitutions... as long as core functionality remains identical." `gemini-2.5-flash` (the initially-planned substitute) was itself retired for new API keys mid-build, and its suggested replacement `gemini-3.6-flash` hit consistent 503s live — the `-latest` alias avoids needing another manual bump on the next retirement. |
 | No auth mentioned | No login/auth implemented; student profile hardcoded as instructed | Matches explicit instruction: "Hardcode student profile details (Lucas – Primary 2)" |
@@ -163,28 +163,39 @@ anywhere broken.
 - Header: "Test Feedback — Week 4 Syllabus Test" with status badge ("Needs Revision" or similar, derived from score)
 - Score display: large circular badge showing score (e.g. "8/10", "80%")
 - Metadata: "Graded on [date], [time]", "[N] character(s) missed"
-- **Correction feedback (KEY EVALUATION POINT — this is what the client evaluates, "the flow"
-  matters more than which specific component renders it):** Every graded character's
-  correct/incorrect status must be visible with the correct answer clear for mistakes. **What
-  shipped differs from the original plan:** a standalone `CorrectionOverlay` widget (a distinct
-  chip list under the score, red text for misses) was built first per this section's original
-  wording, but was **removed during a mockup-fidelity pass** once it became clear the Historical
-  Matrix Table below already renders exactly this information — its most recent (current
-  submission's) date column shows a ✓/✗ per character, which *is* the correction feedback for this
-  submission, not just history. Two components both showing the same 3-6 rows of check/cross marks
-  read as redundant, not as extra clarity, and the mockup itself never shows a separate chip list.
-  The underlying requirement (per-character correct/incorrect, correct answer visible) is still
-  fully met — by the matrix's current-date column — with one component instead of two.
+- **Correction feedback (KEY EVALUATION POINT — the assignment PDF itself names this exact flow,
+  "sending back to the front end for overlay of the correct word in red pen," as the key
+  evaluation point, both in its Evaluation Focus section and again as a parenthetical under the
+  grading-engine requirements):** shipped as `WorksheetOverlay` — the actual graded photo,
+  rendered with a red-bordered box + red "correct word" label over every incorrect character and
+  a green-bordered box + check mark over every correct one, positioned from a bounding box Gemini
+  returns alongside its correctness verdict (via `box_2d`, normalized 0-1000 — confirmed supported
+  by the same `generateContent`/`responseSchema` call already in use, via Context7). **Revision
+  history:** an earlier pass removed a *different*, planned `CorrectionOverlay` widget (a chip
+  list under the score) on the reasoning that the Historical Matrix's current-date column already
+  showed the same ✓/✗ per character — true, but that only satisfies Section 5's literal spec for
+  Screen 4 (Score Header + Historical Matrix Table), not the Evaluation Focus section's explicit
+  description of the flow's *output*: a red-pen mark on the photo itself. Re-read against the
+  source PDF (not just the mockup, which only depicts Screens 1/2/4-as-a-table and never shows the
+  camera-to-photo step), the two requirements are complementary, not redundant — the matrix tracks
+  history across dates, the overlay is the single-submission correction the client explicitly
+  calls out. Both now ship.
 - Historical Matrix Table: rows = tested Chinese characters/words, columns = test dates; cells show
   green check (✓) or red cross (✗) per historical `character_results` records for that character.
-  Doubles as the current submission's correction feedback (see above).
+  Required by name in the assignment's Section 5 ("Results Matrix"); kept alongside the overlay
+  above, not replaced by it.
 - Actions: "Share Report" (can be a stub — e.g. copy link or share sheet trigger), "Retest Missed" (can route back to camera flow, or be a stub if out of time)
 
 **Acceptance criteria:**
 - [x] Score, date, and missed-character count pull from the actual `submissions` record (live data,
   not hardcoded) — verified via real upload → real Gemini grade → real Supabase write → real render
 - [x] Correction feedback clearly shows correct vs. incorrect characters with the correct answer
-  visible for mistakes — via the Historical Matrix's current-date column (see above)
+  visible for mistakes — via both the Historical Matrix's current-date column and the
+  `WorksheetOverlay` red/green marks on the graded photo (see above)
+- [ ] `WorksheetOverlay` verified against a real Gemini-graded submission end-to-end — verified so
+  far only via a throwaway preview route with fake bounding boxes (screenshotted, then deleted);
+  the live `character_results` table still needs its `bounding_box` column added (one `alter
+  table` statement, see `supabase/schema.sql`) before a real upload can be replayed through it
 - [x] Historical matrix reflects real historical `character_results` rows from Supabase, not mock
   data
 - [x] Page is reachable both immediately after a new scan and via a "History" entry point — History

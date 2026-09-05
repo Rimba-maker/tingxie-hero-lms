@@ -6,6 +6,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { HistoricalMatrix } from "@/widgets/historical-matrix/ui/HistoricalMatrix";
 import { ScoreHeader } from "@/widgets/score-header/ui/ScoreHeader";
+import { WorksheetOverlay } from "@/widgets/worksheet-overlay/ui/WorksheetOverlay";
 
 type ResultsScreenProps = {
   submission: SubmissionDetail;
@@ -38,6 +39,8 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
         gradedAt={submission.submittedAt}
         charactersMissed={charactersMissed}
       />
+
+      <WorksheetOverlay imageUrl={submission.imageUrl} characterResults={submission.characterResults} />
 
       <div>
         <p className="mb-2 text-sm font-medium">Results over time</p>

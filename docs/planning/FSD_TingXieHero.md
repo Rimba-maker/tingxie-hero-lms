@@ -155,18 +155,23 @@ authoritative, fully-commented version; the summary below is for orientation onl
 
 **Tables:** `lessons` (syllabus content + vocabulary jsonb), `submissions` (one graded worksheet
 scan, FK to `lessons`), `character_results` (per-character grading outcome, FK to `submissions`,
-cascade delete).
+cascade delete; `bounding_box` jsonb, nullable — Gemini's `box_2d`, drives the Results screen's
+photo overlay, see §5).
+
+**Live-DB migration note:** the live Supabase table predates the `bounding_box` column above —
+run `alter table character_results add column bounding_box jsonb;` in the SQL editor before
+replaying a real upload through `WorksheetOverlay` end-to-end (existing rows just get `null`).
 
 **RLS:** No end-user auth in scope, so no `auth.uid()`-scoped policies. All three tables get a
 public-read policy for `anon`/`authenticated`; writes only ever happen server-side via the service
 role key, which bypasses RLS entirely.
 
 **Storage:** `worksheet-photos` bucket, public. Public rather than signed-URL because the upload
-flow needs a URL immediately usable without a round trip — **note:** the Results screen ended up
-never rendering the photo itself (only the grading data), so this bucket is effectively only ever
-read server-side (`POST /api/grade` fetches the image to send to Gemini). The public-bucket choice
-is still a reasonable simplification (worksheet photos aren't sensitive PII), just not for the
-original "client renders it directly" reason.
+flow needs a URL immediately usable without a round trip. The Results screen's `WorksheetOverlay`
+now renders this photo directly (client-side `<img>`, public URL, no signed-URL round trip needed)
+alongside the server-side read in `POST /api/grade` (which fetches the same image to send to
+Gemini) — so the original "client renders it directly" reasoning for a public bucket now matches
+what's actually built, not just the upload path.
 
 **Seed data** (`supabase/seed.sql`, matches PRD §6 Screen 2): 3 lessons for P2 (weeks 2-4, one each
 of `pending`/`completed`/`needs_revision` status) with their vocabulary lists. P1 and P3-P6 have no
@@ -203,13 +208,14 @@ separate GET API layer — see the note at the end of this section for why.
    `mediaResolution: MEDIA_RESOLUTION_HIGH` (`gradeWithGemini`).
 3. Check `promptFeedback.blockReason` first (a named condition, not a parse failure) before
    attempting to parse `response.text` as JSON.
-4. Write `character_results` rows, update `submissions.status = 'graded'`, `graded_at = now()`
-   (`saveGradingResult`).
+4. Write `character_results` rows (including `bounding_box` when Gemini returned one), update
+   `submissions.status = 'graded'`, `graded_at = now()` (`saveGradingResult`).
 
 **Response:**
 ```json
 { "submissionId": "uuid", "score": 8, "totalPossible": 10,
-  "results": [{ "character": "校园", "isCorrect": true }, ...] }
+  "results": [{ "character": "校园", "isCorrect": true,
+    "boundingBox": { "ymin": 100, "xmin": 200, "ymax": 300, "xmax": 400 } }, ...] }
 ```
 
 **Why no `GET /api/submissions/:id` or `GET /api/character-history` routes** (both were in the
@@ -260,7 +266,11 @@ const response = await geminiClient.models.generateContent({
       { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
     ],
     responseMimeType: "application/json",
-    responseSchema: { /* array of { character: string, isCorrect: boolean } */ },
+    // array of { character, isCorrect, box_2d?: [ymin, xmin, ymax, xmax] } —
+    // box_2d normalized 0-1000, Gemini's documented object-detection output
+    // shape (confirmed via Context7), drives WorksheetOverlay's red/green
+    // marks on the graded photo — the assignment's own "key evaluation point"
+    responseSchema: { /* ... */ },
   },
 });
 
@@ -330,11 +340,33 @@ before showcase" pass:
   ("1 characters missed") plus 3 latent instances of the same bug elsewhere, then rewrote this
   document and the PRD to match the as-built system rather than the original plan.
 
+### Phase 7 (beyond the original plan) — a second re-read of the source PDF
+- **API error surfacing fix** — `/api/upload` and `/api/grade` already returned a clear `{ error }`
+  message on failure, but the client never read the response body, so users saw a bare status code
+  ("Upload failed: 400") instead of the actual message. Added an uncaught-exception boundary to
+  both routes (previously fell through to Next.js's empty-body 500) and fixed the client to read
+  `error` from the body.
+- **`WorksheetOverlay` — corrected an earlier scope call.** Re-reading the source assignment PDF at
+  your prompt (focusing on the Evaluation Focus section's literal subject/object, not the accuracy
+  disclaimer next to it) surfaced that "sending back to the front end for overlay of the correct
+  word in red pen" is named as the key evaluation point *twice* in the source document, and Screen
+  4's earlier "the matrix already covers this" reasoning only satisfied the assignment's Section 5
+  layout spec, not this separate, explicitly-flagged evaluation criterion. Extended
+  `gradeWithGemini`'s prompt/`responseSchema` to also request a `box_2d` bounding box per character
+  (confirmed as a supported `generateContent` output shape via Context7, not assumed), added the
+  `bounding_box` column, and built `WorksheetOverlay` to render the graded photo with red-bordered
+  "correct word" marks over misses and green check marks over hits. The Historical Matrix Table
+  stays — Section 5 names it explicitly by name, so this is additive, not a replacement.
+
 **Deliberately still open**, tracked rather than silently left:
 - [ ] Vercel env vars set, deploy triggered, live URL added to README — deferred pending your
   explicit go-ahead (standing instruction from earlier in this project).
 - [ ] Real-device camera test (`/scan`) — cannot be done from this sandbox; needs a human on an
   actual phone/browser.
+- [ ] Live `character_results.bounding_box` column — schema.sql has it, but the already-created
+  Supabase table doesn't; needs one `alter table` run in the SQL editor (can't be done from here —
+  no DDL access via the service-role key, same reason the original schema setup needed a human)
+  before a real upload can be replayed through `WorksheetOverlay` end-to-end.
 
 ---
 

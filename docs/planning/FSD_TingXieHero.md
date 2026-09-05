@@ -397,6 +397,30 @@ before showcase" pass:
   a real temp graded submission (8/10) for the seeded "completed" lesson, confirming the card
   rendered "Completed (80%)" computed from that row, then deleting it and confirming 0 remain.
 
+### Phase 8 (beyond the original plan) — PWA installability, verified against current criteria
+Checked the PWA Setup requirement ("basic web app manifest settings... so the app installs
+seamlessly on mobile home screens") against current Context7-verified docs (Next.js's own
+`metadata.icons` reference, web.dev's manifest/richer-install-ui guides) rather than assuming the
+Phase 5 build was complete. First finding, before touching code: **modern Lighthouse (v13, checked
+directly — `npx lighthouse --only-categories`) has no "PWA" category or installability audits at
+all anymore** — `installable-manifest`, `service-worker`, `maskable-icon`, etc. don't exist in its
+audit registry any more; Google moved this to manual inspection in Chrome DevTools' Application
+panel years ago. There's no numeric "PWA score" to chase — worth knowing so this isn't re-attempted
+next time.
+
+Found one real gap: no `apple-touch-icon`. iOS Safari's "Add to Home Screen" doesn't read the web
+manifest's `icons` at all — without an explicit `<link rel="apple-touch-icon">` (Next.js
+`metadata.icons.apple`), iOS falls back to a screenshot of the page as the home-screen icon, which
+directly contradicts "installs seamlessly." Fixed by pointing `icons.apple` at the existing
+`icon-192.png` (no new asset needed — iOS scales it). Also added `screenshots` to the manifest
+(3 real app screenshots, already sitting in `docs/screenshots/` for the README, copied into
+`public/screenshots/`) for Chrome's richer install-UI dialog, and `orientation: "portrait"`,
+consistent with the already-documented mobile-only, no-responsive-layout decision.
+
+Verified against the actual current installability criteria (not a score) via Playwright: service
+worker active/activated/controlling the page, manifest valid JSON with 192+512+maskable icons and
+3 screenshots, `apple-touch-icon` present, correct viewport meta, zero console errors.
+
 **Deliberately still open**, tracked rather than silently left:
 - [ ] Vercel env vars set, deploy triggered, live URL added to README — deferred pending your
   explicit go-ahead (standing instruction from earlier in this project).

@@ -27,6 +27,13 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: APP_NAME,
   },
+  // iOS Safari's "Add to Home Screen" ignores the web manifest's icons
+  // entirely — without this, iOS falls back to a screenshot of the page as
+  // the home-screen icon instead of the app icon (confirmed via Context7
+  // against Next.js's own metadata.icons docs, not assumed).
+  icons: {
+    apple: "/icon-192.png",
+  },
   formatDetection: {
     telephone: false,
   },

@@ -800,6 +800,33 @@ race. Verified by running the suite for real (not just reading the diff): 6/6 pa
 independent follow-up query confirmed the fixture's cleanup left 0 rows, matching the test's own
 assertion rather than just trusting it.
 
+### Phase 20 (beyond the original plan) — app-wide heading/landmark audit
+
+Continued widening the audit into areas never checked this pass. Grepped the whole `src/` tree for
+`<h1`/`<h2`/`<h3`/`role="heading"` and for `<main`/`<nav`/`role="main"` — found **zero heading
+elements anywhere in the app**, and only the one `<nav>` inside `BottomNav`. A screen-reader user
+navigating by heading or landmark (a standard assistive-tech workflow, not an edge case) had nothing
+to jump to on any of the 6 screens.
+
+Fixed across all of them, verified with a live Playwright count (`h1`/`main` per screen, not just
+reading the diff) confirming exactly one of each everywhere, and a full screenshot comparison
+confirming zero visual regression (existing `className`s carried over onto the new tag — Tailwind's
+preflight already zeroes default heading margins, so `<p>`/`<span>` → `<h1>` changed nothing visible):
+
+- `ScreenShell` now wraps `{children}` in `<main className="contents">` — `display: contents` keeps
+  the landmark without disturbing the outer flex layout's gap spacing. Covers Dashboard, Syllabus,
+  History, and Premium in one place.
+- `ScanScreen` (the one screen that doesn't use `ScreenShell`, being a full-bleed camera layout) got
+  its own `<main>` directly, and `CameraViewfinder`'s "Align Worksheet" label became its `<h1>`.
+- Syllabus's "MOE {level} Syllabus", History's "Past Ting Xie Results", Results' "Week N Syllabus
+  Test", and Premium's "Premium is coming soon" each became that screen's `<h1>` — already
+  page-specific, distinguishing text, just promoted to the right element.
+- Dashboard has no natural on-screen title (the mockup has none) and `AppHeader`'s "Welcome back,
+  {name}" greeting repeats identically across Dashboard/Syllabus/History/Premium — using it as every
+  page's `<h1>` would give a heading-navigating user the same text four times over, which is worse
+  than no distinguishing heading at all. Added a visually-hidden `<h1 className="sr-only">Dashboard</h1>`
+  instead — correct for screen readers, invisible in the mockup-matched layout.
+
 ---
 
 ## 7. Environment Variables

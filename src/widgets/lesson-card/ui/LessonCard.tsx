@@ -7,11 +7,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { cn } from "@/shared/lib/utils";
 
-const STATUS_LABEL: Record<Lesson["status"], string> = {
-  pending: "Pending Practice",
-  completed: "Completed (80%)",
-  needs_revision: "Needs Revision",
-};
+import { getStatusLabel } from "../model/getStatusLabel";
 
 const STATUS_VARIANT: Record<Lesson["status"], "warning" | "success" | "destructive"> = {
   pending: "warning",
@@ -41,7 +37,7 @@ export function LessonCard({ lesson, expanded, onToggle }: LessonCardProps) {
               <br />
               <span className="text-base font-medium">《{lesson.title}》</span>
             </span>
-            <Badge variant={STATUS_VARIANT[lesson.status]}>{STATUS_LABEL[lesson.status]}</Badge>
+            <Badge variant={STATUS_VARIANT[lesson.status]}>{getStatusLabel(lesson)}</Badge>
           </CardTitle>
         </button>
       </CardHeader>

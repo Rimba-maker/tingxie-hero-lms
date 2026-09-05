@@ -17,6 +17,7 @@ describe("getLessons", () => {
             { character: "礼堂", pinyin: "lǐ táng" },
           ],
           test_scheduled_at: "2026-10-14T15:00:00Z",
+          submissions: [],
         },
       ],
     };
@@ -35,6 +36,7 @@ describe("getLessons", () => {
           { character: "礼堂", pinyin: "lǐ táng" },
         ],
         testScheduledAt: "2026-10-14T15:00:00Z",
+        latestScore: null,
       },
     ]);
   });
@@ -50,6 +52,7 @@ describe("getLessons", () => {
           status: "completed",
           vocabulary: [],
           test_scheduled_at: null,
+          submissions: [],
         },
       ],
     };
@@ -57,5 +60,26 @@ describe("getLessons", () => {
     const result = await getLessons(fakeDb);
 
     expect(result[0].testScheduledAt).toBeNull();
+  });
+
+  test("latestScore is populated from the embedded most-recent submission", async () => {
+    const fakeDb: LessonsDb = {
+      listLessons: async () => [
+        {
+          id: "lesson-3",
+          week_number: 3,
+          title: "第九课",
+          moe_level: "P2",
+          status: "completed",
+          vocabulary: [],
+          test_scheduled_at: null,
+          submissions: [{ total_score: 8, total_possible: 10 }],
+        },
+      ],
+    };
+
+    const result = await getLessons(fakeDb);
+
+    expect(result[0].latestScore).toEqual({ score: 8, totalPossible: 10 });
   });
 });

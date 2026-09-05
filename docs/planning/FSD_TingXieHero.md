@@ -385,6 +385,17 @@ before showcase" pass:
   curriculum) — `formatTestSchedule` now pins `Asia/Singapore` explicitly via `Intl`, independent
   of wherever the server happens to run. Verified end-to-end against live data, including clicking
   the real Top Up button and confirming the DB and UI both updated.
+- **Syllabus's "Completed (80%)" fixed the same way.** Same re-read, same question applied to
+  Screen 2: the assignment only says "Hardcode status tags (Pending, Completed)" — the tag *text*.
+  The `(80%)` appended to every completed lesson's badge, unconditionally, was a fabricated number
+  riding along inside that string, not the tag itself. `getLessons` now embeds each lesson's most
+  recent `submissions` row (ordered `submitted_at desc`, limited to 1 via PostgREST's
+  foreign-table order/limit) and a new pure `getStatusLabel` computes the real percentage from it
+  — a completed lesson with no graded submission yet correctly shows plain "Completed", not an
+  invented number. P1-P6 tabs and the expandable vocabulary cards were already fully real (state-
+  driven tab filter, real `lessons.vocabulary` jsonb) — nothing to fix there. Verified by inserting
+  a real temp graded submission (8/10) for the seeded "completed" lesson, confirming the card
+  rendered "Completed (80%)" computed from that row, then deleting it and confirming 0 remain.
 
 **Deliberately still open**, tracked rather than silently left:
 - [ ] Vercel env vars set, deploy triggered, live URL added to README — deferred pending your

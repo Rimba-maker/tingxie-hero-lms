@@ -87,10 +87,11 @@ npm run build      # production build, also runs `serwist build`
 
 Scoped out deliberately, not oversights:
 
-- **"Top Up," "Share Report," and "Retest Missed" are decorative.** They
-  match the mockups pixel-for-pixel but have no handler — the assignment's
-  evaluation focus is the scan → upload → grade → feedback flow, not billing
-  or report sharing.
+- **"Share Report," "Retest Missed," and "Print A4 Worksheet (PDF)" are
+  decorative.** They match the mockups pixel-for-pixel but have no handler —
+  the assignment's evaluation focus is the scan → upload → grade → feedback
+  flow, not report sharing or printing. ("Top Up" on the Dashboard, by
+  contrast, is real — it's not in this list.)
 - **Mobile-only, by design.** The assignment brief only ever shows mobile
   mockups and never mentions desktop/tablet layouts (re-verified against the
   source PDF, not just the mockup images) — no responsive breakpoints were

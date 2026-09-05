@@ -127,21 +127,34 @@ anywhere broken.
   level (currently 3 for P2, 0 for P1/P3-P6)
 - Expandable lesson cards, each showing:
   - Week number + lesson title (Chinese + pinyin/translation), e.g. "Week 4 《第十课 – 我们的校园》"
-  - Status badge: **Pending Practice** / **Completed (80%)** / **Needs Revision** (hardcoded per mockup data)
+  - Status badge: **Pending Practice** / **Completed** / **Needs Revision** — this is the one
+    Dashboard/Syllabus bullet the assignment actually says to hardcode ("Hardcode status tags
+    (Pending, Completed)"), so the label text stays exactly that. What's **not** hardcoded: the
+    `(80%)` that used to be baked into the "Completed" string as a fixed literal, unconditionally,
+    on every completed lesson regardless of how it was actually graded. That's not "the tag" — it's
+    a fabricated statistic riding along inside it. Now computed for real from the lesson's most
+    recent graded `submissions` row (`getStatusLabel`); a completed lesson with no graded
+    submission yet shows plain "Completed", no invented number.
   - Vocabulary list on expand: character + pinyin pairs (e.g. 校园 xiào yuán, 礼堂 lǐ táng, 老师 lǎo shī)
-  - "Print A4 Worksheet (PDF)" link (can be a stub link / placeholder — PDF generation is not in this assignment's technical requirements)
+    — real `lessons.vocabulary` jsonb, not hardcoded
+  - "Print A4 Worksheet (PDF)" link — decorative stub; not named anywhere in the assignment's
+    Technical Requirements text (mockup-only), same basis as leaving Mastery Stats hardcoded on
+    the Dashboard
 
 **Seed data required (hardcode or seed into `lessons` table):**
 | Week | Title | Status | Vocabulary |
 |---|---|---|---|
 | 4 | 第十课 – 我们的校园 | Pending Practice | 校园 (xiào yuán), 礼堂 (lǐ táng), 老师 (lǎo shī) |
-| 3 | 第九课 – 我爱我的家 | Completed (80%) | 爸爸 (bà ba), 妈妈 (mā ma), 温暖 (wēn nuǎn) |
+| 3 | 第九课 – 我爱我的家 | Completed | 爸爸 (bà ba), 妈妈 (mā ma), 温暖 (wēn nuǎn) |
 | 2 | 第八课 – 快乐的周末 | Needs Revision | 玩耍 (wán shuǎ), 公园 (gōng yuán) |
 
 **Acceptance criteria:**
 - [x] Tab selector switches active level (P2 has 3 seeded lessons; P1/P3-P6 correctly show an empty state, no seed data for those levels)
 - [x] Lesson cards expand/collapse to reveal vocabulary
-- [x] Status badges render correctly per lesson
+- [x] Status badges render correctly per lesson, with a real (not fabricated) percentage on
+  "Completed" — verified by inserting a real temp graded submission (8/10) for the seeded
+  "completed" lesson, confirming the card rendered "Completed (80%)" from that actual row, then
+  deleting it and confirming 0 rows remain
 
 ---
 

@@ -14,10 +14,12 @@ focus.
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Syllabus](docs/screenshots/syllabus.png) | ![Results](docs/screenshots/results.png) | ![History](docs/screenshots/history.png) |
 
 Results and History above show a real graded submission (score, per-character
-correction overlay, historical row) — captured against one temporary
-submission inserted directly into the live database for this screenshot,
-then deleted immediately after. The shipped database starts empty; see
-**Known limitations** below for why no demo data is seeded permanently.
+correction overlay, historical matrix with pinyin, and a "Practice writing"
+stroke-order animation per missed character) — captured against one
+temporary submission inserted directly into the live database for this
+screenshot, then deleted immediately after. The shipped database starts
+empty; see **Known limitations** below for why no demo data is seeded
+permanently.
 The Scan screen isn't pictured here — `getUserMedia`'s fake camera device
 doesn't work in this project's screenshot sandbox (a known limitation of
 that environment, not the app; see FSD §6 Phase 3), so it needs a real
@@ -28,7 +30,8 @@ target design if you want to see it without a phone in hand.
 
 Next.js 16 (App Router, Turbopack) · TypeScript (strict) · Tailwind CSS v4 +
 Shadcn UI · Supabase (Postgres + Storage) · Google Gemini (`@google/genai`) ·
-Serwist (PWA) · Zustand · `pdf-lib` (real worksheet PDF export) · Vitest
+Serwist (PWA) · Zustand · `pdf-lib` (real worksheet PDF export) ·
+`hanzi-writer` (stroke-order practice) · Vitest · Playwright
 
 **Docs, in the order you'd want them:**
 - [`docs/planning/PRD_TingXieHero.md`](docs/planning/PRD_TingXieHero.md) —
@@ -113,6 +116,15 @@ npm run build      # production build, also runs `serwist build`
   `docs/architecture/system-architecture.html` for how everything fits
   together, or `docs/architecture/grading-flow.html` for the scan-to-grade
   sequence specifically.
+- Every screen has exactly one `<h1>` and sits inside a `<main>` landmark
+  (`ScreenShell` provides both for the four nav-tab screens in one place),
+  so heading/landmark navigation works for screen-reader users on every
+  route, not just visually.
+- Data straight from Gemini's grading output (`character_results.character`)
+  is treated as untrusted past the render boundary — lookups keyed by it use
+  a `Map`, not a plain object, since a plain-object lookup keyed by an
+  attacker-influenceable string can resolve `Object.prototype` instead of
+  `undefined` for a key like `"__proto__"`.
 - Design tokens in `src/app/globals.css` were sampled directly from the
   client's mockup images rather than a generic template, converted to OKLCH.
 

@@ -76,6 +76,18 @@ back `needs_revision` or with missed characters. Not a re-grade of the existing 
 one.
 _Avoid_: retry.
 
+**Practice writing**:
+The view-only stroke-order animation shown per missed character on the Results screen. Distinct
+from **Stroke Practice** below — a much smaller, non-interactive thing scoped in deliberately, not
+inferred from the assignment PDF.
+_Avoid_: stroke practice (reserve that term for the excluded phase, to keep the two unambiguous).
+
+**Stroke Practice**:
+A phase of the product's broader learning loop (Story Video → Stroke Practice → Paper Test Scan →
+Game Reward) that this assignment does not build — an interactive tracing/quiz screen, not the
+Results screen's small "Practice writing" animation above.
+_Avoid_: conflating with "Practice writing" — one is out of scope, the other was built.
+
 ## Student & credits
 
 **Student**:

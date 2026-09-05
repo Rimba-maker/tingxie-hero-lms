@@ -9,21 +9,43 @@ focus.
 
 ## Screenshots
 
-| Dashboard | Syllabus | Results |
-|---|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Syllabus](docs/screenshots/syllabus.png) | ![Results](docs/screenshots/results.png) |
+| Dashboard | Syllabus | Results | History |
+|---|---|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Syllabus](docs/screenshots/syllabus.png) | ![Results](docs/screenshots/results.png) | ![History](docs/screenshots/history.png) |
+
+Results and History above show a real graded submission (score, per-character
+correction overlay, historical row) — captured against one temporary
+submission inserted directly into the live database for this screenshot,
+then deleted immediately after. The shipped database starts empty; see
+**Known limitations** below for why no demo data is seeded permanently.
+The Scan screen isn't pictured here — `getUserMedia`'s fake camera device
+doesn't work in this project's screenshot sandbox (a known limitation of
+that environment, not the app; see FSD §6 Phase 3), so it needs a real
+device to capture. `docs/reference/mockups/screen3-camera.png` shows the
+target design if you want to see it without a phone in hand.
 
 ## Stack
 
 Next.js 16 (App Router, Turbopack) · TypeScript (strict) · Tailwind CSS v4 +
 Shadcn UI · Supabase (Postgres + Storage) · Google Gemini (`@google/genai`) ·
-Serwist (PWA) · Zustand · Vitest
+Serwist (PWA) · Zustand · `pdf-lib` (real worksheet PDF export) · Vitest
 
-See [`docs/planning/FSD_TingXieHero.md`](docs/planning/FSD_TingXieHero.md) for
-the full technical spec and build order, and
-[`docs/planning/PRD_TingXieHero.md`](docs/planning/PRD_TingXieHero.md) for
-product requirements and the assumptions made where the brief was ambiguous
-(§5 of that doc).
+**Docs, in the order you'd want them:**
+- [`docs/planning/PRD_TingXieHero.md`](docs/planning/PRD_TingXieHero.md) —
+  product requirements and the assumptions made where the brief was
+  ambiguous (§5 of that doc)
+- [`docs/planning/FSD_TingXieHero.md`](docs/planning/FSD_TingXieHero.md) —
+  full technical spec, folder structure, DB schema, API contract, and a
+  phase-by-phase build log (including every fix made *beyond* the original
+  plan, and why)
+- [`CONTEXT.md`](CONTEXT.md) + [`docs/adr/`](docs/adr/) — domain glossary and
+  the handful of decisions worth not re-litigating (why submission IDs stay
+  random UUIDs, why the DB-adapter pattern stays uniform even for trivial
+  pass-throughs)
+- [`docs/architecture/`](docs/architecture/) — two interactive HTML
+  diagrams: system architecture (component topology) and the scan-to-grade
+  request sequence. Self-contained — open either `.html` file directly in a
+  browser, no server needed.
 
 ## Setup
 
@@ -73,13 +95,22 @@ npm run build      # production build, also runs `serwist build`
   `entities` / `shared`) — see FSD §2 for the full layer breakdown.
 - Backend entity functions (`src/entities/*/api/`) are written against narrow,
   dependency-injected interfaces so the highest-risk logic — Gemini response
-  parsing, score computation — is unit-tested without live credentials; the
-  Supabase/Gemini-backed implementations are thin, untested adapters wired at
-  the API route / page level.
-- Dashboard, Syllabus, and Results are React Server Components fetching data
-  directly (not through a separate REST layer) — simpler than a full GET API
-  for read-only screens, while `POST /api/upload` and `POST /api/grade`
-  (the flow the assignment evaluates) remain real API routes.
+  parsing, score computation, the full grade-submission pipeline — is
+  unit-tested without live credentials; the Supabase/Gemini-backed
+  implementations are thin, untested adapters wired at the API route / page
+  level. `entities/submission/api/gradeSubmission.ts` owns the whole
+  `POST /api/grade` sequence as one interface — the route itself is pure
+  HTTP translation.
+- Dashboard, Syllabus, Results, and History are React Server Components
+  fetching data directly (not through a separate REST layer) — simpler than
+  a full GET API for read-only screens, while `POST /api/upload`,
+  `POST /api/grade` (the flow the assignment evaluates), and
+  `POST /api/credits/topup` remain real API routes.
+- The four screens that need a header/bottom-nav share one `ScreenShell`
+  widget rather than each repeating that wrapper — see
+  `docs/architecture/system-architecture.html` for how everything fits
+  together, or `docs/architecture/grading-flow.html` for the scan-to-grade
+  sequence specifically.
 - Design tokens in `src/app/globals.css` were sampled directly from the
   client's mockup images rather than a generic template, converted to OKLCH.
 
@@ -87,11 +118,12 @@ npm run build      # production build, also runs `serwist build`
 
 Scoped out deliberately, not oversights:
 
-- **"Share Report," "Retest Missed," and "Print A4 Worksheet (PDF)" are
-  decorative.** They match the mockups pixel-for-pixel but have no handler —
-  the assignment's evaluation focus is the scan → upload → grade → feedback
-  flow, not report sharing or printing. ("Top Up" on the Dashboard, by
-  contrast, is real — it's not in this list.)
+- **"Share Report" is decorative.** It matches the mockup pixel-for-pixel but
+  has no handler — the assignment's evaluation focus is the scan → upload →
+  grade → feedback flow, not report sharing. ("Retest Missed" and
+  "Print A4 Worksheet (PDF)" are both real, not decorative — see FSD §6
+  Phase 12 for what each one actually does; "Top Up" on the Dashboard is
+  real too.)
 - **Mobile-only, by design.** The assignment brief only ever shows mobile
   mockups and never mentions desktop/tablet layouts (re-verified against the
   source PDF, not just the mockup images) — no responsive breakpoints were

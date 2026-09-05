@@ -263,13 +263,14 @@ Represents the per-character grading outcome of a single submission: which chara
 - **Security:** Gemini API key and Supabase service role key must live server-side only (Next.js API routes / server actions), never exposed to the client bundle.
 - **NDA-safety:** Since this is a take-home for a company with IP-sensitive policies, avoid referencing this project publicly by client name after submission unless explicitly permitted.
 - **Performance:** Not a primary evaluation criterion per the assignment, but image upload should show loading feedback so the flow doesn't feel broken during the Gemini round-trip (which can take a few seconds).
-- **Test coverage:** 28 unit tests (Vitest) covering every entity function's business logic — Gemini
-  response parsing, score computation, the pivot logic behind the historical matrix — against fakes,
-  no live credentials needed to run them. 5 Playwright E2E specs covering navigation, tab switching,
-  and both History states (empty and populated). The camera's live video stream is the one thing
-  that can't be exercised this way — headless Chromium's fake camera device doesn't produce a
-  usable stream in this environment — so that path is verified structurally (layout, error states)
-  rather than end-to-end.
+- **Test coverage:** 63 unit tests (Vitest, 22 files) covering every entity function's business
+  logic — Gemini response parsing, score computation, the pivot logic behind the historical matrix,
+  the grade-submission pipeline's orchestration order — against fakes, no live credentials needed to
+  run them. 5 Playwright E2E cases (one spec) covering navigation, tab switching, and both History
+  states (empty and populated). The camera's live video stream is the one thing that can't be
+  exercised this way — headless Chromium's fake camera device doesn't produce a usable stream in
+  this environment — so that path is verified structurally (layout, error states) rather than
+  end-to-end.
 
 ---
 

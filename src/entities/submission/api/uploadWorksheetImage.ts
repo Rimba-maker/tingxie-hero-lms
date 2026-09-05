@@ -18,8 +18,14 @@ const BUCKET = "worksheet-photos";
 export function supabaseWorksheetImageStorage(supabase: SupabaseClient): WorksheetImageStorage {
   return {
     async upload(path, file) {
+      // Fixed, not file.type: the only real capture path (canvas.toBlob in
+      // useCameraCapture) always produces image/jpeg, and the stored
+      // content-type is what the public bucket serves the object back as —
+      // trusting the client-declared MIME here would let a spoofed
+      // Content-Type (e.g. image/svg+xml) get served as-is from a public
+      // URL. validateWorksheetImage's image/* check doesn't rule that out.
       const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-        contentType: file.type || "image/jpeg",
+        contentType: "image/jpeg",
       });
       if (error) throw error;
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);

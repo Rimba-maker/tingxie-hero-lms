@@ -137,9 +137,12 @@ anywhere broken.
     submission yet shows plain "Completed", no invented number.
   - Vocabulary list on expand: character + pinyin pairs (e.g. 校园 xiào yuán, 礼堂 lǐ táng, 老师 lǎo shī)
     — real `lessons.vocabulary` jsonb, not hardcoded
-  - "Print A4 Worksheet (PDF)" link — decorative stub; not named anywhere in the assignment's
-    Technical Requirements text (mockup-only), same basis as leaving Mastery Stats hardcoded on
-    the Dashboard
+  - "Print A4 Worksheet (PDF)" link — real, not a stub: generates and downloads an actual Tian
+    Zige practice-sheet PDF for the lesson's vocabulary (`generateWorksheetPdf`, `pdf-lib`). Not
+    named anywhere in the assignment's Technical Requirements text (mockup-only, same basis as
+    leaving Mastery Stats hardcoded), but built anyway once a real, low-effort implementation was
+    found — see FSD §6 Phase "feature-ideas audit" for the reasoning and `docs/research/feature-ideas-audit.md`
+    for the full comparison against alternatives
 
 **Seed data required (hardcode or seed into `lessons` table):**
 | Week | Title | Status | Vocabulary |

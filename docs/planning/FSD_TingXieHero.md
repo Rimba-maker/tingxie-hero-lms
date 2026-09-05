@@ -20,6 +20,7 @@
 | State (client) | Zustand | `useUploadSubmission` store only — everything else is server-fetched or local `useState` |
 | Icons | lucide-react | |
 | Utilities | class-variance-authority, clsx, tailwind-merge | shadcn's standard variant/className stack |
+| PDF generation | `pdf-lib` + `@pdf-lib/fontkit` | Real Tian Zige practice-sheet PDF for "Print A4 Worksheet" (Phase 12) — dynamically imported, not in the main bundle |
 
 ---
 
@@ -551,6 +552,38 @@ the new constraints — found none), applied via the linked `supabase` CLI after
 confirmation, then verified with a real upload through `POST /api/upload` (confirms the new FK
 doesn't block a real insert) and all three data-fetching routes (`/`, `/syllabus`, `/history`)
 still rendering correctly against the new indexes. Test data cleaned up after.
+
+### Phase 12 (beyond the original plan) — creative feature audit
+Documented here retroactively — chronologically this happened between Phase 9 and Phase 10, but
+a spec-conformance review (`mattpocock-skills:code-review`) caught that it had never been written
+up, leaving PRD/FSD stale against real, shipped behavior. Full research and reasoning live in
+`docs/research/feature-ideas-audit.md` and `docs/research/ocr-alternatives.md`; summarized here:
+
+- **Shipped: "Retest Missed"** — was a decorative button. Now a real `Link` to
+  `/scan?lessonId=<id>`, since retesting a worksheet means physically handing the child a new copy
+  of the same page — there's no meaningful way to "retest only 2 of 3 words" on paper.
+- **Shipped: "Print A4 Worksheet (PDF)"** — was a decorative stub (and PRD §6 Screen 2 said so
+  until this phase entry corrected it). `generateWorksheetPdf` (`entities/lesson/api`) draws a real
+  Tian Zige practice sheet via `pdf-lib` + `@pdf-lib/fontkit`, added to the Tech Stack below. The
+  full Noto Sans SC font is 10MB, so it's subset (via `subset-font`/HarfBuzz) down to 26KB by
+  scanning every `.ts`/`.tsx` file plus `seed.sql` for non-ASCII characters actually used — a first
+  attempt that only scanned `seed.sql` silently dropped the 《 》 brackets the UI adds in code.
+  `pdf-lib`/`fontkit` (~1.1MB) are dynamically imported on click, preloaded on hover/focus, and
+  excluded from the service worker's precache (a lowered `maximumFileSizeToCacheInBytes` in
+  `serwist.config.js`) so the feature costs nothing for someone who never clicks it.
+- **Investigated, not built: `jscanify`** (document-edge-detection camera capture). Its real
+  browser cost turned out to be an ~8-10MB `OpenCV.js` dependency, not the modest add-on estimated
+  when first ranked — roughly 6x the app's entire precache, for a feature that only improves
+  recognition accuracy, which the assignment explicitly excludes from evaluation. The existing
+  corner-bracket alignment guide already solves the same underlying problem for free.
+- **Audited, not integrated: `pinyin-pro`**. Verified all 8 seeded vocabulary entries' pinyin are
+  already correct against the library's own derivation; no dependency added since nothing would
+  consume it (no content-authoring workflow exists yet to plug it into).
+- **Skipped as scope creep: a real `ts-fsrs`-backed Mastery Rate.** Good idea for a real product
+  roadmap, not for this assignment — the stat isn't named anywhere in the Technical Requirements.
+
+`pdf-lib` (`^1.17.1`) and `@pdf-lib/fontkit` (`^1.1.1`) are now real runtime dependencies — added
+to §1's Tech Stack table.
 
 ---
 

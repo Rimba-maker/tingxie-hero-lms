@@ -25,6 +25,7 @@ grading-flow sequence diagrams)
 | Utilities | class-variance-authority, clsx, tailwind-merge | shadcn's standard variant/className stack |
 | PDF generation | `pdf-lib` + `@pdf-lib/fontkit` | Real Tian Zige practice-sheet PDF for "Print A4 Worksheet" (Phase 12) — dynamically imported, not in the main bundle |
 | Stroke-order animation | `hanzi-writer` | Results screen's "Practice writing" section (Phase 16) — dynamically imported; per-character stroke data fetched from its default CDN at runtime, not bundled |
+| Testing | Vitest (unit) + Playwright (E2E) | See PRD §8 Non-Functional Requirements for current test counts |
 
 ---
 
@@ -115,7 +116,11 @@ src/
 │
 ├── entities/                               # domain models — pure data shape + fetch logic
 │   ├── lesson/
-│   │   ├── model/types.ts                  # Lesson, VocabEntry
+│   │   ├── model/
+│   │   │   ├── types.ts                    # Lesson, VocabEntry
+│   │   │   └── buildPinyinLookup.ts        # Phase 18 — VocabEntry[] -> Map<character, pinyin>;
+│   │   │                                    # a Map, not a plain object, since it's indexed by
+│   │   │                                    # Gemini-sourced, unvalidated character strings
 │   │   └── api/
 │   │       ├── getLessons.ts
 │   │       └── generateWorksheetPdf.ts     # Phase 12 — real Tian Zige practice-sheet PDF via

@@ -1829,6 +1829,18 @@ Playwright e2e suite (6/6) and Vitest (84/84, unchanged - this is presentational
 verified live per this project's established convention, not unit-tested) both clean. `npx tsc
 --noEmit`, lint, and a full production build all clean too.
 
+**Corrected same session, on direct feedback**: the first version drew an actual bezel and a notch
+- a literal illustrated phone. That read as "the app shrank into its own little phone," the opposite
+of the intent (a normal desktop presentation with tidy edges, not a mockup device). Removed the
+bezel and notch entirely; elevation now comes from a single soft shadow and rounded corners only
+(craft-floor: declare elevation once, not a border stacked under a shadow too). The bounded height
+with its own internal scroll stays - not decoration, but the actual mechanism that keeps
+`BottomNav`'s `position: fixed` correctly scoped to the card's width instead of stretching across
+the full browser viewport; removing it would either break that or require reworking `BottomNav`'s
+positioning strategy, a larger and riskier change than what was actually being asked for. Re-ran the
+full verification pass (axe-core across all three widths, e2e, Vitest, `impeccable detect`,
+production build) against the corrected version - all still clean.
+
 ---
 
 ## 7. Environment Variables

@@ -14,7 +14,10 @@ export function AppHeader({ viewer }: AppHeaderProps) {
   const { studentName, parentName, moeLevel } = viewer;
 
   return (
-    <div className="flex items-center justify-between">
+    // A real landmark, not a bare div - confirmed via a full axe-core scan
+    // (all 4 routes): its content was flagged "not contained by landmarks",
+    // the one gap BottomNav's sibling already avoided by using a real <nav>.
+    <header className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         <Avatar className="size-9">
           <AvatarFallback className="bg-primary text-primary-foreground">
@@ -33,6 +36,6 @@ export function AppHeader({ viewer }: AppHeaderProps) {
         </span>
         <Bell className="size-5 text-foreground" />
       </div>
-    </div>
+    </header>
   );
 }

@@ -1733,6 +1733,33 @@ both clean. `npx tsc --noEmit` and lint clean too.
 
 ---
 
+### Phase 52 (beyond the original plan) — a production-readiness gate, and one real finding from it
+
+Treated this as an explicit final quality gate rather than more edge-case hunting: fresh production
+build, then a full `axe-core` accessibility scan (the same real engine used since Phase 27, not
+reused stale results) across every route - `/`, `/history`, `/syllabus`, `/premium`, `/scan`'s
+static shell, and `/results/[id]` with a real temporary graded submission (missed character,
+`StrokeOrderCard` included) - plus a console/page-error sweep across all of them.
+
+Found one real, previously-uncaught violation, present on all four AppHeader-using routes:
+"Ensure all page content is contained by landmarks" (moderate impact, axe rule `region`), pointing
+at `AppHeader`'s own content. `ScreenShell` renders `AppHeader` as a sibling of `<main>`, not nested
+inside it - and `AppHeader`'s root element was a bare `<div>`, no semantic landmark at all.
+`BottomNav`, the equivalent sibling on the other side of `<main>`, already used a real `<nav>` and
+was never flagged - confirming this was specifically `AppHeader`'s gap, not a `ScreenShell`-wide
+one. Fixed by changing `AppHeader`'s root to a `<header>` element - correctly rendered as the
+page's "banner" landmark since it sits outside `<main>`, not nested within other sectioning
+content, and it's the only `<header>` in the codebase, so no landmark-uniqueness conflict.
+
+Re-ran the full scan after the fix: 0 violations across every route (previously 1 each on the four
+AppHeader routes), 0 console/page errors anywhere. Temporary Results-page submission deleted after,
+confirmed 0 remain. Full Playwright e2e suite (6/6) and Vitest (84/84, unchanged - a landmark
+element choice isn't unit-testable business logic) both clean. `npx tsc --noEmit` and lint clean
+too (on the actual app code; two scratch verification scripts under `.tmp-verify/` flagged a lint
+rule but were deleted before commit, never part of the codebase).
+
+---
+
 ## 7. Environment Variables
 
 ```

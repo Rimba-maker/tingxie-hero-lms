@@ -1382,6 +1382,36 @@ one Postgres happened to return first. Temp rows deleted after, confirmed 0 rema
 
 ---
 
+### Phase 41 (beyond the original plan) — no response ever carried a single security header
+
+Grepped for a `middleware.ts` or a `headers()` config and found neither - this app had never set
+one HTTP response header of its own, on any route, for its entire build. Nothing was preventing
+another site from framing it in an `<iframe>` (clickjacking) or a browser MIME-sniffing a response
+into something it isn't. Not caught by the earlier `security-review` pass (Phase 33), which reviews
+the diff between commits for introduced vulnerabilities - a header that was never set in the first
+place isn't a regression in any diff, so it never surfaced there.
+
+Added `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and
+`Referrer-Policy: strict-origin-when-cross-origin` via `next.config.ts`'s `headers()`, applied to
+every route (confirmed via Context7 against Next.js 16's current docs, per this repo's own
+AGENTS.md warning not to assume API shapes from training data). Deliberately did not add a full
+Content-Security-Policy: correctly scoping one around Next.js's own inline scripts, the service
+worker, and the Supabase/Gemini origins this app actually calls is a real project of its own, and
+getting it wrong this close to the deadline risks silently breaking the app rather than securing
+it - these three are the well-understood, near-zero-risk baseline every response should carry
+regardless, not the whole of what a production deploy would eventually want.
+
+Verified live, not just read from the config: grepped the whole `src/` tree first to confirm no
+`<iframe>`/`<embed>`/`<object>` exists anywhere the app could break by disallowing framing, then ran
+the real dev server and `curl -I`'d `/`, the service worker (`/sw.js`), and the manifest - all three
+carry all three headers. Re-ran the app in a real Playwright browser across the Dashboard, History,
+and Syllabus screens afterward: zero console/page errors, and the service worker still registers
+and activates normally (the headers don't interfere with SW registration, which checks
+`Service-Worker-Allowed`/MIME type, not these). `npx tsc --noEmit`, lint, and the full Vitest suite
+(82/82, unchanged - a config-level header isn't unit-testable business logic) all clean.
+
+---
+
 ## 7. Environment Variables
 
 ```

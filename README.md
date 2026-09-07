@@ -223,6 +223,22 @@ Scoped out deliberately, not oversights:
   mockups and never mentions desktop/tablet layouts (re-verified against the
   source PDF, not just the mockup images) — no responsive breakpoints were
   built.
+- **"Print A4 Worksheet (PDF)" only really supports the 3 seeded lessons'
+  vocabulary.** `NotoSansSC-Subset.ttf` is a hand-picked 26KB, 170-glyph
+  subset covering exactly the characters those 3 lessons use — not a general
+  Chinese font. Confirmed by generating a worksheet for made-up vocabulary
+  outside that set: the title, every reference character in the practice
+  boxes, and every pinyin tone mark came back blank. This isn't new
+  breakage — `generateWorksheetPdf.test.ts` already exercises one
+  unsupported character (`字`) and deliberately asserts the PDF still
+  generates instead of throwing, a considered trade-off recorded there, not
+  an oversight. What's newly measured here is the severity for an entire
+  *new* lesson rather than one rare glyph: every character in it would be
+  missing, not just an occasional one. Left as-is rather than reversing that
+  existing, tested decision unprompted — the real fix is a full Noto Sans SC
+  file (pdf-lib's `subset: true` keeps the *output* PDF small regardless of
+  the source font's size, so this is a one-time asset swap, not a code
+  change), which needs sourcing the font file itself, not just editing code.
 - **Dark mode tokens exist but nothing switches to them.** `globals.css`
   defines a full `.dark` palette (contrast-checked, same as light mode - see
   FSD §6), but the app never applies that class: no theme toggle, and no

@@ -1029,6 +1029,31 @@ useful evidence: Gemini's API accepted the request shape, `image/png` mimeType i
 had no capacity - not a sign this fix broke anything. Temp submission and its Storage object deleted
 after, confirmed 0 remain.
 
+### Phase 29 (beyond the original plan) — measured, not fixed: the print-worksheet font's real ceiling
+
+Investigated `NotoSansSC-Subset.ttf` after noticing its file size (26KB - implausibly small for a
+general Chinese font) didn't match its use as *the* font for a syllabus feature named "Print A4
+Worksheet." Parsed it directly with `@pdf-lib/fontkit` (already a dependency): 170 total glyphs. It
+covers every character the 3 seeded lessons' titles, vocabulary, and pinyin actually use (0 missing)
+and nothing meaningfully else - 27 of 29 completely ordinary, unrelated Chinese characters probed
+(你好世界学生, numbers, directions) have no glyph at all. Generated a real worksheet PDF for
+made-up vocabulary outside that set to see the actual failure, not just infer it: the lesson title
+rendered with every non-original character blank (`《第十　课 -　　　　》`), both practice-box
+reference characters were entirely blank, and both pinyin labels lost every tone mark
+(`nǐ hǎo` → `ni hao`).
+
+**Deliberately not fixed.** `generateWorksheetPdf.test.ts` already covers one unsupported character
+(`字`) and explicitly asserts the PDF still generates instead of throwing - a considered trade-off,
+recorded in that test's own comment, not an oversight this pass gets to unilaterally overrule.
+Making generation throw on any missing glyph, the fix that would have suggested itself, would
+reverse that documented decision and break the existing test; not this session's call to make
+unprompted. What this pass adds isn't a different decision but a truer measurement of the existing
+one's actual cost: the test's framing ("doesn't need every possible character pre-subsetted") reads
+as tolerating an occasional rare glyph gap, not a *new lesson's entire vocabulary* coming back
+essentially blank. Recorded in README's Known Limitations with the real fix path (swap in a full
+Noto Sans SC file - `subset: true` already keeps the generated PDF's own size small regardless of
+the source font's size, so this is an asset change, not a code one) for whoever seeds lesson 4.
+
 ---
 
 ## 7. Environment Variables

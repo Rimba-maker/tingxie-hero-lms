@@ -842,6 +842,31 @@ preflight already zeroes default heading margins, so `<p>`/`<span>` → `<h1>` c
   than no distinguishing heading at all. Added a visually-hidden `<h1 className="sr-only">Dashboard</h1>`
   instead — correct for screen readers, invisible in the mockup-matched layout.
 
+### Phase 21 (beyond the original plan) — deep runtime/concurrency pass, two real bugs found
+
+Deliberately different lens from every prior audit (dead-code, security, Standards+Spec, Vercel
+perf patterns): manually traced the upload → grade → credits → retry pipeline for edge cases and
+state-consistency bugs rather than style or bloat. Found two, both real and both concrete:
+
+- **A failed grading attempt permanently cost a credit.** `findStudentCredits` counted every
+  `submissions` row for the student regardless of `status` — so a submission stuck `pending`
+  (Gemini 503/timeout/blocked content — all three have actually happened during this build, see
+  §5's deprecation history) silently and permanently reduced "remaining credits," with no way for
+  the parent to get it back. Filtered the count to `status = 'graded'`: a credit is now only spent
+  on a scan that actually completed. `CONTEXT.md`'s Credits entry updated to say so explicitly.
+- **"Try again" didn't retry grading — it discarded the submission and demanded a fresh photo.**
+  The PRD's own stated reason for splitting upload/grade into two routes was "lets grading be
+  retried without re-uploading the photo" (§5), but `useUploadSubmission`'s error state never
+  carried the `submissionId` forward, and `ScanScreen`'s retry button just called `reset()`. Added
+  `retryGrade(submissionId)` to the store (re-runs only the grade step) and had the error state
+  keep `submissionId` when the upload itself succeeded; `ScanScreen`'s "Try again" now calls
+  `retryGrade` when there's a submission to retry, falling back to a full `reset()` only when the
+  upload step itself is what failed. TDD'd against a fake API that throws on a second
+  `uploadSubmission` call, proving the retry path genuinely never re-uploads.
+
+Both verified: `npx tsc --noEmit`, lint, and the full Vitest suite (67/67, up from 65 — two new
+cases for the retry behavior) all clean before committing either fix.
+
 ---
 
 ## 7. Environment Variables

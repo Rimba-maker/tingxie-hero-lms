@@ -35,7 +35,11 @@ export function ScanScreen({ lessonId }: ScanScreenProps) {
       {upload.status === "error" && (
         <div className="absolute inset-x-4 bottom-28 z-20 rounded-md bg-red-950/90 p-3 text-center text-sm text-white">
           {upload.message}{" "}
-          <button type="button" onClick={upload.reset} className="underline">
+          <button
+            type="button"
+            onClick={() => (upload.submissionId ? upload.retryGrade(upload.submissionId) : upload.reset())}
+            className="underline"
+          >
             Try again
           </button>
         </div>

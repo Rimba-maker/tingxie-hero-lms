@@ -49,35 +49,29 @@ export function SyllabusScreen({ viewer, moeLevel, lessons }: SyllabusScreenProp
 
   return (
     <ScreenShell viewer={viewer}>
-      {/* Confirmed live on a real device profile (iPhone SE, 320px - the
-          narrowest common iOS width): 6 fixed-width pills never fit, and
-          with nothing containing that overflow it widened the *entire
-          page*, not just this row - BottomNav included. overflow-x-auto
-          scopes the overflow to just this strip; mx-auto on TabsList still
-          centers it normally on every width wide enough to not need to
-          scroll at all. */}
+      {/* Reverted an earlier overflow-x-auto attempt on direct feedback: it
+          broke centering (mx-auto on an inline-flex child doesn't reliably
+          center once nested in a separate scrolling block) and looked
+          broken rather than intentionally scrollable (P6 sat half-cut at
+          the edge with no affordance it was swipeable). All 6 levels are
+          a fixed, known set (MOE Singapore's own P1-P6) - the real fix is
+          making all 6 actually fit, not making the overflow scroll
+          somewhere. Tightened gap-2→gap-1.5 and px-4→px-3; confirmed live
+          this fits at 320px (iPhone SE) with room to spare, no scroll
+          needed at any real width, so mx-auto centers normally everywhere
+          again. h-11 (44px tap target) unaffected - only width shrank. */}
       <Tabs value={level} onValueChange={(value) => setLevel(value as MoeLevel)}>
-        <div className="overflow-x-auto">
-          <TabsList className="mx-auto h-auto gap-2 bg-transparent p-0">
-            {MOE_LEVELS.map((l) => (
-              <TabsTrigger
-                key={l}
-                value={l}
-                // h-11 (44px) explicitly, not just more padding: the base
-                // TabsTrigger sets h-[calc(100%-1px)], an explicit height
-                // that (border-box) padding can't grow on its own -
-                // confirmed live, py-3 alone measured no change at all.
-                // Smallest deliberate deviation from the mockup's original
-                // sizing that reaches Apple/Google's 44px tap-target
-                // guideline; safe to grow since each tab already has gap-2
-                // clearance from its neighbors (no new overlap risk).
-                className="h-11 rounded-full border-none bg-card px-4 text-muted-foreground ring-1 ring-foreground/10 data-active:bg-primary data-active:text-primary-foreground data-active:shadow-none data-active:ring-0"
-              >
-                {l}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+        <TabsList className="mx-auto h-auto gap-1.5 bg-transparent p-0">
+          {MOE_LEVELS.map((l) => (
+            <TabsTrigger
+              key={l}
+              value={l}
+              className="h-11 rounded-full border-none bg-card px-3 text-muted-foreground ring-1 ring-foreground/10 data-active:bg-primary data-active:text-primary-foreground data-active:shadow-none data-active:ring-0"
+            >
+              {l}
+            </TabsTrigger>
+          ))}
+        </TabsList>
       </Tabs>
 
       <div className="flex items-center justify-between">

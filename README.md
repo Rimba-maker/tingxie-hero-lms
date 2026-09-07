@@ -26,6 +26,30 @@ that environment, not the app; see FSD §6 Phase 3), so it needs a real
 device to capture. `docs/reference/mockups/screen3-camera.png` shows the
 target design if you want to see it without a phone in hand.
 
+## For reviewers: open the architecture diagrams first
+
+Before reading source files, open these two in a browser (double-click, no
+server needed):
+
+- [`docs/architecture/system-architecture.html`](docs/architecture/system-architecture.html)
+  — the full component map: parent's phone → this PWA → the App Router
+  server → Supabase (Postgres + Storage) and Gemini. Includes the one
+  deliberate exception to "the browser never talks to a backing service
+  directly": the stroke-order practice section fetches its stroke data
+  straight from `hanzi-writer`'s CDN, client-side, bypassing the server —
+  drawn as a dashed line so it reads as the exception it is.
+- [`docs/architecture/grading-flow.html`](docs/architecture/grading-flow.html)
+  — the exact scan-to-grade request sequence, message by message: upload,
+  the server fetching its own uploaded photo back for Gemini, the Gemini
+  call, **the write to `character_results` before the response goes out**
+  (easy to miss reading the route handler top-to-bottom), then the
+  red-pen overlay returned to the client.
+
+Both are self-contained, interactive (pan/zoom, light/dark theme, a guided
+"Play story" walkthrough per view), and kept in sync with the actual code —
+not drawn once and left to rot. If anything in either diagram ever disagrees
+with `src/`, trust the code and tell me; the diagram is wrong, not the app.
+
 ## Highlights
 
 - **The evaluated flow works end-to-end, with real data at every step.**
@@ -87,7 +111,7 @@ Serwist (PWA) · Zustand · `pdf-lib` (real worksheet PDF export) ·
 - [`docs/architecture/`](docs/architecture/) — two interactive HTML
   diagrams: system architecture (component topology) and the scan-to-grade
   request sequence. Self-contained — open either `.html` file directly in a
-  browser, no server needed.
+  browser, no server needed. See **For reviewers** above if you haven't yet.
 
 ## Setup
 

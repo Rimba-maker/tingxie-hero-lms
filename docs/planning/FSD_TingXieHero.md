@@ -1174,6 +1174,35 @@ manual a11y work, just settling a question that pass raised but left open. `npx 
 lint, the full Vitest suite (77/77, unchanged - no new unit-testable logic), and Playwright (6/6)
 all clean.
 
+### Phase 33 (beyond the original plan) — security-review and Vercel best-practices re-audit
+
+Two more full passes, run again once this session's batch of pipeline fixes (Phases 21-32) had
+accumulated enough to be worth re-checking as a whole, the same rhythm as Phase 18.
+
+**`security-review`**, scoped to the diff since the last pass: clean. Specifically traced the file
+upload/grade pipeline's mimeType changes (Phase 28) end to end - `validateWorksheetImage`'s
+allowlist narrowed what content-types can ever reach Storage or Gemini, it didn't widen anything;
+`gradeSubmission`'s mimeType is read back from Storage's own response header for an object the
+server itself wrote, never attacker-controlled at read time. The error-boundary changes (Phase 26)
+and the four `error.tsx` files (Phase 26) all *reduce* exposure (stopped showing raw digest text to
+end users) rather than introduce any. No candidate reached the review's own confidence threshold -
+recorded as a clean pass, not silently skipped.
+
+**`vercel-react-best-practices`**, scoped to every file this session touched or added (12 files -
+the retry store, the credits/PDF/stroke-order fixes, the new error/not-found routing): one genuine
+finding, confirmed by reading `pdf-lib`'s own source rather than guessed. `generateWorksheetPdf`'s
+new glyph-coverage check (Phase 29) calls `fontkit.create(bytes)` fresh on every Print click, but
+`NotoSansSC-Subset.ttf` is a fixed, unchanging static asset - the exact case `js-cache-function-results`
+targets. Cached the parsed `Font` in a module-level variable, populated once and reused after.
+(A second, smaller duplicate exists where `pdf-lib`'s own `embedFont(bytes, {subset:true})` calls
+`fontkit.create` again internally - confirmed in `pdf-lib`'s `CustomFontEmbedder` source - but its
+public API only accepts raw bytes, not a pre-parsed `Font`, so removing that one means reaching into
+pdf-lib internals for a ~170-glyph parse that only runs on an explicit, rare click. Not worth the
+fragility; left alone.) Everything else in the batch checked out clean - the sequential awaits in
+`gradeSubmission.ts` and the Results page are genuine data dependencies, not fixable waterfalls; the
+new aria-live/retry/for-loop changes don't introduce re-render churn; `ResultsScreen`'s early return
+happens before any hooks. `npx tsc --noEmit`, lint, and the full Vitest suite (77/77) all clean.
+
 ---
 
 ## 7. Environment Variables

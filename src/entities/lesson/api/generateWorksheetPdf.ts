@@ -1,4 +1,4 @@
-import fontkit from "@pdf-lib/fontkit";
+import fontkit, { type Font } from "@pdf-lib/fontkit";
 import { PDFDocument, rgb } from "pdf-lib";
 
 import type { VocabEntry } from "@/entities/lesson/model/types";
@@ -27,12 +27,20 @@ export type WorksheetPdfParams = {
 // Phase 29) - generating for anything outside that set previously produced
 // a PDF with blank title characters, blank practice-box glyphs, and pinyin
 // stripped of every tone mark, with no indication anything went wrong.
+// NotoSansSC-Subset.ttf never changes at runtime (a static bundled asset),
+// so re-parsing it with fontkit on every Print click is pure waste - cache
+// the parsed Font across calls within the same page session.
+let cachedFont: Font | null = null;
+
 function findUnsupportedCharacters(fontBytes: ArrayBuffer | Uint8Array, texts: string[]): string[] {
-  // fontkit.create wants a plain Uint8Array — not Node's Buffer, which
-  // isn't available when this runs in the browser (PrintWorksheetButton is
-  // a client component).
-  const bytes = fontBytes instanceof Uint8Array ? fontBytes : new Uint8Array(fontBytes);
-  const font = fontkit.create(bytes);
+  if (!cachedFont) {
+    // fontkit.create wants a plain Uint8Array — not Node's Buffer, which
+    // isn't available when this runs in the browser (PrintWorksheetButton
+    // is a client component).
+    const bytes = fontBytes instanceof Uint8Array ? fontBytes : new Uint8Array(fontBytes);
+    cachedFont = fontkit.create(bytes);
+  }
+  const font = cachedFont;
   const missing = new Set<string>();
   for (const text of texts) {
     for (const char of text) {

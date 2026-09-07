@@ -49,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${notoSansSC.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col xl:bg-[radial-gradient(ellipse_at_top,_var(--color-accent)_0%,_var(--color-background)_55%)]">
         <SerwistProvider swUrl="/sw.js">{children}</SerwistProvider>
       </body>
     </html>

@@ -30,7 +30,10 @@ export function HistoryScreen({ viewer, submissions }: HistoryScreenProps) {
           </Link>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        // md:grid at tablet width, same reasoning as Syllabus's lesson
+        // list: a stretched single column wastes the extra width a real
+        // tablet actually has.
+        <div className="flex flex-col gap-3 md:grid md:grid-cols-2 md:gap-4">
           {submissions.map((submission) => {
             const percent =
               submission.score !== null

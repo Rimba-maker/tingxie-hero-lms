@@ -70,7 +70,11 @@ export function SyllabusScreen({ viewer, moeLevel, lessons }: SyllabusScreenProp
         </span>
       </div>
 
-      <div className="flex flex-col gap-3">
+      {/* md:grid, not just a wider flex-col: at tablet width a single
+          stretched column means scrolling past lessons that would fit
+          side by side. items-start (not the grid default stretch) keeps
+          one lesson's expand/collapse from stretching its neighbor. */}
+      <div className="flex flex-col gap-3 md:grid md:grid-cols-2 md:items-start md:gap-4">
         {lessonsForLevel.map((lesson) => (
           <LessonCard
             key={lesson.id}
@@ -80,7 +84,7 @@ export function SyllabusScreen({ viewer, moeLevel, lessons }: SyllabusScreenProp
           />
         ))}
         {lessonsForLevel.length === 0 && (
-          <p className="py-8 text-center text-sm text-muted-foreground">
+          <p className="py-8 text-center text-sm text-muted-foreground md:col-span-2">
             No lessons for {level} yet.
           </p>
         )}

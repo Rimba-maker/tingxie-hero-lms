@@ -8,6 +8,7 @@ describe("getSubmissionDetail", () => {
     const fakeDb: SubmissionDetailDb = {
       findSubmissionDetail: async () => ({
         id: "sub-123",
+        status: "graded",
         score: 8,
         totalPossible: 10,
         submittedAt: "2026-10-14T15:12:00Z",
@@ -29,6 +30,7 @@ describe("getSubmissionDetail", () => {
 
     expect(result).toEqual({
       id: "sub-123",
+      status: "graded",
       score: 8,
       totalPossible: 10,
       submittedAt: "2026-10-14T15:12:00Z",

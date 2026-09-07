@@ -18,6 +18,33 @@ type ResultsScreenProps = {
 };
 
 export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps) {
+  // A submission can sit at 'pending' (grading in progress, or never
+  // retried after a failure) or 'failed' for a while now that grading can
+  // be retried on the same id (Phase 21) - defaulting score to 0 and
+  // showing a fabricated "Completed" 0% result for either state would tell
+  // a parent their child failed a test that was never actually graded.
+  if (submission.status !== "graded") {
+    return (
+      <ScreenShell>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center">
+          <p className="text-lg font-semibold">
+            {submission.status === "pending"
+              ? "Still grading this worksheet…"
+              : "Grading failed for this worksheet"}
+          </p>
+          <p className="max-w-xs text-sm text-muted-foreground">
+            {submission.status === "pending"
+              ? "Check back in a moment, or refresh this page."
+              : "Please scan the worksheet again."}
+          </p>
+          <Link href="/" className={buttonVariants({ className: "mt-1" })}>
+            Back to Dashboard
+          </Link>
+        </div>
+      </ScreenShell>
+    );
+  }
+
   const missedCharacters = submission.characterResults.filter((r) => !r.isCorrect);
   const needsRevision = missedCharacters.length > 0;
   const pinyinByCharacter = buildPinyinLookup(submission.vocabulary);

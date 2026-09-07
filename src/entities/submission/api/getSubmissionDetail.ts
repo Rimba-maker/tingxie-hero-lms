@@ -7,6 +7,11 @@ import { SubmissionNotFoundError } from "./gradingErrors";
 
 export type SubmissionDetail = {
   id: string;
+  // A submission that's still 'pending' (grading in progress or never
+  // retried after a failure) has no real score yet - ResultsScreen uses
+  // this to show that honestly instead of defaulting score to 0 and
+  // rendering a fabricated "Completed" 0% result.
+  status: "pending" | "graded" | "failed";
   score: number | null;
   totalPossible: number;
   submittedAt: string;
@@ -34,6 +39,7 @@ export async function getSubmissionDetail(
 
 type SubmissionRow = {
   id: string;
+  status: "pending" | "graded" | "failed";
   total_score: number | null;
   total_possible: number;
   submitted_at: string;
@@ -50,7 +56,7 @@ export function supabaseSubmissionDetailDb(supabase: SupabaseClient): Submission
       const { data, error } = await supabase
         .from("submissions")
         .select(
-          "id, total_score, total_possible, submitted_at, image_url, lesson_id, lessons(week_number, vocabulary), character_results(character, is_correct, bounding_box)",
+          "id, status, total_score, total_possible, submitted_at, image_url, lesson_id, lessons(week_number, vocabulary), character_results(character, is_correct, bounding_box)",
         )
         .eq("id", submissionId)
         .maybeSingle();
@@ -60,6 +66,7 @@ export function supabaseSubmissionDetailDb(supabase: SupabaseClient): Submission
       const row = data as unknown as SubmissionRow;
       return {
         id: row.id,
+        status: row.status,
         score: row.total_score,
         totalPossible: row.total_possible,
         submittedAt: row.submitted_at,

@@ -1121,6 +1121,30 @@ whichever one happened to get checked first; `--destructive` already cleared bot
 cream) and was left alone. Re-scanned all 6 routes in both themes after every change: 0 violations,
 confirmed, not assumed.
 
+### Phase 31 (beyond the original plan) — a pending submission rendered as a fabricated "Completed 0%"
+
+Swept every route for browser console errors/warnings and failed network requests (clean
+everywhere - no hidden runtime issues), then probed a specific state no normal navigation reaches
+but a saved or shared link now genuinely can, since Phase 21's `retryGrade` fix means a submission
+can legitimately sit at `pending` or `failed` for a while rather than always resolving to `graded`
+quickly. Inserted a temporary `pending` submission directly and loaded its `/results/[id]`: the
+page showed a green **"Completed"** badge and **"Score: 0/10" / 0%** - `ResultsScreen` defaulted
+`submission.score ?? 0` and had no notion of the submission's `status` at all, so "not graded yet"
+rendered identically to "graded a perfect zero." A parent landing here - checking a share link,
+or refreshing mid-retry - would read this as their child having failed every character on a test
+that was never actually marked.
+
+Added `status` to `SubmissionDetail` (threaded through `getSubmissionDetail`'s query and mapping,
+the same shape as `submissions.status` in the schema) and had `ResultsScreen` branch on it before
+doing anything else: `pending` shows "Still grading this worksheet… Check back in a moment, or
+refresh this page."; `failed` shows "Grading failed for this worksheet… Please scan the worksheet
+again." Both link back to the Dashboard instead of rendering the normal score/badge/matrix layout
+built for a real graded result. Verified live for both states against temporary submissions (one
+`pending`, then flipped to `failed` in place); deleted after, confirmed 0 remain. This project
+doesn't unit-test UI components directly, so the type-level change is TDD'd via
+`getSubmissionDetail.test.ts` (77/77, `status` now part of the fixture and assertion) and the
+screen behavior itself is verified live rather than faked through a component test harness.
+
 ---
 
 ## 7. Environment Variables

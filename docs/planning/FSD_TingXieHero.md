@@ -1636,6 +1636,48 @@ gap before this was committed. Full Playwright e2e suite (6/6, unchanged) and Vi
 
 ---
 
+### Phase 49 (beyond the original plan) — "Try again" could succeed and still leave the user staring at the camera
+
+Two bugs, the second found while verifying the fix for the first.
+
+**Retry never navigated on success.** The "Try again" button's `onClick` fired `upload.retryGrade(...)`
+directly and did nothing with its result - unlike `handleCapture`, which awaits `upload.upload(...)`
+and navigates to Results on success. A retry that actually *succeeded* left `upload.status` at
+`"success"` with nothing rendering it: not the error banner (status is no longer `"error"`), not the
+busy overlay (`isBusy` is now false), not a redirect - just the bare camera view, indistinguishable
+from a hung request. This has been true since Phase 21 introduced `retryGrade` and was never
+actually wired to react to its own outcome. Fixed by extracting a `handleRetry` function mirroring
+`handleCapture`'s existing success-navigation logic exactly.
+
+**Verifying that fix caught a second, more serious bug in Phase 48's own `mountedRef` guard.** Live
+testing showed the success-navigation check failing intermittently for *both* `handleCapture` and
+`handleRetry` - even in scenarios that should have worked. Instrumented directly rather than
+guessing: a temporary `console.log` at the decision point showed `mountedRef.current` reading
+`false` despite the component being genuinely, currently mounted, camera view still on screen, user
+having done nothing to leave. Root cause confirmed against Next.js's own docs: this app's App
+Router has React Strict Mode on by default (13.5.1+), un-overridden in `next.config.ts`, and Strict
+Mode deliberately double-invokes effects in development (mount → cleanup → mount) specifically to
+surface bugs like this one. Phase 48's effect set `mountedRef.current = false` on cleanup but never
+reset it back to `true` on the following real mount - so the simulated cleanup's `false` was
+permanent, silently breaking every success-navigation for the rest of that component's life,
+**in development only** (Strict Mode's double-invoke doesn't happen in production builds - meaning
+this would have looked completely broken to anyone testing locally via `npm run dev`, while working
+fine in a deployed build, the most confusing possible failure mode).
+
+Fixed with the standard pattern: the effect now also sets `mountedRef.current = true` on its own
+body, not just via `useRef`'s initial value, so both the simulated and the real mount correctly
+leave it `true`; only a genuine unmount's cleanup sets it `false`. Also chased down and ruled out a
+red herring during this investigation: an early re-test after the fix still appeared to fail, but
+turned out to be a test-authoring artifact - a fake `submissionId` that wasn't valid UUID format
+made the real Results page's Supabase query throw a slow Postgres type error (`invalid input syntax
+for type uuid`, ~5s) that just barely exceeded the test's own timeout, unrelated to the actual fix.
+Re-ran with a realistic UUID-shaped fake ID and both `handleCapture`'s and `handleRetry`'s success
+paths navigated correctly. Full Playwright e2e suite (6/6) and Vitest (84/84, unchanged - this is
+dev-mode-specific lifecycle behavior, verified live per this project's established convention) both
+clean. `npx tsc --noEmit` and lint clean too.
+
+---
+
 ## 7. Environment Variables
 
 ```

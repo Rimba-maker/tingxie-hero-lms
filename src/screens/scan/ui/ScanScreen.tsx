@@ -41,6 +41,18 @@ export function ScanScreen({ lessonId }: ScanScreenProps) {
   // they're now doing, entirely unprompted.
   const mountedRef = useRef(true);
   useEffect(() => {
+    // Confirmed live, not assumed: this app's App Router has React Strict
+    // Mode on by default (Next.js 13.5.1+) with no override in
+    // next.config.ts, so `npm run dev` deliberately double-invokes this
+    // effect (mount -> cleanup -> mount) to help surface exactly this class
+    // of bug. Without resetting to true here, the simulated cleanup's
+    // `= false` was never undone by the real mount that follows it -
+    // instrumented directly and caught mountedRef.current reading false at
+    // the success-navigation check despite the component being genuinely,
+    // currently mounted, silently breaking every retry/capture success in
+    // dev (production builds don't double-invoke, so this specific failure
+    // mode wouldn't reproduce there - but dev is how this gets tested).
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
@@ -48,6 +60,19 @@ export function ScanScreen({ lessonId }: ScanScreenProps) {
 
   async function handleCapture(file: Blob) {
     const result = await upload.upload({ file, lessonId });
+    if (mountedRef.current && result.status === "success") {
+      router.push(`/results/${result.submissionId}`);
+    }
+  }
+
+  // Confirmed live: this previously fired retryGrade() and did nothing with
+  // its result - a retry that actually succeeded left the user staring at
+  // the bare camera view with zero feedback, the error banner gone but
+  // nothing navigating anywhere either. Same success-navigation handling
+  // handleCapture already has, for the same reason (retryGrade can also now
+  // be abandoned mid-flight since Close is reachable during "grading" too).
+  async function handleRetry(submissionId: string) {
+    const result = await upload.retryGrade(submissionId);
     if (mountedRef.current && result.status === "success") {
       router.push(`/results/${result.submissionId}`);
     }
@@ -77,7 +102,7 @@ export function ScanScreen({ lessonId }: ScanScreenProps) {
           {upload.message}{" "}
           <button
             type="button"
-            onClick={() => (upload.submissionId ? upload.retryGrade(upload.submissionId) : upload.reset())}
+            onClick={() => (upload.submissionId ? handleRetry(upload.submissionId) : upload.reset())}
             className="underline"
           >
             Try again

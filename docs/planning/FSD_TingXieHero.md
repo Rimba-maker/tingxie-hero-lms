@@ -2152,6 +2152,31 @@ from `vercel link`'s own auto-edit - removed it as dead weight, the earlier expl
 
 ---
 
+### Phase 61 (beyond the original plan) — a distinct message for hitting Gemini's free-tier daily quota
+
+A real scan attempt on the live deployment failed with the generic "Gemini is temporarily
+unavailable, please try again" message. Confirmed live against the real API with the exact request
+shape production sends (same model, schema, safety settings): `429 RESOURCE_EXHAUSTED` -
+`generate_content_free_tier_requests`, limit 20/day for `gemini-3.8-flash` (what `gemini-flash-latest`
+resolves to). Not a code bug - the shared pool for this API key had already been spent today across
+this session's own testing plus the live scan attempts, and the generic message actively misleads
+here: "try again" implies retrying soon might help, but the cap is a daily one shared across every
+caller of this key, not a per-user or per-minute limit a short wait fixes.
+
+`@google/genai`'s own `ApiError` (confirmed via its source: `throwErrorIfNotOK` sets `.status` to
+the real HTTP status code, and `.message` to the raw JSON error body) carries Google's distinct
+`"RESOURCE_EXHAUSTED"` status string for exactly this case, distinguishable from the already-handled
+503 `"UNAVAILABLE"` "high demand" case. `gradeWithGemini.ts`'s catch block now checks the message for
+that string and throws a specific "hit today's request limit... try again tomorrow" message instead
+of the generic one - matching this project's existing pattern of message-content checks (the 503
+test already mocks a plain `Error` with a JSON-shaped message rather than constructing the real SDK
+class) rather than a new `instanceof ApiError` dependency. New test added following the existing
+503 test's exact shape. `npx tsc --noEmit`, lint, and the full Vitest suite (85/85, up from 84, one
+new test) all clean; e2e (6/6) unaffected (this path isn't exercised by fake-camera E2E runs, which
+never call the real Gemini API).
+
+---
+
 ## 7. Environment Variables
 
 ```

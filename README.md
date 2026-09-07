@@ -78,7 +78,7 @@ with `src/`, trust the code and tell me; the diagram is wrong, not the app.
   photo, positioned from Gemini's own bounding boxes. That overlay is the
   assignment's own named "key evaluation point" — not a stand-in table, an
   actual mark on the actual photo.
-- **Tested where it matters, not everywhere for its own sake.** 84 Vitest
+- **Tested where it matters, not everywhere for its own sake.** 85 Vitest
   unit tests (26 files) cover every entity function's business logic —
   Gemini response parsing, score computation, the grade-submission
   pipeline's full orchestration order — against fakes, no live credentials

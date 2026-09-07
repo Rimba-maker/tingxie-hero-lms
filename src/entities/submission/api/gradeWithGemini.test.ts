@@ -214,6 +214,27 @@ describe("gradeWithGemini", () => {
     ).rejects.toBeInstanceOf(GeminiGradingError);
   });
 
+  test("gives a distinct, actionable message for a free-tier daily quota hit (429 RESOURCE_EXHAUSTED)", async () => {
+    // Confirmed live against the real API on the free tier: distinct from
+    // the transient 503 above, this is Google's named status for "the daily
+    // request cap for this API key is used up" - retrying immediately can't
+    // help, so the generic "please try again" message would be actively
+    // misleading here.
+    const quotaExhaustedGemini: GeminiClient = {
+      models: {
+        generateContent: async () => {
+          throw new Error(
+            '{"error":{"code":429,"message":"You exceeded your current quota...","status":"RESOURCE_EXHAUSTED"}}',
+          );
+        },
+      },
+    };
+
+    await expect(
+      gradeWithGemini(quotaExhaustedGemini, { imageBase64: "x", mimeType: "image/jpeg", vocabList: ["校园"] }),
+    ).rejects.toThrow("Please try again tomorrow");
+  });
+
   test("throws instead of returning a 0/0 result when Gemini graded nothing", async () => {
     // A degenerate-but-valid-JSON response (e.g. a blank/unreadable photo).
     // Saving this as-is would set totalPossible to 0, and every percentage

@@ -120,6 +120,18 @@ export async function gradeWithGemini(
     // live (see the -latest alias note above). That's still "Gemini failed",
     // not a generic 500 - map it the same way as a blocked/malformed response.
     if (err instanceof GeminiGradingError) throw err;
+    // Confirmed live against the real API: a free-tier daily quota hit
+    // (429 RESOURCE_EXHAUSTED) throws an @google/genai ApiError whose own
+    // .message is the raw JSON error body - "RESOURCE_EXHAUSTED" is Google's
+    // distinct status name for this specific case, not present in a 503
+    // "high demand" failure's message. Worth telling apart from a generic
+    // "try again" - retrying immediately can't help; the daily cap is shared
+    // across every grading call this API key makes, not per-user.
+    if (err instanceof Error && err.message.includes("RESOURCE_EXHAUSTED")) {
+      throw new GeminiGradingError(
+        "Grading has hit today's request limit for this API key. Please try again tomorrow.",
+      );
+    }
     throw new GeminiGradingError("Gemini is temporarily unavailable, please try again");
   }
 

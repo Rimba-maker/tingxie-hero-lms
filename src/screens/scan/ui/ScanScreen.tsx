@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { useUploadSubmission } from "@/features/upload-submission/model/useUploadSubmission";
@@ -12,6 +13,24 @@ type ScanScreenProps = {
 export function ScanScreen({ lessonId }: ScanScreenProps) {
   const router = useRouter();
   const upload = useUploadSubmission();
+
+  // useUploadSubmission is a module-level Zustand store, not per-component
+  // state - it survives client-side navigation away from this screen.
+  // Confirmed live: fail a scan, close, then open a completely fresh scan
+  // for a different lesson via normal in-app navigation (no reload) - the
+  // previous session's error banner ("Upload failed, please try again")
+  // was still showing before the user had done anything in the new
+  // session. Resetting on mount means every scan session always starts
+  // from a clean slate, regardless of how the last one ended.
+  useEffect(() => {
+    upload.reset();
+    // `upload` (the whole store snapshot) changes identity on every status
+    // transition - depending on it would re-run this on every "uploading"
+    // -> "grading" -> "success" step, resetting the in-progress upload it's
+    // supposed to only run once, on mount. `reset` itself is a stable
+    // Zustand action reference, so this deps array is correct as scoped.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [upload.reset]);
 
   async function handleCapture(file: Blob) {
     const result = await upload.upload({ file, lessonId });

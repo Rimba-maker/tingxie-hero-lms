@@ -1556,6 +1556,41 @@ wrong-answer submission once quota resets. `npx tsc --noEmit`, lint, and the ful
 
 ---
 
+### Phase 47 (beyond the original plan) — a failed scan's error outlived the session that caused it
+
+`useUploadSubmission` is a module-level Zustand store, not per-component React state - it survives
+client-side navigation away from `ScanScreen` entirely, since the JS module (and therefore the
+store) never tears down between route changes in a client-rendered PWA. Nothing ever reset it.
+
+Confirmed live with a real end-to-end reproduction (Playwright, Chromium's fake camera device -
+which turned out to work reliably in this local environment despite this project's own e2e comment
+about CI unreliability, likely a Linux-CI-specific issue rather than a Playwright limitation
+generally): forced `/api/upload` to fail, captured a photo to trigger a real failed scan (the
+"Upload failed, please try again" banner appeared correctly), closed the camera via normal
+client-side navigation back to the Dashboard, then opened a *completely fresh* scan session for a
+different lesson the same way a real user would - by clicking "Scan & Grade Worksheet" again. The
+old session's error banner was already showing, "Try again" button included, before the user had
+done anything in the new session at all.
+
+Fixed by resetting the store on `ScanScreen` mount (`useEffect(() => upload.reset(), [upload.reset])`)
+- every scan session now starts from a clean slate regardless of how the last one ended. Depending
+on `upload.reset` specifically (not the whole `upload` object eslint's exhaustive-deps rule wanted)
+is deliberate: the whole store snapshot changes identity on every status transition, so depending on
+it would re-run this effect - and reset the store - on every step of an in-progress upload
+("uploading" -> "grading" -> "success"), not just once on mount. `reset` itself is a stable Zustand
+action reference, so scoping the deps array to just that is correct, matching this codebase's
+existing precedent (`StrokeOrderCard.tsx`) for a justified `eslint-disable-next-line
+react-hooks/exhaustive-deps`.
+
+Re-verified live: re-ran the exact same failed-scan-then-fresh-scan reproduction after the fix - the
+new session now starts clean, with the old error nowhere to be seen. Also re-verified the normal
+successful path still works end to end (capture -> upload -> grade -> navigate to Results) with the
+reset in place, confirming it doesn't interfere with an active upload. Full Playwright e2e suite
+(6/6) and the full Vitest suite (83/83, unchanged - this is UI lifecycle behavior, verified live per
+this project's own convention, not unit-tested) both clean. `npx tsc --noEmit` and lint clean too.
+
+---
+
 ## 7. Environment Variables
 
 ```

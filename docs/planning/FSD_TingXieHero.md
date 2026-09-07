@@ -1145,6 +1145,35 @@ doesn't unit-test UI components directly, so the type-level change is TDD'd via
 `getSubmissionDetail.test.ts` (77/77, `status` now part of the fixture and assertion) and the
 screen behavior itself is verified live rather than faked through a component test harness.
 
+### Phase 32 (beyond the original plan) — Replay could break its own sibling glyph, confirmed not assumed
+
+Re-reading `StrokeOrderCard` during this pass's deep dive surfaced a suspicion earlier in the same
+pass had already noted and deliberately left unverified rather than report as a finding on a guess:
+`onLoadCharDataError` puts a failed glyph's writer into `writersRef.current` right alongside working
+ones, and Replay's handler called `animateCharacter()` on all of them through a bare `.forEach()` -
+if the failed writer's method throws, nothing stops that from killing the loop before it reaches
+the *next* writer.
+
+Settled it for real this pass: built a minimal standalone HTML page loading the actual
+`hanzi-writer` package, created one writer with a deliberately-invalid character (data load fails)
+and one with a real one (`人`), waited for both to settle, then called `animateCharacter()` on both
+in a plain loop exactly like the component did. Confirmed via a real browser, not inferred from
+docs: it throws - `"Failed to load character data. Call setCharacter and try again."` - a real,
+synchronous exception, not a silent no-op. On a multi-character missed word (`温暖`, `校园`, any
+two-glyph vocabulary entry), one character's CDN fetch failing (offline, a CDN hiccup - the
+documented one real failure mode of this feature) would stop Replay from animating the *other*,
+successfully-loaded character in the same card too.
+
+Fixed by wrapping each `animateCharacter()` call in its own `try`/`catch` instead of a bare
+`forEach`, so one writer's failure can't stop the loop before it reaches the next. Re-verified with
+the same standalone harness with the fix applied: the failed writer's error is caught, and the good
+writer's `animateCharacter()` still runs and its `onComplete` fires normally afterward. This
+component isn't unit-tested (no jsdom/React Testing Library in this project - UI is verified live),
+so the standalone browser harness is the same category of evidence as the rest of Phase 17-24's
+manual a11y work, just settling a question that pass raised but left open. `npx tsc --noEmit`,
+lint, the full Vitest suite (77/77, unchanged - no new unit-testable logic), and Playwright (6/6)
+all clean.
+
 ---
 
 ## 7. Environment Variables

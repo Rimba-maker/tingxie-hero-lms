@@ -119,7 +119,20 @@ export function StrokeOrderCard({ character, pinyin }: StrokeOrderCardProps) {
           variant="ghost"
           size="sm"
           aria-label={`Replay stroke order for ${character}`}
-          onClick={() => writersRef.current.forEach((w) => w.animateCharacter())}
+          onClick={() => {
+            for (const writer of writersRef.current) {
+              try {
+                writer.animateCharacter();
+              } catch {
+                // Confirmed live: animateCharacter() throws synchronously
+                // when its character data never loaded (offline/CDN
+                // hiccup) - a plain forEach would let that stop iteration
+                // partway through a multi-character word, breaking replay
+                // for glyphs that loaded fine right alongside the one that
+                // didn't.
+              }
+            }
+          }}
         >
           <RotateCcw data-icon="inline-start" />
           Replay

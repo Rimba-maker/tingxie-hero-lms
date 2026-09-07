@@ -130,7 +130,7 @@ src/
 │   │   └── api/
 │   │       ├── createSubmission.ts         # POST /api/upload step 2: insert pending submission
 │   │       ├── uploadWorksheetImage.ts     # POST /api/upload step 1: Storage upload
-│   │       ├── validateWorksheetImage.ts   # trust-boundary check (image MIME + <=10MB) before
+│   │       ├── validateWorksheetImage.ts   # trust-boundary check (image MIME + <=4MB) before
 │   │       │                               # either of the above run
 │   │       ├── gradeSubmission.ts          # Phase 10 — owns the whole POST /api/grade sequence as
 │   │       │                               # one interface (DB adapters + Gemini client + image
@@ -246,8 +246,9 @@ directly, **not** a separate GET API layer — see the note at the end of this s
 **Request:** `multipart/form-data` — `{ image: Blob, lessonId: string }`
 
 **Server logic:**
-1. Validate the image (`validateWorksheetImage`: must be `image/*`, ≤10MB) — 400 with a clear
-   message if not, before anything touches Storage.
+1. Validate the image (`validateWorksheetImage`: must be `image/jpeg`/`png`/`webp`, ≤4MB — kept
+   under Vercel's own 4.5MB request body cap, see Phase 38) — 400 with a clear message if not,
+   before anything touches Storage.
 2. Upload to Supabase Storage bucket `worksheet-photos` (`uploadWorksheetImage`).
 3. Insert a `submissions` row with `image_url`, `lesson_id`, `status: 'pending'`
    (`createSubmission`).
@@ -1293,6 +1294,29 @@ screenshotted the Dashboard to confirm the message doesn't cramp against `CardAc
 top-right grid cell in the credits card header. This project doesn't unit-test UI components
 directly (established convention - see Phase 31), so this fix is verified live only. `npx tsc
 --noEmit`, lint, and the full Vitest suite (81/81, unchanged) all clean.
+
+---
+
+### Phase 38 (beyond the original plan) — the app's own upload limit was above the deploy platform's hard cap
+
+`validateWorksheetImage` allowed images up to 10MB, a number picked with no reference to where this
+would actually run. Confirmed against Vercel's current docs (not assumed from training data,
+fetched live): "The maximum payload size for the request body or the response body of a Vercel
+Function is 4.5 MB" - a hard, non-configurable platform limit, enforced with an opaque `413
+FUNCTION_PAYLOAD_TOO_LARGE` before the function's own code (and therefore this validation) ever
+runs. A worksheet photo between 4.5MB and 10MB - entirely plausible from `useCameraCapture`'s
+preferred `ImageCapture.takePhoto()` path, which deliberately captures at the camera's full photo
+resolution rather than the video preview's - would pass this app's own check today but get
+silently rejected by the platform itself the moment this deploys, with a generic error instead of
+the friendly "Image must be smaller than 10MB" message this code promises.
+
+Lowered `MAX_SIZE_BYTES` to 4MB, leaving headroom under the 4.5MB platform cap for the
+multipart/form-data boundary overhead and the `lessonId` field alongside the image. Updated the
+user-facing message and every other reference to the old 10MB figure (FSD, PRD, the existing error-
+message test) for consistency. Deploy itself is still on hold pending review, so this couldn't be
+confirmed against the real platform limit end-to-end - but the limit itself is Vercel's documented,
+enforced behavior regardless of when the deploy happens, not a guess. `npx tsc --noEmit`, lint, and
+the full Vitest suite (81/81, unchanged - existing tests updated, not added) all clean.
 
 ---
 

@@ -24,13 +24,15 @@ describe("validateWorksheetImage", () => {
     );
   });
 
-  test("rejects a file over the 10MB limit", () => {
-    expect(validateWorksheetImage({ type: "image/jpeg", size: 11_000_000 })).toBe(
-      "Image must be smaller than 10MB",
+  test("rejects a file over the 4MB limit", () => {
+    // The limit sits under Vercel's own 4.5MB request body cap - see
+    // validateWorksheetImage.ts's comment - not an arbitrary round number.
+    expect(validateWorksheetImage({ type: "image/jpeg", size: 5_000_000 })).toBe(
+      "Image must be smaller than 4MB",
     );
   });
 
-  test("accepts a file exactly at the 10MB limit", () => {
-    expect(validateWorksheetImage({ type: "image/png", size: 10_000_000 })).toBeNull();
+  test("accepts a file exactly at the 4MB limit", () => {
+    expect(validateWorksheetImage({ type: "image/png", size: 4_000_000 })).toBeNull();
   });
 });

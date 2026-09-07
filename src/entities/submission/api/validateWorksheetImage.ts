@@ -1,4 +1,10 @@
-const MAX_SIZE_BYTES = 10_000_000;
+// Vercel Functions hard-cap the total request body at 4.5MB (platform limit,
+// not configurable) and return an opaque 413 before this code ever runs -
+// confirmed against Vercel's current docs. 4MB leaves headroom for the
+// multipart/form-data boundary overhead and the lessonId field so a photo
+// that passes this check doesn't still get rejected by the platform itself
+// once deployed.
+const MAX_SIZE_BYTES = 4_000_000;
 
 // The only formats a real capture path can produce (canvas.toBlob's fixed
 // "image/jpeg", or whatever raster format ImageCapture.takePhoto() picks on
@@ -17,7 +23,7 @@ export function validateWorksheetImage(file: { type: string; size: number }): st
     return "File must be a JPEG, PNG, or WebP image";
   }
   if (file.size > MAX_SIZE_BYTES) {
-    return "Image must be smaller than 10MB";
+    return "Image must be smaller than 4MB";
   }
   return null;
 }

@@ -13,13 +13,13 @@ describe("realApi error surfacing", () => {
       vi.fn().mockResolvedValue({
         ok: false,
         status: 400,
-        json: async () => ({ error: "Image must be smaller than 10MB" }),
+        json: async () => ({ error: "Image must be smaller than 4MB" }),
       }),
     );
 
     await expect(
       realApi.uploadSubmission({ file: new Blob(["x"]), lessonId: "lesson-1" }),
-    ).rejects.toThrow("Image must be smaller than 10MB");
+    ).rejects.toThrow("Image must be smaller than 4MB");
   });
 
   test("gradeSubmission falls back to the status when the body has no error field", async () => {

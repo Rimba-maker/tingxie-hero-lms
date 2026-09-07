@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { QrCode, X, Zap } from "lucide-react";
 
-import { useCameraCapture } from "@/features/capture-worksheet/model/useCameraCapture";
+import { normalizeOrientation, useCameraCapture } from "@/features/capture-worksheet/model/useCameraCapture";
 import { ShutterButton } from "@/features/capture-worksheet/ui/ShutterButton";
 import { cn } from "@/shared/lib/utils";
 
@@ -16,6 +16,7 @@ type CameraViewfinderProps = {
 export function CameraViewfinder({ onClose, onCapture, capturing }: CameraViewfinderProps) {
   const { videoRef, state, error, torchSupported, torchOn, start, toggleTorch, capture } =
     useCameraCapture();
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     start();
@@ -24,6 +25,21 @@ export function CameraViewfinder({ onClose, onCapture, capturing }: CameraViewfi
   async function handleShutterClick() {
     const blob = await capture();
     if (blob) onCapture(blob);
+  }
+
+  // A gallery pick needs the exact same EXIF-orientation fix a live capture
+  // gets (see useCameraCapture.ts's own comment on normalizeOrientation) -
+  // a photo already sitting in the gallery is just as likely to carry a
+  // real phone camera's orientation tag as one taken through this screen.
+  // Not gated on camera `state`: this is the actual fallback for when the
+  // camera errors out (permission denied, no hardware), not just a
+  // nice-to-have alongside a working stream.
+  async function handleGallerySelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // lets the same file be re-selected later
+    if (!file) return;
+    const normalized = await normalizeOrientation(file);
+    if (normalized) onCapture(normalized);
   }
 
   return (
@@ -112,6 +128,22 @@ export function CameraViewfinder({ onClose, onCapture, capturing }: CameraViewfi
       <div className="relative z-10 flex flex-col items-center gap-2 pb-10">
         <ShutterButton onClick={handleShutterClick} disabled={state !== "streaming" || capturing} />
         <span className="text-sm">Capture &amp; Grade</span>
+        <button
+          type="button"
+          onClick={() => galleryInputRef.current?.click()}
+          disabled={capturing}
+          className="mt-1 py-3.5 text-xs text-white/70 underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-40"
+        >
+          Choose from Gallery
+        </button>
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleGallerySelect}
+          className="hidden"
+          aria-label="Choose a worksheet photo from your device"
+        />
       </div>
     </div>
   );

@@ -6,10 +6,12 @@
 // once deployed.
 const MAX_SIZE_BYTES = 4_000_000;
 
-// The only formats a real capture path can produce (canvas.toBlob's fixed
-// "image/jpeg", or whatever raster format ImageCapture.takePhoto() picks on
-// the device - not guaranteed to be JPEG, confirmed via MDN, hence more than
-// one entry here). Deliberately not a blanket startsWith("image/") check:
+// The only formats a real capture path can produce: canvas.toBlob's own
+// "image/webp" (both the live-capture and gallery-picker paths re-encode
+// through it), or whatever raster format ImageCapture.takePhoto() picks on
+// the device before that re-encode - not guaranteed to be JPEG, confirmed
+// via MDN, hence more than one entry here. Deliberately not a blanket
+// startsWith("image/") check:
 // this Content-Type is stored and served back verbatim from a public
 // Storage URL (9a94c9e), and image/svg+xml starts with "image/" too while
 // being able to carry an embedded <script>.

@@ -126,7 +126,13 @@ export function useCameraCapture() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
+      // WebP, not JPEG: Gemini's vision input documents WEBP as a supported
+      // MIME type directly (confirmed via Context7 against the current
+      // Gemini API docs, not assumed) - typically 25-35% smaller than JPEG
+      // at comparable visual quality, so this shrinks every upload without
+      // touching validateWorksheetImage.ts's allowlist, which already
+      // permitted image/webp.
+      canvas.toBlob((blob) => resolve(blob), "image/webp", 0.85);
     });
   }, []);
 
@@ -156,7 +162,13 @@ export function useCameraCapture() {
 // re-drawing it plain bakes that rotation into the pixels. canvas.toBlob
 // never writes EXIF, so the result carries no orientation tag for anything
 // downstream to interpret differently.
-async function normalizeOrientation(blob: Blob): Promise<Blob | null> {
+//
+// Exported for reuse by CameraViewfinder's gallery-picker path: a photo
+// selected from the gallery is just as likely to carry a real phone
+// camera's EXIF orientation tag as one captured live here, and needs the
+// exact same fix for the same reason — Gemini's box_2d coordinates and the
+// stored pixel buffer must agree on which way is "up".
+export async function normalizeOrientation(blob: Blob): Promise<Blob | null> {
   const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
   const canvas = document.createElement("canvas");
   canvas.width = bitmap.width;
@@ -164,5 +176,6 @@ async function normalizeOrientation(blob: Blob): Promise<Blob | null> {
   const ctx = canvas.getContext("2d");
   if (!ctx) return blob;
   ctx.drawImage(bitmap, 0, 0);
-  return new Promise((resolve) => canvas.toBlob((normalized) => resolve(normalized ?? blob), "image/jpeg", 0.9));
+  // WebP here too — see the capture path's own comment above for why.
+  return new Promise((resolve) => canvas.toBlob((normalized) => resolve(normalized ?? blob), "image/webp", 0.85));
 }

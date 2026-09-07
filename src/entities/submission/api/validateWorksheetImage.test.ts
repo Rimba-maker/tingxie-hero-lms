@@ -7,6 +7,14 @@ describe("validateWorksheetImage", () => {
     expect(validateWorksheetImage({ type: "image/jpeg", size: 2_000_000 })).toBeNull();
   });
 
+  test("accepts a normal-sized WebP", () => {
+    // The actual format both capture paths (live camera + gallery picker)
+    // produce now - canvas.toBlob re-encodes through "image/webp" for its
+    // smaller size, falling back to PNG only on a browser that can't
+    // encode WebP (MDN: toBlob's own documented fallback behavior).
+    expect(validateWorksheetImage({ type: "image/webp", size: 1_500_000 })).toBeNull();
+  });
+
   test("rejects a non-image file", () => {
     expect(validateWorksheetImage({ type: "application/pdf", size: 1000 })).toBe(
       "File must be a JPEG, PNG, or WebP image",

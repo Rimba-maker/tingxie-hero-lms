@@ -9,9 +9,13 @@ focus.
 
 ## Screenshots
 
-| Dashboard | Syllabus | Results | History | Scan |
-|---|---|---|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Syllabus](docs/screenshots/syllabus.png) | ![Results](docs/screenshots/results.png) | ![History](docs/screenshots/history.png) | ![Scan](docs/screenshots/scan.png) |
+| Dashboard | Syllabus | Scan |
+|---|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Syllabus](docs/screenshots/syllabus.png) | ![Scan](docs/screenshots/scan.png) |
+
+| Results | History | Print Worksheet |
+|---|---|---|
+| ![Results](docs/screenshots/results.png) | ![History](docs/screenshots/history.png) | ![Print Worksheet](docs/screenshots/print-worksheet.png) |
 
 Results and History above show three real graded submissions for the same
 lesson across three different dates (score, per-character correction
@@ -28,7 +32,9 @@ Scan shows the real camera screen's UI shell — header, alignment brackets,
 QR target box, shutter button — with the graceful "Not supported" fallback
 this sandbox's fake camera device always hits (see **Known limitations**);
 `docs/reference/mockups/screen3-camera.png` shows the target design with a
-live feed for comparison.
+live feed for comparison. Print Worksheet is the actual generated Tian Zige
+practice-sheet PDF (`generateWorksheetPdf`, real output, not a mockup),
+rendered here in a PDF viewer.
 
 ## For reviewers: open the architecture diagrams first
 

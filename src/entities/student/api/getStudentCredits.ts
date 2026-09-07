@@ -22,7 +22,14 @@ export function supabaseStudentCreditsDb(supabase: SupabaseClient): StudentCredi
     async findStudentCredits(studentId) {
       const [studentResult, countResult] = await Promise.all([
         supabase.from("students").select("credits_total, credits_expire_at").eq("id", studentId).maybeSingle(),
-        supabase.from("submissions").select("id", { count: "exact", head: true }).eq("student_id", studentId),
+        // Only a completed grading attempt actually consumes a credit - a
+        // submission stuck 'pending' (Gemini failed/timed out) or 'failed'
+        // shouldn't permanently cost the parent a scan they never received.
+        supabase
+          .from("submissions")
+          .select("id", { count: "exact", head: true })
+          .eq("student_id", studentId)
+          .eq("status", "graded"),
       ]);
       if (studentResult.error) throw studentResult.error;
       if (countResult.error) throw countResult.error;

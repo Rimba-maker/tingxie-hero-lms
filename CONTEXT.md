@@ -101,7 +101,9 @@ _Avoid_: guardian, user.
 
 **Credits**:
 A student's prepaid allowance of worksheet scans. Remaining credits are the total minus how many
-submissions the student has actually made — not a separately tracked counter.
+submissions have actually been graded — not a separately tracked counter, and not every submission
+row: one stuck `pending` (Gemini failed/timed out) or `failed` doesn't cost the parent a scan they
+never received.
 _Avoid_: balance, tokens, quota.
 
 **Mastery rate**:

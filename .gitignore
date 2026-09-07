@@ -1,8 +1,8 @@
 # --- Client/assignment-sensitive source material (do not share publicly) ---
 # JD PDF contains compensation figures + client identity; the assignment PDF
 # and its extracted mockups are the client's IP. Neither should be
-# redistributed even in a private repo meant for the reviewer only — see
-# docs/planning/PRD_TingXieHero.md NDA note.
+# redistributed — this repo is public, so this matters even more than it
+# would in a private one. See docs/planning/PRD_TingXieHero.md NDA note.
 docs/reference/
 
 # --- dependencies ---
@@ -49,6 +49,9 @@ yarn-error.log*
 
 # --- vercel ---
 .vercel
+
+# --- editor/agent-tooling local state (not project-relevant) ---
+.claude/
 
 # --- supabase CLI ---
 supabase/.temp/

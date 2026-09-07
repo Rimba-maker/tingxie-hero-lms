@@ -1554,6 +1554,16 @@ wording could not be re-confirmed live tonight. Whoever reviews this should spot
 wrong-answer submission once quota resets. `npx tsc --noEmit`, lint, and the full Vitest suite
 (83/83, up from 82) all clean.
 
+**Update, same night**: re-confirmed live after all. The user checked Google AI Studio's own
+rate-limit dashboard directly (something I have no API access to check myself) and found the daily
+quota exhaustion was specific to `gemini-3.8-flash` (what `gemini-flash-latest` resolves to, and
+what the app actually calls) - a *different* model, `gemini-3.6-flash`, had 17 of its own 20 daily
+requests still free, on a completely separate quota bucket. Re-ran the exact same wrong-answer
+repro against that model instead (same fixed prompt and schema, not app code) - Gemini now
+correctly returned `{"character": "妈妈", "isCorrect": false, ...}`, the expected vocabulary word,
+not a transcription of the wrong "爸爸" actually handwritten. The fix's compliance is now genuinely
+confirmed live, not just reasoned from `box_2d`'s precedent.
+
 ---
 
 ### Phase 47 (beyond the original plan) — a failed scan's error outlived the session that caused it

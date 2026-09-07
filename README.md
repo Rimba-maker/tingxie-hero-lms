@@ -7,6 +7,16 @@ focus.
 
 **Live URL:** https://tingxie-hero-lms.vercel.app
 
+> **Viewing note:** this is a mobile-first PWA — every screen's visual design
+> matches the assignment's own mobile mockups exactly, for phone or tablet
+> (the actual target: a parent's phone, or a student's iPad). Opening the
+> Live URL on a desktop browser at full window width still works — it's a
+> real, working adaptive layout, not broken (see **Known limitations**) —
+> but that's not the intended look. For the real experience, open DevTools
+> (`F12`, or `Cmd+Option+I` on Mac) → toggle device toolbar
+> (`Ctrl+Shift+M` / `Cmd+Shift+M`) → pick any phone or tablet preset →
+> *then* load the link.
+
 ## Screenshots
 
 | Dashboard | Syllabus | Results |

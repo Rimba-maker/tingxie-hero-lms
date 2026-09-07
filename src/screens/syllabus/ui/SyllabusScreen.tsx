@@ -49,18 +49,35 @@ export function SyllabusScreen({ viewer, moeLevel, lessons }: SyllabusScreenProp
 
   return (
     <ScreenShell viewer={viewer}>
+      {/* Confirmed live on a real device profile (iPhone SE, 320px - the
+          narrowest common iOS width): 6 fixed-width pills never fit, and
+          with nothing containing that overflow it widened the *entire
+          page*, not just this row - BottomNav included. overflow-x-auto
+          scopes the overflow to just this strip; mx-auto on TabsList still
+          centers it normally on every width wide enough to not need to
+          scroll at all. */}
       <Tabs value={level} onValueChange={(value) => setLevel(value as MoeLevel)}>
-        <TabsList className="mx-auto h-auto gap-2 bg-transparent p-0">
-          {MOE_LEVELS.map((l) => (
-            <TabsTrigger
-              key={l}
-              value={l}
-              className="rounded-full border-none bg-card px-4 py-1.5 text-muted-foreground ring-1 ring-foreground/10 data-active:bg-primary data-active:text-primary-foreground data-active:shadow-none data-active:ring-0"
-            >
-              {l}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="mx-auto h-auto gap-2 bg-transparent p-0">
+            {MOE_LEVELS.map((l) => (
+              <TabsTrigger
+                key={l}
+                value={l}
+                // h-11 (44px) explicitly, not just more padding: the base
+                // TabsTrigger sets h-[calc(100%-1px)], an explicit height
+                // that (border-box) padding can't grow on its own -
+                // confirmed live, py-3 alone measured no change at all.
+                // Smallest deliberate deviation from the mockup's original
+                // sizing that reaches Apple/Google's 44px tap-target
+                // guideline; safe to grow since each tab already has gap-2
+                // clearance from its neighbors (no new overlap risk).
+                className="h-11 rounded-full border-none bg-card px-4 text-muted-foreground ring-1 ring-foreground/10 data-active:bg-primary data-active:text-primary-foreground data-active:shadow-none data-active:ring-0"
+              >
+                {l}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
       </Tabs>
 
       <div className="flex items-center justify-between">

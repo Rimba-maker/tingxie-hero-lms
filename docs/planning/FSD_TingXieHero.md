@@ -1841,6 +1841,35 @@ positioning strategy, a larger and riskier change than what was actually being a
 full verification pass (axe-core across all three widths, e2e, Vitest, `impeccable detect`,
 production build) against the corrected version - all still clean.
 
+**Corrected again, same session, on more direct feedback**: even without a bezel or notch, wrapping
+the *content screens* (Dashboard/Syllabus/History/Results) in any narrow card at desktop width was
+itself the problem, not just its visual styling - Syllabus's own 2-column lesson grid (this same
+phase, above) was still active at `xl:` and got crammed into a ~390px-wide card, exactly the
+"cramped" complaint. The fix wasn't a softer frame; it was recognizing these four screens don't need
+a `PhoneFrame` at any width at all. `ScreenShell` no longer wraps children in `PhoneFrame` -
+`max-w-3xl` (tablet) now grows further to `max-w-5xl` at `xl:`, with a soft shadow, rounded corners,
+and generous padding applied directly to that real, full-width container instead: a genuine desktop
+layout with tidy edges, not a shrunk mockup of one. `PhoneFrame` itself is untouched and still used
+for `Scan` alone, which has no internal grid to cramp and no real desktop-native layout to build in
+the first place.
+
+The earlier claim that the bounded-height/internal-scroll mechanism "would either break [BottomNav]
+or require reworking its positioning strategy" turned out to be overstated: `min-h-dvh` (a *lower
+bound*) plus the same `[transform:translateZ(0)]` containment trick works on an ordinarily-flowing,
+unbounded-height container just as well, with no fixed height or internal scrollbar needed - the
+page scrolls normally, exactly like before any of this phase's work. The one honest trade-off this
+carries: if a content screen's real content ever grows taller than one viewport at desktop width
+(unlikely at this app's actual data volume - 3 lessons, a handful of submissions - but not
+impossible), `BottomNav` would sit at the bottom of all that content rather than staying visibly
+"stuck" while scrolling, since `position: fixed` against a transformed ancestor behaves like
+`position: absolute` relative to that ancestor's own box, not the true viewport. Mobile is
+unaffected either way - it never applies the transform, so `BottomNav` there stays scoped to the
+real browser viewport regardless of content length, exactly as it always has.
+
+Re-verified the full pass again after this correction: axe-core across mobile/tablet/desktop on
+every route (0 violations), 0 console errors, `impeccable detect` (0 findings), e2e (6/6), Vitest
+(84/84), real mobile screenshotted and confirmed still pixel-identical.
+
 ---
 
 ## 7. Environment Variables

@@ -128,10 +128,11 @@ notes and `docs/research/feature-ideas-audit.md` item 6 for how the library was 
   widths. The brief's own mockups stop at mobile (re-verified directly against the source PDF, not
   just the mockup images — no responsive requirement appears anywhere in it), so no desktop- or
   tablet-*native* design exists to build from. Extended anyway (FSD §6 Phase 53) once asked
-  directly whether tablet users (a real Singapore-classroom scenario) were being overlooked: tablet
-  width (≥768px) gets a genuine adaptive reflow on the content screens, and desktop/Scan get a
-  phone-frame mockup rather than either a stretched mobile column or an invented, unreviewed
-  desktop design
+  directly whether tablet users (a real Singapore-classroom scenario) were being overlooked: the
+  content screens (Dashboard/Syllabus/History/Results) get a genuine adaptive reflow from tablet
+  width (≥768px) through desktop, growing further rather than ever shrinking into a mockup; Scan
+  alone gets a phone-frame mockup at any non-mobile width, since there's no camera-on-a-monitor use
+  case to design a native layout for
 - [x] Credits card and calendar strip pull real data, not hardcoded mockup values — verified
   end-to-end against the live `students`/`lessons` tables: the real current week renders (correctly
   rolling across a month boundary), today is genuinely highlighted, the test-schedule banner shows

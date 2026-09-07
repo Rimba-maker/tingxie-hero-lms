@@ -232,19 +232,22 @@ Scoped out deliberately, not oversights:
   never supplied one — not a reason the app should look broken or stretched
   on anything wider. Two different answers for two different real
   audiences, not one blanket "unsupported" for everything non-mobile:
-  - **Tablet (≥768px) gets a real, working layout**, not a shrunk mockup —
-    Dashboard/Syllabus/History/Results reflow their content (wider cards,
-    2-column lesson/history lists) because a student or parent checking
-    progress on an iPad is a plausible, real Singapore-classroom scenario,
-    not a hypothetical one.
-  - **Desktop (≥1280px) and Scan at any non-mobile width get a phone-frame
-    mockup** (`PhoneFrame`, FSD §6 Phase 53) instead of an invented desktop
-    layout. Scan specifically has no camera-on-a-monitor use case at any
-    width, so it gets the frame treatment starting at tablet width already.
-    A genuinely native desktop redesign was always possible in principle —
-    it just means designing new screens the assignment never asked for or
-    reviewed, which is a different, larger piece of work than "make what
-    exists not look broken."
+  - **Dashboard/Syllabus/History/Results get a real, working layout at any
+    width**, tablet through desktop, not a shrunk mockup — wider cards,
+    2-column lesson/history lists, growing further at genuinely wide
+    desktop, because a student or parent checking progress on an iPad (or
+    a laptop) is a plausible, real Singapore-classroom scenario, not a
+    hypothetical one. Tidy edges (soft shadow, rounded corners) at desktop
+    width, not a resize into anything phone-shaped.
+  - **Scan alone gets a phone-frame mockup** (`PhoneFrame`, FSD §6 Phase 53)
+    starting at tablet width, since there's no camera-on-a-monitor (or
+    camera-on-a-large-tablet-mockup) use case at any non-mobile width to
+    build a native layout for in the first place — unlike the content
+    screens, more width buys Scan nothing a real adaptation could use.
+    A genuinely native desktop camera layout was always possible in
+    principle — it just means designing a screen the assignment never
+    asked for or reviewed, which is a different, larger piece of work than
+    "make what exists not look broken."
 - **"Print A4 Worksheet (PDF)" only really supports the 3 seeded lessons'
   vocabulary.** `NotoSansSC-Subset.ttf` is a hand-picked 26KB, 170-glyph
   subset covering exactly the characters those 3 lessons use — not a general
@@ -328,16 +331,23 @@ verified pass at a time, never silently. Full reasoning for each lives in
   anywhere on success; and the one remaining `axe-core` accessibility
   violation across every screen (a missing landmark). Full findings,
   live-verification evidence, and reasoning for each: FSD §6 Phases 21-52.
-- **Real tablet layouts, not just a mobile-only shrug (Phase 53).** Revisited
-  "mobile-only" after being asked directly whether iPad-using students were
-  being overlooked — split the answer by actual use case instead of one
-  blanket non-mobile fallback: Dashboard/Syllabus/History/Results get a real
-  adaptive tablet layout (2-column reflow) since checking progress on an
-  iPad is a plausible real scenario; Scan and genuinely wide desktop get a
-  phone-frame mockup instead, since there's no camera-on-a-monitor use case
-  to design a native layout for. Two real bugs found building the frame
-  itself (a border eating into the content width, an unscoped `min-h-dvh`
-  overriding the frame's fixed height) — both caught by inspecting the
+- **Real tablet-through-desktop layouts, not just a mobile-only shrug
+  (Phase 53).** Revisited "mobile-only" after being asked directly whether
+  iPad-using students were being overlooked — split the answer by actual
+  use case instead of one blanket non-mobile fallback: Dashboard/Syllabus/
+  History/Results get a real adaptive layout (2-column reflow, growing
+  further at desktop width) at any non-mobile width, since checking
+  progress on an iPad or a laptop is a plausible real scenario; Scan alone
+  gets a phone-frame mockup, since there's no camera-on-a-monitor use case
+  to design a native layout for at any width. Iterated twice on direct
+  feedback before landing here — a first pass drew an actual bezel and
+  notch (read as "the app shrank into its own phone"), a second still
+  wrapped every screen in a narrow card at desktop (crammed Syllabus's own
+  2-column grid into far too little width) — both corrected the same
+  session, each re-verified with the full cross-breakpoint check again
+  afterward. Two real implementation bugs also found and fixed along the
+  way (a border eating into the frame's content width, an unscoped
+  `min-h-dvh` overriding a fixed height), both caught by inspecting the
   actual rendered bounding box, not assumed from the CSS.
 
 See `docs/planning/FSD_TingXieHero.md` §6 for the complete, dated log —

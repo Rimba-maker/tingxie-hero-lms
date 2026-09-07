@@ -867,6 +867,20 @@ state-consistency bugs rather than style or bloat. Found two, both real and both
 Both verified: `npx tsc --noEmit`, lint, and the full Vitest suite (67/67, up from 65 — two new
 cases for the retry behavior) all clean before committing either fix.
 
+### Phase 22 (beyond the original plan) — a degenerate all-empty grading result
+
+Continued the same deep pass into `gradeWithGemini.ts` and its downstream consumers. Both
+`ScoreHeader` and `getStatusLabel` compute `score / totalPossible * 100` with no guard — and
+`totalPossible` is `results.length` (§5), not a fixed constant. If Gemini ever returns a
+valid-but-empty `[]` (a blank or unreadable worksheet photo is a real, if rare, way to get one, not
+a contrived input), that saves a `0/0` graded submission: `0/0` is `NaN` in JS, so the Syllabus
+status badge and the Results score circle would silently render "Completed (NaN%)" and "NaN%"
+instead of failing loudly. Fixed at the source rather than patching both display sites separately:
+`gradeWithGemini` now throws `GeminiGradingError` when Gemini grades nothing (or returns a
+non-array), the same typed failure already used for blocked/malformed responses, so it surfaces as
+a normal "grading failed, please try again" instead of a broken-looking success. TDD'd (68/68
+passing, up from 67); `npx tsc --noEmit` and lint both clean.
+
 ---
 
 ## 7. Environment Variables

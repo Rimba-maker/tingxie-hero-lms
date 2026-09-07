@@ -125,6 +125,15 @@ export async function gradeWithGemini(
     throw new GeminiGradingError("Gemini returned invalid JSON");
   }
 
+  if (!Array.isArray(raw) || raw.length === 0) {
+    // A degenerate-but-parseable response (e.g. a blank/unreadable photo).
+    // Saving this as a graded 0/0 submission would make every downstream
+    // score/totalPossible percentage (ScoreHeader, the Syllabus status
+    // label) divide by zero and silently render "NaN%" - treat it as the
+    // grading failure it actually is instead.
+    throw new GeminiGradingError("Gemini didn't grade any characters, please try again");
+  }
+
   const results: CharacterResult[] = raw.map(({ character, isCorrect, box_2d }) => ({
     character,
     isCorrect,

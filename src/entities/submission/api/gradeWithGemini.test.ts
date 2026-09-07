@@ -155,6 +155,23 @@ describe("gradeWithGemini", () => {
     ).rejects.toBeInstanceOf(GeminiGradingError);
   });
 
+  test("throws instead of returning a 0/0 result when Gemini graded nothing", async () => {
+    // A degenerate-but-valid-JSON response (e.g. a blank/unreadable photo).
+    // Saving this as-is would set totalPossible to 0, and every percentage
+    // computed from score/totalPossible downstream (ScoreHeader, the
+    // Syllabus status label) divides by it - 0/0 is NaN in JS, so this would
+    // otherwise silently render "NaN%" instead of a real error.
+    const emptyResultsGemini: GeminiClient = {
+      models: {
+        generateContent: async () => ({ text: "[]" }),
+      },
+    };
+
+    await expect(
+      gradeWithGemini(emptyResultsGemini, { imageBase64: "x", vocabList: ["校园"] }),
+    ).rejects.toThrow("Gemini didn't grade any characters, please try again");
+  });
+
   test("every Gemini-side failure throws the typed GeminiGradingError, not a plain Error", async () => {
     const blockedGemini: GeminiClient = {
       models: {

@@ -1412,6 +1412,32 @@ and activates normally (the headers don't interfere with SW registration, which 
 
 ---
 
+### Phase 42 (beyond the original plan) — a rapid double-tap on the shutter could start two concurrent captures
+
+`ShutterButton` only disables once `ScanScreen`'s `upload.status` flips to `"uploading"` -  which
+happens after `CameraViewfinder.handleShutterClick` awaits `capture()` in full and then calls
+`onCapture(blob)`. Phase 39's orientation-normalization fix made `capture()` slower on the enhanced
+path (an extra decode+redraw step), widening an already-real window: a second tap landing before
+that whole chain resolves was still reachable (button state hadn't changed yet) and would start a
+second, fully concurrent `capture()` call against the same live camera stream and Zustand upload
+store - two uploads racing, with whichever resolved last silently overwriting the other's state.
+
+Fixed at the source rather than in the UI: `capture()` now guards itself with a ref-based
+re-entrancy check (set synchronously before any `await`, reset in `finally`) - a second call made
+while the first is still in flight returns `null` immediately instead of starting real work. This
+fixes it once for every current and future caller, not just `ShutterButton`'s particular disable
+timing. Verified in isolation, not against a live camera: this project's own e2e suite already
+documents (`e2e/navigation.spec.ts`) that headless Chromium's fake camera device isn't reliable in
+CI, so - matching that established precedent - extracted the exact guard pattern (ref flag checked
+at entry, set before the `await`, reset in `finally`) into a standalone script and called it twice
+with zero delay between them, worse than any real double-tap: the second call returned `null`
+immediately with the underlying work never starting a second time, and a third call made only after
+the first fully resolved succeeded normally, confirming the guard resets correctly. `npx tsc
+--noEmit`, lint, and the full Vitest suite (82/82, unchanged - this hook has no test file, per the
+same live-verification convention noted in Phase 39) all clean.
+
+---
+
 ## 7. Environment Variables
 
 ```

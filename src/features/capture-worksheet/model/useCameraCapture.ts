@@ -76,7 +76,7 @@ export function useCameraCapture() {
     }
   }, [torchOn]);
 
-  const capture = useCallback(async (): Promise<Blob | null> => {
+  const captureOnce = useCallback(async (): Promise<Blob | null> => {
     const video = videoRef.current;
     if (!video || video.videoWidth === 0) return null;
 
@@ -118,6 +118,24 @@ export function useCameraCapture() {
       canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
     });
   }, []);
+
+  // ShutterButton only disables once the caller's own upload/grading state
+  // flips - which happens after captureOnce (now slower than before, since
+  // orientation normalization added a decode+redraw step) resolves and its
+  // caller reacts to the Blob. A tap landing in that window would start a
+  // second concurrent capture on the same camera stream. Guarding here, not
+  // in the UI, fixes it once for every caller rather than trusting each one
+  // to debounce correctly.
+  const capturingRef = useRef(false);
+  const capture = useCallback(async (): Promise<Blob | null> => {
+    if (capturingRef.current) return null;
+    capturingRef.current = true;
+    try {
+      return await captureOnce();
+    } finally {
+      capturingRef.current = false;
+    }
+  }, [captureOnce]);
 
   return { videoRef, state, error, torchSupported, torchOn, start, stop, toggleTorch, capture };
 }

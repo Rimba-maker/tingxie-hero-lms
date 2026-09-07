@@ -1275,6 +1275,25 @@ strip still correctly showed today as Monday the 7th - confirming the fix in the
 just the unit test. `npx tsc --noEmit`, lint, and the full Vitest suite (81/81, up from 80, 26 files
 up from 25) all clean.
 
+### Phase 37 (beyond the original plan) — Top Up silently swallowed a failed request
+
+Same gap Phase 29 found and fixed in `PrintWorksheetButton` (a missing `catch`, any failure just
+silently resetting the button) was still live in `TopUpButton`: `handleTopUp` checked
+`response.ok` and called `router.refresh()` when true, but did nothing at all in the `else` branch
+- a `/api/credits/topup` 500 (which the route genuinely returns on any Supabase failure, per its
+own `catch` block) left the button simply re-enabled with zero feedback, visual or
+screen-reader, exactly the silent-failure class of bug this project has already fixed once.
+
+Fixed the same way as `PrintWorksheetButton`: wrapped the fetch in try/catch, surfaced the API's
+own error message (falling back to a generic one if the response body isn't JSON), and added a
+`role="alert"` message next to the button. Verified live, not just by reading the diff: ran the
+real dev server, used Playwright's route interception to force the real `/api/credits/topup`
+endpoint to return a 500, confirmed the `role="alert"` element renders with the right text, and
+screenshotted the Dashboard to confirm the message doesn't cramp against `CardAction`'s narrow
+top-right grid cell in the credits card header. This project doesn't unit-test UI components
+directly (established convention - see Phase 31), so this fix is verified live only. `npx tsc
+--noEmit`, lint, and the full Vitest suite (81/81, unchanged) all clean.
+
 ---
 
 ## 7. Environment Variables

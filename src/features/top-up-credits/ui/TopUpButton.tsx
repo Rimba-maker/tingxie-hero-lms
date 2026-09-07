@@ -8,12 +8,26 @@ import { Button } from "@/shared/ui/button";
 export function TopUpButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleTopUp() {
     setLoading(true);
-    const response = await fetch("/api/credits/topup", { method: "POST" });
-    setLoading(false);
-    if (response.ok) router.refresh();
+    setError(null);
+    try {
+      const response = await fetch("/api/credits/topup", { method: "POST" });
+      if (!response.ok) {
+        // Previously silent: a non-ok response (Supabase down, network
+        // error) just re-enabled the button with nothing said - a parent
+        // clicking Top Up deserves to know it didn't work.
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error ?? "Top up failed, please try again");
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Top up failed, please try again");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -26,6 +40,11 @@ export function TopUpButton() {
       <span role="status" aria-live="polite" className="sr-only">
         {loading ? "Adding credits…" : ""}
       </span>
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
     </>
   );
 }

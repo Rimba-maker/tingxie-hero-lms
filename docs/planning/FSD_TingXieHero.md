@@ -1357,6 +1357,31 @@ Vitest suite (81/81, unchanged) all clean.
 
 ---
 
+### Phase 40 (beyond the original plan) — the historical matrix could show a non-deterministic result for the same day
+
+`getCharacterHistory`'s query had no `.order()` clause, and `buildCharacterHistoryMatrix` resolves a
+character appearing twice on the same calendar day by plain object-key overwrite - the last matching
+row in its input wins that cell. Without an explicit order, Postgres doesn't guarantee which of two
+same-day rows comes back first, so a character graded both correct and incorrect on the same day
+(two lessons sharing a character, or a re-scan - genuinely reachable, nothing prevents scanning
+twice in one day) could flip between showing a green check and a red X on every page reload, for
+the exact same underlying data.
+
+Added `.order("submitted_at", { foreignTable: "submissions", ascending: true })` to the query -
+`foreignTable`, not `referencedTable`, matching the existing convention in `getLessons.ts`'s
+identical join-ordering need. This makes the last-row-wins resolution deterministic and meaningful:
+with rows guaranteed chronological, the matrix cell now reflects the day's most recent attempt,
+not an arbitrary one. Documented this as the pivot function's real contract (previously implicit)
+and added a unit test locking in the behavior. Verified against the live database, not just unit
+tests: inserted a temp lesson with two temp submissions on the same calendar day - one graded a
+shared character incorrect at 01:00 UTC, the other correct at 20:00 UTC - ran the actual fixed
+query, and confirmed the results come back in guaranteed chronological order (incorrect row first,
+correct row last), so the matrix would show the day's later, correct result rather than whichever
+one Postgres happened to return first. Temp rows deleted after, confirmed 0 remain. `npx tsc
+--noEmit`, lint, and the full Vitest suite (82/82, up from 81) all clean.
+
+---
+
 ## 7. Environment Variables
 
 ```

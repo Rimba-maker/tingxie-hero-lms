@@ -9,6 +9,13 @@ export type CharacterHistoryMatrix = {
   rows: { character: string; resultsByDate: Record<string, boolean> }[];
 };
 
+// A character can appear in more than one submission on the same calendar
+// day (two lessons sharing a character, or a re-scan) - `date` is a
+// day-level string, not a unique key. When that happens, the last matching
+// row in `rows` wins that cell, so a caller querying multiple attempts must
+// hand rows back in chronological order for this to mean "today's most
+// recent attempt" rather than an arbitrary one (see getCharacterHistory.ts's
+// explicit `.order()` for the real DB-backed caller).
 export function buildCharacterHistoryMatrix(rows: CharacterHistoryRow[]): CharacterHistoryMatrix {
   const dates = [...new Set(rows.map((row) => row.date))].sort();
 

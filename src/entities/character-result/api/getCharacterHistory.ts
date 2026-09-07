@@ -32,10 +32,17 @@ type CharacterResultWithSubmittedAt = {
 export function supabaseCharacterHistoryDb(supabase: SupabaseClient): CharacterHistoryDb {
   return {
     async listCharacterHistory(characters) {
+      // Ordered so buildCharacterHistoryMatrix's same-day collision handling
+      // (last row for a given character+date wins) is deterministic - a
+      // student can submit two worksheets sharing a character on the same
+      // calendar day, and without this, Postgres doesn't guarantee which
+      // row comes back first, so the matrix cell could flip between correct
+      // and incorrect on every reload for the exact same data.
       const { data, error } = await supabase
         .from("character_results")
         .select("character, is_correct, submissions(submitted_at)")
-        .in("character", characters);
+        .in("character", characters)
+        .order("submitted_at", { foreignTable: "submissions", ascending: true });
       if (error) throw error;
 
       return (data as unknown as CharacterResultWithSubmittedAt[])

@@ -28,4 +28,17 @@ describe("buildCharacterHistoryMatrix", () => {
   test("returns an empty matrix for no rows", () => {
     expect(buildCharacterHistoryMatrix([])).toEqual({ dates: [], rows: [] });
   });
+
+  test("a same-character same-date collision resolves to the last row, not an arbitrary one", () => {
+    // Two submissions sharing a character on the same calendar day (e.g. a
+    // re-scan) - callers must hand rows back in chronological order (see
+    // getCharacterHistory.ts's .order()) for this to mean "today's latest
+    // attempt," which is exactly what this test locks in.
+    const matrix = buildCharacterHistoryMatrix([
+      { character: "校园", date: "2026-10-08", isCorrect: false },
+      { character: "校园", date: "2026-10-08", isCorrect: true },
+    ]);
+
+    expect(matrix.rows).toEqual([{ character: "校园", resultsByDate: { "2026-10-08": true } }]);
+  });
 });

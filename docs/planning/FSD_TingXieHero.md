@@ -1203,6 +1203,25 @@ fragility; left alone.) Everything else in the batch checked out clean - the seq
 new aria-live/retry/for-loop changes don't introduce re-render churn; `ResultsScreen`'s early return
 happens before any hooks. `npx tsc --noEmit`, lint, and the full Vitest suite (77/77) all clean.
 
+### Phase 34 (beyond the original plan) — a real test-coverage gap, closed
+
+Swept `src/entities`, `src/shared/lib`, and `src/widgets/*/model` for pure-logic files with no
+matching `.test.ts` (there's a consistent one-to-one convention throughout this project otherwise).
+Found five: `gradingErrors.ts` (bare error-class constructors, nothing to assert), `gemini/client.ts`
+and `supabase/server.ts` (singleton factories wrapping real SDKs - untested glue by the project's
+own established convention), `utils.ts` (a one-line `clsx`+`tailwind-merge` wrapper) - all
+correctly untested, not gaps. `getCharacterHistory.ts` was the one real gap: it has actual branching
+logic (an early return for an empty character list, skipping the DB call entirely) that was never
+exercised by a test, unlike its sibling `buildCharacterHistoryMatrix.ts`, which is thoroughly
+tested. The early return matters for a real case - a submission with zero `character_results` (an
+all-empty Gemini result caught before being saved as graded per Phase 22, or a manually-inserted
+fixture like the History e2e test's) has nothing to look up, and querying `.in("character", [])`
+would be a wasted round trip at best. Added `getCharacterHistory.test.ts` covering both the
+empty-list short-circuit and the real query-and-pivot path; both passed immediately, since the
+underlying code was already correct - this closes a coverage gap on real, working logic, not a bug
+fix. `npx tsc --noEmit`, lint, and the full Vitest suite (79/79, up from 77, 25 files up from 24)
+all clean.
+
 ---
 
 ## 7. Environment Variables

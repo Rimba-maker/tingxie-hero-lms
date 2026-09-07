@@ -349,6 +349,20 @@ verified pass at a time, never silently. Full reasoning for each lives in
   way (a border eating into the frame's content width, an unscoped
   `min-h-dvh` overriding a fixed height), both caught by inspecting the
   actual rendered bounding box, not assumed from the CSS.
+- **A real-device audit found two more genuine bugs, and cleared up an iOS
+  scare (Phase 54).** Tested across 10+ of Playwright's actual device
+  definitions (real iPhone/iPad/Pixel/Galaxy models, not guessed pixel
+  widths) in both orientations. Found the level-tabs row genuinely broke
+  the whole page on iPhone SE (320px, narrower than any earlier check this
+  session used) — 6 fixed-width pills didn't fit and widened the entire
+  document, `BottomNav` included, not just the tab strip. Also measured
+  several real touch targets below Apple/Google's 44px guideline —
+  consequential here specifically, since this app's actual users are
+  primary-school children. Both fixed and re-verified across the full
+  device matrix. Separately, chased down an alarming-looking web search
+  claiming iOS PWAs can't access the camera at all — traced it to a stale
+  2018 WebKit bug, confirmed fixed since iOS 13.4 (2020) by reading the
+  actual bug tracker resolution rather than trusting a blog summary.
 
 See `docs/planning/FSD_TingXieHero.md` §6 for the complete, dated log —
 every phase, every finding, every decision and the reasoning behind it.

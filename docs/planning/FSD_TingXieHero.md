@@ -1872,6 +1872,67 @@ every route (0 violations), 0 console errors, `impeccable detect` (0 findings), 
 
 ---
 
+### Phase 54 (beyond the original plan) — a real-device audit: two real bugs, and clearing up an iOS scare
+
+Asked directly to cross-check whether Phase 53's responsive work was actually thorough, and whether
+this app genuinely supports iOS and Android - not just "resizes okay in a browser DevTools panel."
+Used Playwright's own real device definitions (exact viewport, DPR, and UA per actual device model -
+not guessed pixel values) across 10+ profiles: iPhone SE, iPhone 14 Pro, iPhone 16 Pro Max, iPad
+Mini, iPad Pro 11, Pixel 7, Pixel 8 Pro, Galaxy S24, Galaxy Tab S9, Galaxy Z Fold 7 - each in both
+portrait and landscape, across every main route.
+
+**Found and fixed: the level-tabs row broke the entire page on the narrowest real iPhone.** iPhone
+SE (320px - narrower than the 390px every earlier check this session used as its mobile baseline)
+showed genuine horizontal page overflow on `/syllabus`: `document.documentElement.scrollWidth`
+(350) exceeded `clientWidth` (320). Traced to the 6 fixed-width P1-P6 pills never fitting at that
+width, with nothing scoping the overflow - it widened the *whole page*, `BottomNav` included, not
+just the tab row itself. Fixed with `overflow-x-auto` on a wrapper around just that strip.
+
+**Found and fixed: several real touch targets measured below the 44px guideline** on that same
+iPhone SE profile - "Top Up" (28px), both "Scan & Grade Worksheet" CTAs (36px/32px), the level tabs
+themselves (31px), "View All" (16px), "Print A4 Worksheet (PDF)" (20px). Consequential here
+specifically: this app's actual users are primary-school children, not adults. Even shadcn's own
+largest non-icon `Button` size variant ("lg") is only `h-9` (36px) - a systemic gap in the shared
+component's default scale. Fixed with targeted `h-11` overrides at each call site rather than
+changing `buttonVariants` globally (which would ripple through every button in the app). The level
+tabs specifically needed an explicit height override, not just more padding: the base `TabsTrigger`
+sets `h-[calc(100%-1px)]`, an explicit height `border-box` padding can't grow past on its own -
+confirmed live that adding padding alone measured zero change before switching to `h-11`.
+
+**Chased down and cleared a genuinely alarming-looking search result.** A first web search for
+"iOS PWA getUserMedia" turned up a 2026-dated blog post and a camera-SDK vendor's knowledge base
+both claiming camera access "does not work" for PWAs installed to the iOS home screen - which would
+have meant this app's entire core feature is broken for exactly the deployment mode (`display:
+standalone`) it's built for. Didn't take that at face value: found and read the actual WebKit bug
+tracker entry (bugs.webkit.org #185448) the claim traces back to. Status: **RESOLVED FIXED**,
+confirmed working by the reporting engineer as of iOS 13.4 (February 2020) and re-verified by
+others through iOS 13.5.1 - years before any iOS version a real user would plausibly be running
+today. The blog posts describing it as broken were stale, citing the original 2018 report without
+the resolution. The one real, still-current caveat from the bug thread: camera permission grants
+aren't always persisted as reliably across PWA relaunches as in a regular Safari tab, occasionally
+re-prompting - a WebKit-level permission-caching quirk, not something fixable in this app's own
+code, and a UX friction, not a functional block.
+
+**Checked and confirmed already-safe: iOS notch/Dynamic Island/home-indicator handling.**
+`viewport-fit` is not set anywhere (Next.js 16's current `Viewport.viewportFit` API, confirmed via
+Context7, not assumed), meaning it defaults to `auto` - the browser automatically keeps all content
+within the safe area, so nothing is ever hidden behind a notch or the home indicator. This is
+already the safe, non-broken behavior; the only thing forgoing `viewport-fit: cover` costs is a more
+"immersive" edge-to-edge look, and enabling that would require adding explicit
+`env(safe-area-inset-*)` padding everywhere (`ScreenShell`, `BottomNav`, `CameraViewfinder`) to
+avoid *introducing* the exact problem cover mode exists to solve, for a purely cosmetic gain under
+time pressure. Left as the deliberately safer default.
+
+Re-verified the full pass one more time after both fixes: 0 horizontal overflow and 0 console/page
+errors across every device profile x orientation x route (60+ checks), 0 `axe-core` violations
+including its `target-size` rule (independently confirming the touch-target measurements) across
+320/390/900/1600px widths, 0 findings from `impeccable detect` on every changed file (one pre-existing,
+untouched finding on an unrelated element noted and correctly left alone - out of scope for this
+audit), full screenshot comparison confirming no visual regression, full e2e suite (6/6) and Vitest
+(84/84) both clean, `npx tsc --noEmit` and lint clean, production build clean.
+
+---
+
 ## 7. Environment Variables
 
 ```

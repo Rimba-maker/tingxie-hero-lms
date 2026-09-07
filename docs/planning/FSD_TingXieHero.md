@@ -1222,6 +1222,32 @@ underlying code was already correct - this closes a coverage gap on real, workin
 fix. `npx tsc --noEmit`, lint, and the full Vitest suite (79/79, up from 77, 25 files up from 24)
 all clean.
 
+### Phase 35 (beyond the original plan) — the calendar strip used the server's timezone, not Singapore's
+
+Same class of bug as §5's Phase 7 fix, missed for a sibling function at the time: `formatTestSchedule`
+pins `Asia/Singapore` explicitly via `Intl.DateTimeFormat` (fixed once already, when the "Upcoming
+Ting Xie" banner showed 10:00 PM instead of 3:00 PM), but `getCurrentWeekDays` - which decides which
+day the Dashboard's weekly calendar strip highlights as "today" - used plain `Date` getters
+(`getDate()`, `getDay()`, `getFullYear()`), which read the **server's own local timezone**, not
+Singapore's. Confirmed live, not inferred: ran the function with `process.env.TZ` set to
+`America/Los_Angeles` and a real UTC instant that's already Tuesday 8 Sept, 2:30pm in Singapore but
+still Monday 7 Sept, 11:30pm on that server - it marked *Monday* as "today," the wrong day, wrong
+week-numbering knock-on effects included. Deployment to Vercel is still pending (README's Known
+Limitations), and Vercel's serverless functions don't run in Singapore's timezone by default -
+this would have been a real, live bug on day one of deployment, not a theoretical one.
+
+Fixed by resolving "today" and the given `eventDate` to their Singapore calendar-date parts via
+`Intl.DateTimeFormat` first (the same technique `formatTestSchedule` already uses), then anchoring
+each at UTC midnight so all the subsequent day-of-week and day-arithmetic (`setUTCDate`,
+`getUTCDay`) only ever reads back what was just written - never the ambient server timezone again.
+TDD'd: added a test with the same US-Pacific-vs-Singapore instant used to confirm the bug, plus kept
+every existing test (Sunday-rolls-forward, `hasEvent` matching, mid-week reference) passing
+unchanged - the fix changes the timezone the calculation happens in, not the calculation's own
+documented behavior. Re-ran the original `TZ=America/Los_Angeles` repro after the fix: now correctly
+resolves Tuesday 8 as "today." Verified live in the browser too (Dashboard's calendar strip still
+renders correctly for the normal case). `npx tsc --noEmit`, lint, the full Vitest suite (80/80, up
+from 79), and Playwright (6/6) all clean.
+
 ---
 
 ## 7. Environment Variables

@@ -49,4 +49,19 @@ describe("getCurrentWeekDays", () => {
 
     expect(days.every((d) => !d.hasEvent)).toBe(true);
   });
+
+  it("resolves 'today' in Asia/Singapore time, not the server's ambient local timezone", () => {
+    // formatTestSchedule already pins Asia/Singapore explicitly (FSD §6
+    // Phase 7 - the exact same class of bug, caught once for the test
+    // schedule banner but missed here). 2026-09-08T06:30:00Z is already
+    // 14:30 on 8 Sept in Singapore (UTC+8) - but only 23:30 on 7 Sept in a
+    // US-Pacific server (UTC-7), which plain Date getters would read as
+    // "today" instead, on whatever machine happens to run this app.
+    const instant = new Date("2026-09-08T06:30:00Z");
+    const days = getCurrentWeekDays(instant);
+
+    expect(days.filter((d) => d.isToday)).toEqual([
+      { label: "Tue", date: 8, isToday: true, hasEvent: false },
+    ]);
+  });
 });

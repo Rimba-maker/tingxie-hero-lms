@@ -2001,6 +2001,24 @@ fake-camera workaround further.
 
 ---
 
+### Phase 57 (beyond the original plan) — the Syllabus level-tabs pill shape matched closer to the reference mockup
+
+Compared live against `docs/reference/mockups/screen2-syllabus.png`: the mockup's P1-P6 pills are a
+clearly oval stadium shape (wide relative to their height); this app's pills, after Phase 54's
+`h-11` (44px) touch-target fix, had shrunk to `px-3` to fit six of them at 320px (iPhone SE) and
+ended up looking nearly circular (41x44, aspect ~0.93) instead - a real, if secondary, casualty of
+that fix. The narrow width and the 44px height floor are in genuine tension: at 320px there's no
+combination of padding/gap that both fits six pills and reaches the mockup's ~1.8 aspect ratio.
+Rather than pick one width for every screen, stepped it with an ordinary `min-[375px]:` breakpoint -
+an unremarkable media query, not the kind of clever/fragile trick already rejected twice this
+session - keeping `px-3`/`gap-1.5` as the floor confirmed to fit the true narrowest real width, and
+widening to `px-4`/`gap-2` (49x44, aspect 1.12, visibly closer to the mockup) for every other real
+phone (375px+). Re-verified centering, zero overflow, and zero clipping from 320px through 1280px+,
+plus the full Vitest/e2e/`impeccable detect` pass - all clean. Regenerated
+`docs/screenshots/syllabus.png` and `public/screenshots/syllabus.png` to show the new shape.
+
+---
+
 ## 7. Environment Variables
 
 ```

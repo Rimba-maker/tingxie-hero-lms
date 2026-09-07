@@ -56,17 +56,22 @@ export function SyllabusScreen({ viewer, moeLevel, lessons }: SyllabusScreenProp
           the edge with no affordance it was swipeable). All 6 levels are
           a fixed, known set (MOE Singapore's own P1-P6) - the real fix is
           making all 6 actually fit, not making the overflow scroll
-          somewhere. Tightened gap-2→gap-1.5 and px-4→px-3; confirmed live
-          this fits at 320px (iPhone SE) with room to spare, no scroll
-          needed at any real width, so mx-auto centers normally everywhere
-          again. h-11 (44px tap target) unaffected - only width shrank. */}
+          somewhere. px-3/gap-1.5 is the floor confirmed to fit the
+          narrowest real width (320px, iPhone SE) with room to spare; from
+          375px up (nearly every other real phone) there's enough room to
+          widen back toward the reference mockup's own more oval pill
+          shape (docs/reference/mockups/screen2-syllabus.png), so
+          min-[375px]: steps padding/gap back up there - an ordinary
+          breakpoint, not the rejected scroll-wrapper approach. h-11 (44px
+          tap target) unaffected at every width - only the pill's width
+          changes. */}
       <Tabs value={level} onValueChange={(value) => setLevel(value as MoeLevel)}>
-        <TabsList className="mx-auto h-auto gap-1.5 bg-transparent p-0">
+        <TabsList className="mx-auto h-auto gap-1.5 bg-transparent p-0 min-[375px]:gap-2">
           {MOE_LEVELS.map((l) => (
             <TabsTrigger
               key={l}
               value={l}
-              className="h-11 rounded-full border-none bg-card px-3 text-muted-foreground ring-1 ring-foreground/10 data-active:bg-primary data-active:text-primary-foreground data-active:shadow-none data-active:ring-0"
+              className="h-11 rounded-full border-none bg-card px-3 text-muted-foreground ring-1 ring-foreground/10 min-[375px]:px-4 data-active:bg-primary data-active:text-primary-foreground data-active:shadow-none data-active:ring-0"
             >
               {l}
             </TabsTrigger>

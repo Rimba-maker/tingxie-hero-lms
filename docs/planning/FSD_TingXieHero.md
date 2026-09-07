@@ -2019,6 +2019,32 @@ plus the full Vitest/e2e/`impeccable detect` pass - all clean. Regenerated
 
 ---
 
+### Phase 58 (beyond the original plan) — the results.png correction box was cut off because of the demo photo, not the overlay code
+
+Directly asked whether the red box under-covering "温暖" (both characters) in the previous
+screenshot was a real overlay bug. Re-confirmed `boundingBoxToOverlayStyle` is a plain, unit-tested
+linear transform, and `gradeSubmission.ts` sends Gemini the exact same image bytes the overlay later
+renders - so the overlay math itself was never the issue (see Phase 55's investigation). What was
+fixable: the specific demo photo behind that screenshot. Built a fresh synthetic worksheet image (a
+Playwright-rendered HTML page reusing the app's own Noto Sans SC font, exported as JPEG - no new
+asset, same technique implied by Phase 46's synthetic-worksheet approach) with large, clearly wrong
+handwriting for 温暖, and sent it through a real Gemini call - `gemini-flash-latest` (really
+`gemini-3.8-flash`) had hit its 20-requests/day free-tier ceiling again, so used `gemini-3.6-flash`
+(separate quota, same fallback this project has used before). The real response's `box_2d` for
+"温暖" matched the exact x-range of the two correct words above it (`xmin`/`xmax` 45/333 all three
+rows) - a full, correctly-detected two-cell span, not truncated. The earlier screenshot's under-
+coverage was Gemini's own imprecision against that specific (different, messier) photo, exactly as
+Phase 55 concluded - a cleaner, clearer synthetic photo simply gives the model less room to be
+imprecise. Rebuilt all three historical submissions (28 Aug/2 Sept/7 Sept, same score pattern as
+before: 1/3, 2/3, 2/3) with explicit daytime `Asia/Singapore` timestamps rather than `now()` - the
+previous capture's `now()` had landed within seconds of actual local midnight, showing "Graded on 8
+Sept" against a "7 Sept" history column for the same submission, a real display artifact of the test
+fixture's timing, not a code bug. Regenerated `results.png` (both `docs/` and `public/`) and
+`history.png`, then deleted every temp submission, its `character_results`, and the Storage object -
+confirmed 0 rows remaining.
+
+---
+
 ## 7. Environment Variables
 
 ```

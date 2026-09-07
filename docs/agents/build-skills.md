@@ -64,9 +64,11 @@ spec, not loose inspiration.
 ## Phase 5 — PWA, Polish, Deployment
 
 10. **`webapp-testing`** — the FSD §6 Phase 5 checklist item "real photo →
-    real grading → real results" (mobile only — no desktop/tablet layout is
-    in scope, confirmed against the source PDF, not just the mockup images)
-    — run it through Playwright, don't just eyeball it.
+    real grading → real results" (mobile only at this phase — the source
+    PDF's mockups never went past mobile, so that's the only layout built
+    yet) — run it through Playwright, don't just eyeball it. Real adaptive
+    layouts for the content screens came much later, well beyond this
+    phase — see FSD §6 Phase 53.
 11. **`security-review`** (built-in) — final pass before submitting: confirm
     `SUPABASE_SERVICE_ROLE_KEY` and `GEMINI_API_KEY` never reach client
     bundles, per FSD §7/§8 and PRD's security NFR.

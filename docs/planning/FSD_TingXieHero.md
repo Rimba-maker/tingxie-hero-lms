@@ -1491,6 +1491,34 @@ business logic) all clean.
 
 ---
 
+### Phase 45 (beyond the original plan) — a stalled Gemini call could strand a user on "Grading…" forever
+
+Also ran `security-review` and a fresh `vercel-react-best-practices` audit against every file changed
+across Phases 34-44 (all 26 commits since the last such audit) - both came back clean, no findings.
+
+Continued looking anyway and found a real gap the audits weren't scoped to catch: nothing bounded
+how long `gradeWithGemini`'s `generateContent` call could take. A fast rejection (the documented 503
+"high demand" flakiness) already surfaces the retry button fine, but an actual network/server
+*stall* - the request never resolving or rejecting at all - would leave `upload.status` stuck at
+`"grading"` indefinitely, since the "Try again" button only ever appears once a call actually
+throws. Once deployed, Vercel's own platform-level function timeout would eventually kill it, but
+as an opaque `504` well after a much longer wait than any user should tolerate.
+
+Added `httpOptions: { timeout: 60_000 }` to the existing `generateContent` config - confirmed
+current and real against the installed `@google/genai` SDK's own `.d.ts` (`GenerateContentConfig.
+httpOptions: HttpOptions`, `HttpOptions.timeout: number` in milliseconds), not assumed from
+training data. 60s comfortably covers the PRD's own "a few seconds" performance expectation plus
+real network variance, while firing well before Vercel's platform timeout would. The existing
+catch-all (`if (err instanceof GeminiGradingError) throw err; throw new GeminiGradingError(...)`)
+already handles whatever error a timeout produces with zero additional code - it was already
+written generically enough. Verified live: sent a real request to the actual Gemini API with this
+exact config shape and confirmed a normal successful response still comes back untouched - the
+timeout doesn't interfere with the fast, common case. `npx tsc --noEmit`, lint, and the full Vitest
+suite (82/82, unchanged - the existing fake-client tests don't exercise real SDK config validation)
+all clean.
+
+---
+
 ## 7. Environment Variables
 
 ```

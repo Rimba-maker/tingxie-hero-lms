@@ -58,6 +58,18 @@ export async function gradeWithGemini(
         },
       ],
       config: {
+        // Nothing previously bounded how long this call could hang - a
+        // stalled request (not a fast 503, an actual network/server stall)
+        // would leave upload.status stuck at "grading" forever, since the
+        // Try again button only appears once a call actually rejects.
+        // 60s comfortably covers "a few seconds" (PRD's own performance
+        // note) plus real network variance, while still firing well before
+        // Vercel's own platform-level function timeout would kill the
+        // request with an opaque 504 instead of this catch block's message.
+        // Confirmed current and real, not guessed: httpOptions.timeout is a
+        // documented GenerateContentConfig field in the installed
+        // @google/genai SDK version (verified via Context7 + its own .d.ts).
+        httpOptions: { timeout: 60_000 },
         // HIGH costs the same 256 tokens/image as MEDIUM but does "zoomed
         // reframing" (per @google/genai's MediaResolution docs) — better for
         // reading individual handwritten strokes in a Tian Zige grid, at no

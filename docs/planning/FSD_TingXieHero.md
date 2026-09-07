@@ -1077,6 +1077,50 @@ PDF's own size small regardless of the source font's size, so this is an asset c
 one) for whoever seeds lesson 4 - what changed is that hitting it now fails loudly instead of
 quietly handing someone a broken worksheet.
 
+### Phase 30 (beyond the original plan) — ran an actual accessibility scanner, not just manual review
+
+Every a11y pass so far (Phases 17, 20, 24) was manual: grep for missing landmarks, reason about
+`aria-live`, trace through code by hand. This pass ran a real tool instead - `axe-core` (the same
+engine Lighthouse and most production a11y linting use), loaded via CDN into a live Playwright
+browser, `axe.run()` against every real route (`/`, `/syllabus`, `/history`, `/premium`,
+`/results/[id]`, `/scan`), both themes.
+
+Found one real, tool-confirmed violation: the Dashboard's "Upcoming Ting Xie" banner text
+(`text-muted-foreground` on the `--accent`-tinted banner) measured 4.48:1 in light mode and 4.17:1
+in dark mode, both below the 4.5:1 minimum - the same class of issue as the Badge fixes above
+(a color tuned against the default surface, never checked against a tinted one), just a token
+nobody had reason to suspect until a tool actually measured it there. Darkened `--muted-foreground`
+in `:root` (0.526→0.52 L) and lightened it in `.dark` (0.65→0.67 L); both are imperceptibly small
+adjustments that don't affect its many other, already-passing uses elsewhere.
+
+**A real false alarm worth recording, not just the finding.** The first dark-mode scan reported
+`destructive`/`success`/`warning` Badge variants failing at 2.55:1/3.19:1/3.24:1 - numbers that
+directly contradicted Phase 27's own contrast math (4.58/4.74/5.83:1) for the exact same tokens.
+Chased it down rather than trusting either number blindly: `document.documentElement.classList.add
+("dark")` executed correctly, but reading computed styles *immediately after* raced Next.js's own
+client-side reconciliation, which was still resolving with the light-mode class list at that exact
+instant - the badges the scanner measured were transiently still light-mode-colored. Adding a
+short wait after toggling the class fixed the measurement, and the "failures" vanished; Phase 27's
+fix was correct all along. Recorded so a future pass doesn't re-chase the same phantom, and as a
+reminder that a monitoring tool's raw number still needs the same skepticism applied to any other
+signal - trust, but verify the measurement methodology, not just the code under test.
+
+**A second real, tool-confirmed violation**, found after fixing the first and re-scanning every
+route: the Results screen's status badge (`success`/`Completed` variant) measured 4.24:1, below
+4.5:1 - `text-success` at the *same* lightness that passed 4.52:1 on the Syllabus screen. The
+difference: Syllabus's badges sit inside a white `<Card>` (`--card`, pure white); the Results
+screen's badge sits directly on the page body (`--background`, a warm cream, deliberately slightly
+darker than white per this file's own palette note above) with no Card wrapper. The same value that
+clears 4.5:1 against white doesn't necessarily clear it against cream. Re-checked `warning` against
+the same cream backdrop as a precaution rather than waiting for axe to catch it too: also failing,
+4.23:1 (it happens not to appear as a status badge outside Cards anywhere in the app today, but
+there was no reason to leave a token known to fail in one real context sitting there for the next
+place that uses it). Darkened both `--success` (0.525→0.505 L) and `--warning` (0.54→0.51 L) enough
+to clear 4.5:1 against the *worse* of the two backgrounds each is actually used against, not just
+whichever one happened to get checked first; `--destructive` already cleared both (5.33:1 on
+cream) and was left alone. Re-scanned all 6 routes in both themes after every change: 0 violations,
+confirmed, not assumed.
+
 ---
 
 ## 7. Environment Variables

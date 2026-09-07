@@ -58,14 +58,14 @@
   --secondary: oklch(0.956 0.009 84.6);
   --secondary-foreground: oklch(0.235 0 0);
   --muted: oklch(0.956 0.009 84.6);
-  --muted-foreground: oklch(0.526 0.011 106.8);
+  --muted-foreground: oklch(0.52 0.011 106.8); /* darkened from 0.526 L - axe-core found 4.48:1 (below 4.5:1) for the Dashboard's "Upcoming Ting Xie" banner text, the one place this token sits on the tinted --accent background instead of the default card/background */
   --accent: oklch(0.937 0.012 170.3); /* light green tint, hover/selected surfaces */
   --accent-foreground: oklch(0.457 0.047 179.9);
   --destructive: oklch(0.495 0.154 24.8); /* red X / Needs Revision — darkened from the raw mockup sample (#c84848) so text-destructive on a tinted destructive surface clears 4.5:1 (was 4.03:1) */
   --destructive-foreground: oklch(1 0 0);
-  --success: oklch(0.525 0.086 166.3); /* green checkmarks / Completed */
+  --success: oklch(0.505 0.086 166.3); /* green checkmarks / Completed — darkened from 0.525 L: that passed 4.5:1 on the Syllabus's white Card surface but only 4.24:1 on the page's cream --background (axe-core caught this on the Results screen's status badge, which sits directly on the page instead of inside a Card) */
   --success-foreground: oklch(1 0 0);
-  --warning: oklch(0.54 0.112 78.6); /* amber / Pending Practice — darkened from the raw mockup sample (0.715 L) so text-warning on a tinted warning surface clears 4.5:1 (was 2.26:1), matching how --destructive was already darkened for the identical reason */
+  --warning: oklch(0.51 0.112 78.6); /* amber / Pending Practice — darkened from the raw mockup sample (0.715 L) so text-warning clears 4.5:1 on both the white Card surface and the page's cream --background (was 2.26:1 unfixed, 4.23:1 on cream after the first fix) */
   --warning-foreground: oklch(0.235 0 0);
   --border: oklch(0.911 0.013 82.4);
   --input: oklch(0.911 0.013 82.4);
@@ -89,7 +89,7 @@
   --secondary: oklch(0.26 0.008 170);
   --secondary-foreground: oklch(0.95 0.005 80);
   --muted: oklch(0.26 0.008 170);
-  --muted-foreground: oklch(0.65 0.01 100);
+  --muted-foreground: oklch(0.67 0.01 100); /* lightened from 0.65 L - axe-core found 4.17:1 (below 4.5:1) for the same Dashboard banner text as the light-mode fix above, on dark mode's --accent background */
   --accent: oklch(0.3 0.02 170);
   --accent-foreground: oklch(0.85 0.05 175);
   --destructive: oklch(0.7 0.15 25); /* lightened from 0.65 L so text-destructive on the Badge component's dark:bg-destructive/20 clears 4.5:1 (was 3.95:1) - same class of bug already fixed for light mode's warning/destructive, never checked for dark */

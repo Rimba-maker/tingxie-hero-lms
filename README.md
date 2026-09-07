@@ -9,9 +9,9 @@ focus.
 
 ## Screenshots
 
-| Dashboard | Syllabus | Results | History |
-|---|---|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Syllabus](docs/screenshots/syllabus.png) | ![Results](docs/screenshots/results.png) | ![History](docs/screenshots/history.png) |
+| Dashboard | Syllabus | Results | History | Scan |
+|---|---|---|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Syllabus](docs/screenshots/syllabus.png) | ![Results](docs/screenshots/results.png) | ![History](docs/screenshots/history.png) | ![Scan](docs/screenshots/scan.png) |
 
 Results and History above show three real graded submissions for the same
 lesson across three different dates (score, per-character correction
@@ -23,11 +23,12 @@ immediately after (verified 0 rows remaining). The worksheet photo itself is
 a synthesized demo image (not a real phone photo), built the same way for
 this screenshot only. The shipped database starts empty; see
 **Known limitations** below for why no demo data is seeded permanently.
-The Scan screen isn't pictured here — `getUserMedia`'s fake camera device
-doesn't work in this project's screenshot sandbox (a known limitation of
-that environment, not the app; see FSD §6 Phase 3), so it needs a real
-device to capture. `docs/reference/mockups/screen3-camera.png` shows the
-target design if you want to see it without a phone in hand.
+
+Scan shows the real camera screen's UI shell — header, alignment brackets,
+QR target box, shutter button — with the graceful "Not supported" fallback
+this sandbox's fake camera device always hits (see **Known limitations**);
+`docs/reference/mockups/screen3-camera.png` shows the target design with a
+live feed for comparison.
 
 ## For reviewers: open the architecture diagrams first
 

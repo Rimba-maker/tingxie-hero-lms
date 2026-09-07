@@ -22,6 +22,28 @@ export type WorksheetPdfParams = {
   vocabulary: VocabEntry[];
 };
 
+// NotoSansSC-Subset.ttf is a hand-picked ~170-glyph subset covering exactly
+// what today's seeded lessons use, not a general Chinese font (see FSD §6
+// Phase 29) - generating for anything outside that set previously produced
+// a PDF with blank title characters, blank practice-box glyphs, and pinyin
+// stripped of every tone mark, with no indication anything went wrong.
+function findUnsupportedCharacters(fontBytes: ArrayBuffer | Uint8Array, texts: string[]): string[] {
+  // fontkit.create wants a plain Uint8Array — not Node's Buffer, which
+  // isn't available when this runs in the browser (PrintWorksheetButton is
+  // a client component).
+  const bytes = fontBytes instanceof Uint8Array ? fontBytes : new Uint8Array(fontBytes);
+  const font = fontkit.create(bytes);
+  const missing = new Set<string>();
+  for (const text of texts) {
+    for (const char of text) {
+      if (!font.hasGlyphForCodePoint(char.codePointAt(0)!)) {
+        missing.add(char);
+      }
+    }
+  }
+  return [...missing];
+}
+
 // Draws a Tian Zige (田字格) practice sheet: one row per vocabulary word,
 // a reference character in the first box(es) of the row (one box per
 // character in the word), blank boxes after it to practice on paper.
@@ -32,6 +54,16 @@ export async function generateWorksheetPdf({
   moeLevel,
   vocabulary,
 }: WorksheetPdfParams): Promise<Uint8Array> {
+  const unsupported = findUnsupportedCharacters(fontBytes, [
+    title,
+    ...vocabulary.flatMap((entry) => [entry.character, entry.pinyin]),
+  ]);
+  if (unsupported.length > 0) {
+    throw new Error(
+      `Can't print this worksheet - the font doesn't support: ${unsupported.join(", ")}`,
+    );
+  }
+
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
   const font = await pdfDoc.embedFont(fontBytes, { subset: true });

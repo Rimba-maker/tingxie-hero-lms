@@ -11,6 +11,7 @@ type PrintWorksheetButtonProps = {
 
 export function PrintWorksheetButton({ lesson }: PrintWorksheetButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const preloaded = useRef(false);
 
   // Warm the dynamic import + font fetch on hover/focus, before the click
@@ -27,6 +28,7 @@ export function PrintWorksheetButton({ lesson }: PrintWorksheetButtonProps) {
 
   async function handleClick() {
     setLoading(true);
+    setError(null);
     try {
       // pdf-lib + fontkit are a genuinely large dependency (~1MB) for a
       // rarely-used action - dynamically imported so the Syllabus page's
@@ -52,6 +54,12 @@ export function PrintWorksheetButton({ lesson }: PrintWorksheetButtonProps) {
       link.download = `tingxie-week-${lesson.weekNumber}-worksheet.pdf`;
       link.click();
       URL.revokeObjectURL(url);
+    } catch (err) {
+      // Previously uncaught: any failure here (unsupported characters -
+      // FSD §6 Phase 29, an offline font fetch, anything) silently reset
+      // the button with zero feedback. A parent clicking Print deserves to
+      // know it didn't work, not just watch nothing happen.
+      setError(err instanceof Error ? err.message : "Couldn't generate the worksheet");
     } finally {
       setLoading(false);
     }
@@ -78,6 +86,11 @@ export function PrintWorksheetButton({ lesson }: PrintWorksheetButtonProps) {
       <span role="status" aria-live="polite" className="sr-only">
         {loading ? "Preparing worksheet PDF…" : ""}
       </span>
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
     </>
   );
 }

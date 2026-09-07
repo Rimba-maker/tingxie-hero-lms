@@ -68,7 +68,7 @@ with `src/`, trust the code and tell me; the diagram is wrong, not the app.
   photo, positioned from Gemini's own bounding boxes. That overlay is the
   assignment's own named "key evaluation point" — not a stand-in table, an
   actual mark on the actual photo.
-- **Tested where it matters, not everywhere for its own sake.** 76 Vitest
+- **Tested where it matters, not everywhere for its own sake.** 77 Vitest
   unit tests (24 files) cover every entity function's business logic —
   Gemini response parsing, score computation, the grade-submission
   pipeline's full orchestration order — against fakes, no live credentials
@@ -226,19 +226,19 @@ Scoped out deliberately, not oversights:
 - **"Print A4 Worksheet (PDF)" only really supports the 3 seeded lessons'
   vocabulary.** `NotoSansSC-Subset.ttf` is a hand-picked 26KB, 170-glyph
   subset covering exactly the characters those 3 lessons use — not a general
-  Chinese font. Confirmed by generating a worksheet for made-up vocabulary
-  outside that set: the title, every reference character in the practice
-  boxes, and every pinyin tone mark came back blank. This isn't new
-  breakage — `generateWorksheetPdf.test.ts` already exercises one
-  unsupported character (`字`) and deliberately asserts the PDF still
-  generates instead of throwing, a considered trade-off recorded there, not
-  an oversight. What's newly measured here is the severity for an entire
-  *new* lesson rather than one rare glyph: every character in it would be
-  missing, not just an occasional one. Left as-is rather than reversing that
-  existing, tested decision unprompted — the real fix is a full Noto Sans SC
-  file (pdf-lib's `subset: true` keeps the *output* PDF small regardless of
-  the source font's size, so this is a one-time asset swap, not a code
-  change), which needs sourcing the font file itself, not just editing code.
+  Chinese font. Generating for vocabulary outside that set now fails loudly
+  instead of silently: `generateWorksheetPdf` checks glyph coverage up front
+  and throws a clear "font doesn't support: …" error, which
+  `PrintWorksheetButton` shows inline instead of quietly downloading a PDF
+  with blank title characters, blank practice-box glyphs, and pinyin
+  stripped of every tone mark (confirmed live both ways — broken silently
+  before, a clear message after). The underlying gap is still there — a
+  4th lesson's vocabulary can't be printed until the font is — but a parent
+  hitting Print now finds out immediately instead of after printing a blank
+  page. The real fix is a full Noto Sans SC file (pdf-lib's `subset: true`
+  keeps the *output* PDF small regardless of the source font's size, so
+  this is a one-time asset swap, not a code change) for whoever seeds
+  lesson 4.
 - **Dark mode tokens exist but nothing switches to them.** `globals.css`
   defines a full `.dark` palette (contrast-checked, same as light mode - see
   FSD §6), but the app never applies that class: no theme toggle, and no

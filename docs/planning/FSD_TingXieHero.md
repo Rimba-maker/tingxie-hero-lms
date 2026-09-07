@@ -1029,7 +1029,7 @@ useful evidence: Gemini's API accepted the request shape, `image/png` mimeType i
 had no capacity - not a sign this fix broke anything. Temp submission and its Storage object deleted
 after, confirmed 0 remain.
 
-### Phase 29 (beyond the original plan) — measured, not fixed: the print-worksheet font's real ceiling
+### Phase 29 (beyond the original plan) — the print-worksheet font's real ceiling, measured then fixed
 
 Investigated `NotoSansSC-Subset.ttf` after noticing its file size (26KB - implausibly small for a
 general Chinese font) didn't match its use as *the* font for a syllabus feature named "Print A4
@@ -1042,17 +1042,40 @@ rendered with every non-original character blank (`《第十　课 -　　　　
 reference characters were entirely blank, and both pinyin labels lost every tone mark
 (`nǐ hǎo` → `ni hao`).
 
-**Deliberately not fixed.** `generateWorksheetPdf.test.ts` already covers one unsupported character
-(`字`) and explicitly asserts the PDF still generates instead of throwing - a considered trade-off,
-recorded in that test's own comment, not an oversight this pass gets to unilaterally overrule.
-Making generation throw on any missing glyph, the fix that would have suggested itself, would
-reverse that documented decision and break the existing test; not this session's call to make
-unprompted. What this pass adds isn't a different decision but a truer measurement of the existing
-one's actual cost: the test's framing ("doesn't need every possible character pre-subsetted") reads
-as tolerating an occasional rare glyph gap, not a *new lesson's entire vocabulary* coming back
-essentially blank. Recorded in README's Known Limitations with the real fix path (swap in a full
-Noto Sans SC file - `subset: true` already keeps the generated PDF's own size small regardless of
-the source font's size, so this is an asset change, not a code one) for whoever seeds lesson 4.
+**First pass: deliberately not fixed.** `generateWorksheetPdf.test.ts` already covered one
+unsupported character (`字`) and explicitly asserted the PDF still generated instead of throwing - a
+considered trade-off, recorded in that test's own comment, not an oversight to unilaterally overrule
+without being asked to revisit it. Recorded as a measured Known Limitation instead.
+
+**Reconsidered, at your explicit prompt** ("keputusan terbaik... yakin membiarkan nya?"). The
+existing test's framing ("doesn't need every possible character pre-subsetted") reads as tolerating
+an occasional rare glyph gap in an otherwise-correct document - not a *new lesson's entire
+vocabulary* coming back essentially blank with zero indication anything failed. That gap between
+what the trade-off was reasoned for and what it actually costs here is real, and worth closing.
+Re-reading `PrintWorksheetButton.tsx` while implementing surfaced a second, compounding bug: its
+`handleClick` had a `try/finally` with **no `catch`** at all - any failure (this one, an offline
+font fetch, anything) was an unhandled rejection with zero user feedback; the button just silently
+reset. A parent clicking Print had no way to know it hadn't worked, whether by a thrown error or a
+blank page.
+
+Fixed both: `generateWorksheetPdf` now checks every character it's about to render (title,
+vocabulary, pinyin) against the actual font via `fontkit.hasGlyphForCodePoint` *before* generating
+anything, and throws a specific, actionable error (`Can't print this worksheet - the font doesn't
+support: 你, 好, 世, 界`) instead of silently producing broken output. `PrintWorksheetButton` now has
+a real `catch`, surfacing that message inline instead of swallowing it. The existing "doesn't throw"
+test was replaced with one asserting it now does (a conscious reversal, not an accidental one) plus
+a pagination test fix (its 15-word fixture had used `字0`–`字14`, itself outside the subset -
+switched to a real subset character since that test's actual concern is page-overflow, not glyph
+coverage). Verified live end-to-end, not just unit-tested: inserted a temporary lesson with
+out-of-subset vocabulary into the real database, loaded `/syllabus`, clicked Print, screenshotted
+the inline error rendering correctly; separately confirmed printing an existing seeded lesson still
+downloads normally. Temp lesson deleted after, confirmed 0 remain. TDD'd (77/77, up from 76).
+
+The underlying ceiling itself is unchanged and still recorded in README's Known Limitations with
+the real fix path (swap in a full Noto Sans SC file - `subset: true` already keeps the generated
+PDF's own size small regardless of the source font's size, so this is an asset change, not a code
+one) for whoever seeds lesson 4 - what changed is that hitting it now fails loudly instead of
+quietly handing someone a broken worksheet.
 
 ---
 

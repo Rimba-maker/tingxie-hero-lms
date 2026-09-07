@@ -29,8 +29,11 @@ describe("generateWorksheetPdf", () => {
   });
 
   test("adds a new page instead of overflowing when the list is long", async () => {
+    // Repeats a real subset character - this test's own concern is pagination
+    // (many rows overflowing onto a second page), not glyph coverage, so it
+    // shouldn't trip the coverage check below.
     const manyWords = Array.from({ length: 15 }, (_, i) => ({
-      character: `字${i}`,
+      character: "校",
       pinyin: `zi ${i}`,
     }));
 
@@ -42,9 +45,26 @@ describe("generateWorksheetPdf", () => {
       vocabulary: manyWords,
     });
 
-    // "字" isn't in the subset font, so this also confirms embedFont doesn't
-    // throw on an unmapped glyph - pdf-lib falls back silently, it doesn't
-    // need every possible character pre-subsetted to stay usable.
     expect(Buffer.from(bytes.slice(0, 5)).toString("ascii")).toBe("%PDF-");
+  });
+
+  test("throws a clear, actionable error instead of silently producing a broken PDF", async () => {
+    // Reconsidered trade-off: this subset font covers exactly the 3 seeded
+    // lessons' vocabulary (170 glyphs total) and nothing meaningfully else -
+    // generating for anything outside that set previously produced a PDF
+    // with blank title characters, blank practice-box glyphs, and pinyin
+    // stripped of every tone mark, with no indication anything went wrong.
+    // A parent printing this for their kid had no way to know until they
+    // looked at the physical page. Failing loudly here is strictly better
+    // than a document that silently doesn't do what it claims to.
+    await expect(
+      generateWorksheetPdf({
+        fontBytes,
+        weekNumber: 5,
+        title: "第十一课 – 你好世界",
+        moeLevel: "P2",
+        vocabulary: [{ character: "你好", pinyin: "nǐ hǎo" }],
+      }),
+    ).rejects.toThrow(/你|好|世|界/);
   });
 });

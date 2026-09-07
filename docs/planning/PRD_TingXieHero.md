@@ -306,10 +306,11 @@ rather than hardcoded mockup values — not part of the original 3-table sketch.
   run them. 6 Playwright E2E cases (one spec) covering navigation, tab switching, and both History
   states (empty and populated) — the populated case manages its own real Supabase fixture
   (insert, verify, delete, confirm 0 rows remain), since the shipped database has no permanent seed
-  data for it to rely on. The camera's live video stream is the one thing that can't be
-  exercised this way — headless Chromium's fake camera device doesn't produce a usable stream in
-  this environment — so that path is verified structurally (layout, error states) rather than
-  end-to-end.
+  data for it to rely on. The camera's live video stream is exercised too, via Chromium's
+  `--use-fake-device-for-media-stream` flag (confirmed reliable in this environment during a later
+  hardening pass — FSD §6 Phase 48-50 — after several real bugs were found this exact way), but a
+  synthetic test pattern still isn't a real phone camera, so first real-device use is still
+  recommended before showcase.
 
 ---
 
@@ -328,7 +329,8 @@ rather than hardcoded mockup values — not part of the original 3-table sketch.
 | Risk | Mitigation |
 |---|---|
 | Gemini model deprecated/unavailable | Realized twice during build, not just a theoretical risk: `gemini-2.5-flash` (the initial substitute) was retired for new API keys, then `gemini-3.6-flash` hit consistent 503s. Settled on the `gemini-flash-latest` alias (see Section 5) specifically so the next retirement doesn't need a manual bump. |
-| Camera permissions denied on some devices/browsers | Graceful fallback UI with retry instructions, verified via Playwright. Real-device test on a mobile browser still needed before showcase (no desktop scope — see Screen 1 acceptance criteria) — this sandbox can't produce a working camera stream in headless Chromium. |
+| Camera permissions denied on some devices/browsers | Graceful fallback UI with retry instructions, verified via Playwright (including a forced `getUserMedia` rejection, not just a fake stream). Real-device test on a mobile browser still needed before showcase (no desktop scope — see Screen 1 acceptance criteria) — a synthetic Chromium test pattern still isn't real hardware. |
 | Free-tier rate limits (Gemini / Supabase) hit during grading/demo | Keep grading prompt minimal (JD confirms accuracy isn't graded); avoid unnecessary repeated calls during testing |
 | Time overrun across 5-day window | Follow phased build order in FSD; core flow (upload → grade → overlay) is completed before UI polish |
 | Upload endpoint accepting arbitrary files | Not anticipated in the original plan — found during a later maturity audit: `/api/upload` accepted any `Blob` with no size or type check. Fixed with `validateWorksheetImage` (image MIME + 4MB limit, kept under Vercel's own 4.5MB request body cap) before anything touches Storage or Gemini. |
+| Gemini's response schema left "which word is correct" ambiguous | Found during the same later audit: nothing told Gemini whether its `character` field meant the expected word or a transcription of what was actually handwritten. Confirmed live it meant the latter — a wrong answer's correction overlay showed the student's own mistake back as the "fix." Both the prompt and the schema's `character` field now explicitly require the expected word; re-confirmed live after the fix (FSD §6 Phase 46). |

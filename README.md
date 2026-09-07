@@ -28,11 +28,12 @@ a synthesized demo image (not a real phone photo), built the same way for
 this screenshot only. The shipped database starts empty; see
 **Known limitations** below for why no demo data is seeded permanently.
 
-Scan shows the real camera screen's UI shell — header, alignment brackets,
-QR target box, shutter button — with the graceful "Not supported" fallback
-this sandbox's fake camera device always hits (see **Known limitations**);
-`docs/reference/mockups/screen3-camera.png` shows the target design with a
-live feed for comparison. Print Worksheet is the actual generated Tian Zige
+Scan shows the real, live camera screen — header, alignment brackets, QR
+target box, shutter button — genuinely streaming, not a static mockup or an
+error fallback; Chromium's synthetic test-pattern feed (the moving
+green/light-green shape) stands in for a real phone camera here, which is
+what actually varies before first real-device use (see **Known
+limitations**). Print Worksheet is the actual generated Tian Zige
 practice-sheet PDF (`generateWorksheetPdf`, real output, not a mockup),
 rendered here in a PDF viewer.
 
@@ -209,10 +210,14 @@ Scoped out deliberately, not oversights:
   below but deliberately held pending your final manual review — see
   **Deployment**.
 - **No real-device camera test yet.** `/scan`'s layout, error states, and
-  upload/grade flow are all verified; the live `getUserMedia` stream itself
-  needs an actual phone — headless Chromium's fake camera device fails with
-  `NotSupportedError` in this build sandbox, a known limitation of that
-  environment, not the app (FSD §6 Phase 3/8/9).
+  the full upload/grade/retry lifecycle are all verified end-to-end against
+  Chromium's `--use-fake-device-for-media-stream` flag, which turned out to
+  work reliably in this environment (FSD §6 Phase 48-50 — several real bugs
+  were caught this way: a busy-overlay UI trap, a shutter race condition, an
+  abandoned-request state leak) — but a synthetic 1080p test pattern still
+  isn't a real phone camera. Real-hardware specifics (actual permission
+  prompts, real autofocus/lighting, a genuine `ImageCapture.takePhoto()`
+  codec) still need an actual device before first real-world use.
 - **"Share Report" is decorative.** It matches the mockup pixel-for-pixel but
   has no handler — the assignment's evaluation focus is the scan → upload →
   grade → feedback flow, not report sharing. ("Retest Missed" and
@@ -291,6 +296,21 @@ verified pass at a time, never silently. Full reasoning for each lives in
   style bug, an E2E test that only ever passed by accident because it
   depended on leftover data instead of its own fixture, and an app-wide gap
   where no screen had a semantic heading or landmark for screen readers.
+- **A third, extended hardening pass (Phases 21-52)** — the most consequential
+  finding: Gemini's response schema never specified whether its `character`
+  field meant the expected word or a transcription of what was actually
+  handwritten. Confirmed live it meant the latter — a wrong answer's
+  correction overlay was showing the student's own mistake back as if it
+  were the fix, on the app's own named key evaluation point. Fixed and
+  re-confirmed live. Also closed: every displayed date silently used the
+  server's own timezone instead of Singapore's; the upload size limit
+  exceeded Vercel's actual platform cap; no response carried a single
+  security header; a busy-overlay UI trap left users unable to cancel a
+  scan in progress, which in turn exposed a real abandoned-request race
+  condition in the upload store; a failed grading retry never navigated
+  anywhere on success; and the one remaining `axe-core` accessibility
+  violation across every screen (a missing landmark). Full findings,
+  live-verification evidence, and reasoning for each: FSD §6 Phases 21-52.
 
 See `docs/planning/FSD_TingXieHero.md` §6 for the complete, dated log —
 every phase, every finding, every decision and the reasoning behind it.

@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BoundingBox, CharacterResult } from "@/entities/character-result/model/types";
 import type { VocabEntry } from "@/entities/lesson/model/types";
 
+import { SubmissionNotFoundError } from "./gradingErrors";
+
 export type SubmissionDetail = {
   id: string;
   score: number | null;
@@ -25,7 +27,7 @@ export async function getSubmissionDetail(
 ): Promise<SubmissionDetail> {
   const result = await db.findSubmissionDetail(submissionId);
   if (!result) {
-    throw new Error(`Submission not found: ${submissionId}`);
+    throw new SubmissionNotFoundError(submissionId);
   }
   return result;
 }

@@ -881,6 +881,36 @@ non-array), the same typed failure already used for blocked/malformed responses,
 a normal "grading failed, please try again" instead of a broken-looking success. TDD'd (68/68
 passing, up from 67); `npx tsc --noEmit` and lint both clean.
 
+### Phase 23 (beyond the original plan) — the Results not-found UI was dead code in production
+
+Found by deliberately checking a real production build, not just `next dev` (which is the one
+environment where this bug can't reproduce — see why below). `getSubmissionDetail` threw a plain
+`new Error("Submission not found: ...")`, and `ResultsError` (the route's `error.tsx`) branched on
+`error.message.startsWith("Submission not found")` to show a friendly "This result couldn't be
+found / Back to Dashboard" message instead of the generic failure UI — the exact string-matching
+pattern `mapGradeError.ts` already has a comment warning against, reintroduced in a sibling file.
+
+Confirmed live end-to-end: `npm run build && npm run start`, then loaded `/results/<a made-up
+uuid>` in a real browser. Production showed **"Couldn't load this result" / a minified React error
+digest / "Try again"** — never the intended message. Root cause, per Next.js's own docs (confirmed
+via context7, not assumed): *"errors forwarded from Server Components show a generic message with
+an identifier [in production]... to prevent leaking sensitive details from the server."*
+`error.message` never carried the real text past that boundary; the branch had been dead since
+whenever this last got tested only in dev, where messages pass through unobfuscated.
+
+Fixed with the framework's actual purpose-built mechanism instead of trying to preserve a message
+across a boundary that deliberately strips it: `getSubmissionDetail` now throws the existing typed
+`SubmissionNotFoundError` (reused from `gradingErrors.ts`, not a new class); `page.tsx` catches
+that specific type and calls `notFound()` from `next/navigation`, which isn't treated as an
+application error and reaches a new dedicated `not-found.tsx` intact. `error.tsx` is now only for
+genuinely unexpected failures and no longer branches on a string it can't reliably see. Re-verified
+against the same rebuilt production server: the correct message now renders.
+
+While in there: `(dashboard)/error.tsx`, `history/error.tsx`, and `syllabus/error.tsx` all
+displayed raw `error.message` to the end user - the same generic Next.js digest text a parent has
+no reason to see. Removed it from all three in favor of the app's own friendly fallback text;
+`console.error(error)` already captures the real one for debugging.
+
 ---
 
 ## 7. Environment Variables

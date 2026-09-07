@@ -32,7 +32,8 @@ export function TopUpButton() {
 
   return (
     <>
-      <Button size="sm" onClick={handleTopUp} disabled={loading}>
+      {/* h-11 (44px): the "sm" size alone measured only 28px tall live. */}
+      <Button size="sm" className="h-11" onClick={handleTopUp} disabled={loading}>
         {loading ? "Adding…" : "Top Up"}
       </Button>
       {/* A screen reader focused on the button won't hear its own label

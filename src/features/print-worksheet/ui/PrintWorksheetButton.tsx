@@ -73,7 +73,11 @@ export function PrintWorksheetButton({ lesson }: PrintWorksheetButtonProps) {
         onFocus={preload}
         onClick={handleClick}
         disabled={loading}
-        className="flex items-center justify-between rounded-md text-sm text-primary outline-none hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+        // py-3 grows the tappable area to 44px without changing the visible
+        // text/icon at all - a plain no-background button, so padding here
+        // is invisible, just a bigger hit box (confirmed live at only 20px
+        // tall before this).
+        className="flex items-center justify-between rounded-md py-3 text-sm text-primary outline-none hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
       >
         <span className="flex items-center gap-1.5">
           <Printer className="size-4" />

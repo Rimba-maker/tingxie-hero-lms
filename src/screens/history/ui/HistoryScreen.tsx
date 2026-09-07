@@ -25,7 +25,9 @@ export function HistoryScreen({ viewer, submissions }: HistoryScreenProps) {
           <p className="max-w-xs text-sm text-muted-foreground">
             Scan a worksheet to see your first graded result here.
           </p>
-          <Link href="/scan" className={buttonVariants({ className: "mt-1" })}>
+          {/* h-11 (44px), matching the same fix on Dashboard's identical
+              CTA - the shadcn default size measured only 32px tall live. */}
+          <Link href="/scan" className={buttonVariants({ className: "mt-1 h-11" })}>
             Scan &amp; Grade Worksheet
           </Link>
         </div>

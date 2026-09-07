@@ -55,7 +55,10 @@ export function DashboardScreen({ viewer, credits, upcomingLesson }: DashboardSc
       <div>
         <div className="mb-2 flex items-center justify-between">
           <span className="text-sm font-medium">Upcoming Ting Xie</span>
-          <Link href="/syllabus" className="text-xs font-medium text-primary">
+          {/* py-3.5 grows the tappable area to 44px without changing the
+              visible text at all - a plain text link has no background/
+              border, so padding here is invisible, just a bigger hit box. */}
+          <Link href="/syllabus" className="py-3.5 text-xs font-medium text-primary">
             View All
           </Link>
         </div>
@@ -79,7 +82,14 @@ export function DashboardScreen({ viewer, credits, upcomingLesson }: DashboardSc
 
       <Link
         href={upcomingLesson ? `/scan?lessonId=${upcomingLesson.id}` : "/scan"}
-        className={buttonVariants({ size: "lg", className: "self-center px-6 text-base [&_svg:not([class*='size-'])]:size-5" })}
+        // h-11 (44px), not the shadcn "lg" size's own h-9 (36px): confirmed
+        // live on a real iPhone SE device profile that no Button size
+        // variant reaches Apple/Google's 44px minimum tap target guideline
+        // - most consequential here, the single primary action of the
+        // whole app, tapped by a primary-school student. Isolated with
+        // generous surrounding whitespace (confirmed live), so growing it
+        // doesn't risk overlapping any neighboring control.
+        className={buttonVariants({ size: "lg", className: "h-11 self-center px-6 text-base [&_svg:not([class*='size-'])]:size-5" })}
       >
         <Camera data-icon="inline-start" />
         Scan &amp; Grade Worksheet

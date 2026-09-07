@@ -1770,6 +1770,67 @@ rule but were deleted before commit, never part of the codebase).
 
 ---
 
+### Phase 53 (beyond the original plan) — real tablet layouts, and a phone-frame mockup for what's left
+
+Revisited the "mobile-only, by design" decision (Phase 0-era, re-confirmed as recently as Phase 52's
+README pass) after being asked directly: the assignment brief only ever supplied phone mockups, but
+that's a reason the *visual design* stops at mobile, not a reason the *app* has to look broken or
+unfinished on a tablet or desktop browser. Singapore students plausibly use an iPad for schoolwork
+as often as a phone - a real, foreseeable audience the original "mobile-only" framing didn't
+distinguish from "someone previewing on a monitor."
+
+Split the decision by actual use case instead of treating "non-mobile" as one category:
+
+- **Dashboard, Syllabus, History, Results** (`ScreenShell`-based) get a **real adaptive tablet
+  layout** starting at `md:` (768px) - `ScreenShell` widens from `max-w-md` to `max-w-3xl`, and
+  `SyllabusScreen`'s lesson list and `HistoryScreen`'s submission list reflow into a 2-column grid
+  (`items-start` on Syllabus's so one lesson's expand/collapse can't stretch its neighbor). These
+  are pure content/browsing screens - a parent or student checking progress on an iPad is a real,
+  plausible use case, not a hypothetical one.
+- **Scan** and genuinely wide desktop (`xl:`, 1280px+, all screens including the tablet-adapted
+  ones above) get a **phone-frame mockup** instead (new `src/widgets/phone-frame/ui/PhoneFrame.tsx`)
+  - a realistic bezel, notch, soft offset shadow, and a radial-gradient backdrop sampled from the
+  app's own palette, rather than either a stretched mobile column or an invented desktop layout the
+  assignment never supplied a mockup for. Scan gets this from `md:` already, earlier than the
+  content screens: there's no camera-on-a-monitor (or camera-on-a-large-tablet-mockup) use case to
+  build a native layout for in the first place, so the phone-frame treatment starts as soon as it's
+  not a real phone.
+
+Two real implementation bugs found and fixed while building `PhoneFrame`, both confirmed live by
+inspecting the actual rendered bounding box, not assumed from the Tailwind classes alone:
+
+1. **The border ate into the content width.** `box-sizing: border-box` (Tailwind's own preflight)
+   means a `border-[10px]` on a `w-[390px]` box leaves only 370px of actual content area - 20px
+   narrower than the 390px viewport every mobile layout is tuned for. This was enough to wrap
+   `AppHeader`'s "Welcome back, Sarah" text onto three lines instead of two. Fixed by sizing the
+   outer box at 410px so the content area lands back on exactly 390px.
+2. **An unscoped `min-h-dvh` silently overrode the frame's fixed height.** `min-height` is a lower
+   bound `height` can never shrink below - the base (non-breakpoint-scoped) `min-h-dvh` needed for
+   the plain mobile layout was still active at `md:`/`xl:`, so the frame stretched to fill the
+   entire viewport instead of being a real ~870px phone silhouette. A `getBoundingClientRect()`
+   check directly on the device element caught this precisely (height equaled `window.innerHeight`
+   exactly, not the requested 870px). Fixed by resetting `min-height` at each breakpoint alongside
+   the explicit `height`.
+
+`BottomNav`'s existing `position: fixed` needed no changes at all: any ancestor with a CSS
+`transform` becomes the containing block for its `fixed` descendants, so giving the device shell
+`[transform:translateZ(0)]` automatically re-scopes the nav bar to the phone frame's own box
+instead of the true browser viewport - confirmed live by screenshotting the framed Dashboard and
+seeing the nav bar correctly anchored to the bottom of the *phone silhouette*, not the browser
+window below it.
+
+Verified live and thoroughly, not just at one width: a full `axe-core` accessibility scan and a
+console/page-error sweep across mobile (390px), tablet (900px), and desktop (1600px) widths, on
+every route (`/`, `/history`, `/syllabus`, `/scan`, `/premium`) - 0 violations and 0 errors across
+all 15 checks. Screenshotted the real mobile viewport (390px) before and after and confirmed it's
+pixel-identical - this change adds a presentation layer above mobile, it doesn't touch it. Ran the
+`impeccable` skill's own mechanical design detector against every changed file - 0 findings. Full
+Playwright e2e suite (6/6) and Vitest (84/84, unchanged - this is presentational layout work,
+verified live per this project's established convention, not unit-tested) both clean. `npx tsc
+--noEmit`, lint, and a full production build all clean too.
+
+---
+
 ## 7. Environment Variables
 
 ```

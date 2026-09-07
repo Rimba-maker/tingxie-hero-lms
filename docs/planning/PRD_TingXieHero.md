@@ -125,8 +125,13 @@ notes and `docs/research/feature-ideas-audit.md` item 6 for how the library was 
   pass (screenshot compared side-by-side against `screen1-dashboard.png`)
 - [x] "Scan & Grade Worksheet" navigates to camera capture flow
 - [x] Responsive on mobile viewport (this is a PWA, mobile-first) — verified at 375/390/414/430px
-  widths; no desktop/tablet layout, which matches the brief (re-verified directly against the
-  source PDF, not just the mockup images — no responsive requirement appears anywhere in it)
+  widths. The brief's own mockups stop at mobile (re-verified directly against the source PDF, not
+  just the mockup images — no responsive requirement appears anywhere in it), so no desktop- or
+  tablet-*native* design exists to build from. Extended anyway (FSD §6 Phase 53) once asked
+  directly whether tablet users (a real Singapore-classroom scenario) were being overlooked: tablet
+  width (≥768px) gets a genuine adaptive reflow on the content screens, and desktop/Scan get a
+  phone-frame mockup rather than either a stretched mobile column or an invented, unreviewed
+  desktop design
 - [x] Credits card and calendar strip pull real data, not hardcoded mockup values — verified
   end-to-end against the live `students`/`lessons` tables: the real current week renders (correctly
   rolling across a month boundary), today is genuinely highlighted, the test-schedule banner shows

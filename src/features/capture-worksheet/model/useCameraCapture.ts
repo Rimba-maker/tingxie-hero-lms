@@ -65,16 +65,13 @@ export function useCameraCapture() {
     }
   }, []);
 
-  const stop = useCallback(() => {
-    stopStream();
-    setState("idle");
-    setTorchSupported(false);
-    setTorchOn(false);
-  }, [stopStream]);
-
-  // Always release the camera when the component unmounts, even if the
-  // caller never explicitly calls stop() — a leaked MediaStream keeps the
-  // camera's hardware indicator lit and can block getUserMedia elsewhere.
+  // Always release the camera when the component unmounts - a leaked
+  // MediaStream keeps the camera's hardware indicator lit and can block
+  // getUserMedia elsewhere. This is the only place a stream ever needs
+  // releasing: no caller keeps this hook mounted while stopping the camera
+  // and potentially starting it again later, so there's no case an
+  // explicit stop() (previously exported here, unused by any caller) would
+  // handle that this doesn't already cover.
   useEffect(() => stopStream, [stopStream]);
 
   const toggleTorch = useCallback(async () => {
@@ -151,7 +148,7 @@ export function useCameraCapture() {
     }
   }, [captureOnce]);
 
-  return { videoRef, state, error, torchSupported, torchOn, start, stop, toggleTorch, capture };
+  return { videoRef, state, error, torchSupported, torchOn, start, toggleTorch, capture };
 }
 
 // "from-image" makes the decode itself apply the Blob's EXIF orientation, so

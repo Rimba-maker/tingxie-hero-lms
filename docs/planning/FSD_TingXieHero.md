@@ -1711,6 +1711,28 @@ and lint clean too.
 
 ---
 
+### Phase 51 (beyond the original plan) — dead code: `useCameraCapture`'s exported `stop()` had no caller
+
+While auditing the other `useRef(true/false)` instances for Phase 49's class of bug, noticed
+`useCameraCapture` exports a `stop()` function that `CameraViewfinder` - its only consumer - never
+destructures or calls. Confirmed by grepping the entire `capture-worksheet` feature: `stop` appears
+nowhere outside its own definition. The hook's unmount `useEffect` already calls the lower-level
+`stopStream()` unconditionally on unmount regardless of whether `stop()` is ever invoked, so the
+camera hardware genuinely does get released correctly either way - this was unused surface, not a
+functional gap. `stop()`'s only additional behavior beyond that cleanup (resetting `state`/
+`torchSupported`/`torchOn` React state) only matters for a caller that stops the camera while
+staying mounted and potentially restarting it later on the same hook instance - nothing in this app
+does that; `CameraViewfinder` always fully unmounts via navigation when closing.
+
+Removed the unused function and its entry in the hook's return value. Verified live, not just by
+reading the diff: opened the camera, confirmed the stream's tracks read `"live"`; closed via
+navigation and reopened a fresh scan session, confirming the new session gets a clean, working
+video stream (`videoWidth: 1920`) - proving the old stream was genuinely released, not left
+dangling, with the deletion in place. Full Playwright e2e suite (6/6) and Vitest (84/84, unchanged)
+both clean. `npx tsc --noEmit` and lint clean too.
+
+---
+
 ## 7. Environment Variables
 
 ```

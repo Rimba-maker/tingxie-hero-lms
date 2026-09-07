@@ -207,11 +207,13 @@ notes and `docs/research/feature-ideas-audit.md` item 6 for how the library was 
 - On successful grading response: navigate to Results screen (Screen 4) with the new submission's ID
 
 **Acceptance criteria:**
-- [ ] Camera permission requested and stream displays live video — **code complete, not yet
-  verified on a real device.** Headless Chromium's fake camera device doesn't produce a usable
-  stream in this dev sandbox (confirmed via a direct `getUserMedia` test), so this needs a human on
-  an actual phone/browser before showcase.
-- [ ] Capture button produces an image blob from the live stream — same real-device caveat as above
+- [x] Camera permission requested and stream displays live video — verified extensively against
+  Chromium's `--use-fake-device-for-media-stream` flag in a real browser (reliable in this
+  environment, confirmed live, not the failure an earlier pass first assumed — see FSD §6
+  Phase 48-50). **Still open:** an actual physical phone hasn't tested this yet — real permission
+  prompts, autofocus, and codec behavior are the one thing a synthetic stream can't confirm.
+- [x] Capture button produces an image blob from the live stream — same fake-camera verification as
+  above, same real-device caveat still open
 - [x] Uploading state is visually indicated (spinner/progress) while backend processes — verified
   (uploading/grading states render correctly in `ScanScreen`)
 - [x] Error state handled gracefully if camera permission denied or upload fails — verified via

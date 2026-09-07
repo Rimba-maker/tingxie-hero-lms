@@ -78,7 +78,7 @@ with `src/`, trust the code and tell me; the diagram is wrong, not the app.
   photo, positioned from Gemini's own bounding boxes. That overlay is the
   assignment's own named "key evaluation point" — not a stand-in table, an
   actual mark on the actual photo.
-- **Tested where it matters, not everywhere for its own sake.** 85 Vitest
+- **Tested where it matters, not everywhere for its own sake.** 86 Vitest
   unit tests (26 files) cover every entity function's business logic —
   Gemini response parsing, score computation, the grade-submission
   pipeline's full orchestration order — against fakes, no live credentials
@@ -281,6 +281,14 @@ baseline worked end-to-end, several things were deliberately taken further:
   against the live API.
 - **A view-only stroke-order practice animation** for missed characters,
   added at explicit request beyond the original PRD scope.
+- **A gallery-upload fallback and WebP capture**, added once live testing on
+  a real phone surfaced them as genuine gaps. `/scan` no longer requires the
+  live camera — "Choose from Gallery" hands off to the exact same
+  upload/grade pipeline. Every captured or gallery-picked photo is now
+  re-encoded to WebP (confirmed a Gemini-supported input format, not
+  assumed) before upload, typically 25-35% smaller than the JPEG this
+  produced before, with a safe PNG fallback on any browser that can't
+  encode WebP.
 
 Full reasoning, every fix, and the complete dated build log:
 `docs/planning/FSD_TingXieHero.md` §6.

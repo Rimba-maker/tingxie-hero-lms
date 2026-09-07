@@ -204,6 +204,15 @@ notes and `docs/research/feature-ideas-audit.md` item 6 for how the library was 
   Context7/MDN), falling back to the original canvas-snapshot-of-the-video-element approach
   everywhere else (Safari, Firefox, or if `takePhoto()` itself throws on specific hardware) —
   convert to Blob/File, show uploading state, POST to backend upload endpoint
+- **Gallery-upload fallback** (added beyond the original scope, Phase 62): a persistent "Choose from
+  Gallery" option hands a `<input type="file">` selection into the exact same upload/grade pipeline
+  as a live capture, normalized through the same EXIF-orientation fix. Not gated on the camera's own
+  state — this is the real fallback for a denied/unavailable camera, not just an alternative
+  alongside a working one.
+- **Every photo — captured or gallery-picked — is re-encoded to WebP** before upload (Phase 62),
+  confirmed a Gemini-supported vision input format via Context7 against the current API docs, not
+  assumed. Falls back to PNG (already an allowed format) on a browser that can't encode WebP,
+  per `canvas.toBlob`'s own documented behavior — never throws.
 - On successful grading response: navigate to Results screen (Screen 4) with the new submission's ID
 
 **Acceptance criteria:**
@@ -218,6 +227,11 @@ notes and `docs/research/feature-ideas-audit.md` item 6 for how the library was 
   (uploading/grading states render correctly in `ScanScreen`)
 - [x] Error state handled gracefully if camera permission denied or upload fails — verified via
   Playwright (permission-denied path) and the store's own tests (upload/grade failure paths)
+- [x] Gallery-upload fallback reaches the real upload pipeline and produces a genuinely stored
+  WebP object — verified live end-to-end against a real production build and real Supabase: a
+  file selected through the hidden input reached `POST /api/upload` and was served back with
+  `Content-Type: image/webp`, same as a real fake-camera shutter capture. Temp submissions and
+  their Storage objects deleted after.
 
 ---
 
@@ -308,7 +322,7 @@ rather than hardcoded mockup values — not part of the original 3-table sketch.
 - **Security:** Gemini API key and Supabase service role key must live server-side only (Next.js API routes / server actions), never exposed to the client bundle.
 - **NDA-safety:** Since this is a take-home for a company with IP-sensitive policies, avoid referencing this project publicly by client name after submission unless explicitly permitted.
 - **Performance:** Not a primary evaluation criterion per the assignment, but image upload should show loading feedback so the flow doesn't feel broken during the Gemini round-trip (which can take a few seconds).
-- **Test coverage:** 85 unit tests (Vitest, 26 files) covering every entity function's business
+- **Test coverage:** 86 unit tests (Vitest, 26 files) covering every entity function's business
   logic — Gemini response parsing, score computation, the pivot logic behind the historical matrix,
   the grade-submission pipeline's orchestration order — against fakes, no live credentials needed to
   run them. 6 Playwright E2E cases (one spec) covering navigation, tab switching, and both History

@@ -1248,6 +1248,33 @@ resolves Tuesday 8 as "today." Verified live in the browser too (Dashboard's cal
 renders correctly for the normal case). `npx tsc --noEmit`, lint, the full Vitest suite (80/80, up
 from 79), and Playwright (6/6) all clean.
 
+### Phase 36 (beyond the original plan) — every other displayed date had the same timezone bug as Phase 35
+
+Phase 35 fixed `getCurrentWeekDays`, but the same root cause - `toLocaleDateString`/`toLocaleString`
+reading the server's ambient timezone instead of Singapore's - was still live in four other display
+sites: `DashboardScreen.tsx` (credits expiry date, using locale `"en-US"` with no `timeZone` at
+all), `HistoryScreen.tsx` (submission date), `HistoricalMatrix.tsx` (date column headers), and
+`ScoreHeader.tsx` (graded date+time) - all three of the latter passed locale `"en-SG"` but still no
+`timeZone` option, the exact mix-up Phase 35's own writeup calls out: locale controls
+day/month-order and separator conventions, not which timezone a timestamp is interpreted in.
+Confirmed live with the same repro technique as Phase 35: `process.env.TZ =
+'America/Los_Angeles'` then `new Date('2026-11-30T00:00:00Z').toLocaleDateString('en-SG', {...})`
+produced `"29 Nov 2026"` - a calendar day early - regardless of the `"en-SG"` locale.
+
+Extracted the fix Phase 35 only applied locally into a shared helper,
+`src/shared/lib/formatSingaporeDate.ts`, exporting `SINGAPORE_TIME_ZONE = "Asia/Singapore"` and
+`formatSingaporeDate(date, options)` (a thin `Intl.DateTimeFormat("en-SG", { ...options, timeZone:
+SINGAPORE_TIME_ZONE })` wrapper), and pointed all four call sites at it. Also deduplicated the two
+`"Asia/Singapore"` string constants that already existed separately in `formatTestSchedule.ts` and
+`getCurrentWeekDays.ts` (from Phase 35) to both import `SINGAPORE_TIME_ZONE` from the new shared
+file instead - one source of truth for the timezone string app-wide. TDD'd
+`formatSingaporeDate.test.ts` against the same `2026-11-30T00:00:00Z` repro, asserting `"30 Nov
+2026"`. Re-verified live: with the dev server itself forced to `TZ=America/Los_Angeles`, the real
+Dashboard rendered "Credits expire on 30 Nov 2026" (not the off-by-one "29 Nov") and the calendar
+strip still correctly showed today as Monday the 7th - confirming the fix in the actual browser, not
+just the unit test. `npx tsc --noEmit`, lint, and the full Vitest suite (81/81, up from 80, 26 files
+up from 25) all clean.
+
 ---
 
 ## 7. Environment Variables

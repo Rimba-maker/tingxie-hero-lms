@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, ClipboardList } from "lucide-react";
 
 import type { SubmissionSummary } from "@/entities/submission/api/listSubmissionHistory";
+import { formatSingaporeDate } from "@/shared/lib/formatSingaporeDate";
 import { Card, CardContent } from "@/shared/ui/card";
 import { buttonVariants } from "@/shared/ui/button";
 import type { Viewer } from "@/widgets/app-header/model/types";
@@ -35,7 +36,7 @@ export function HistoryScreen({ viewer, submissions }: HistoryScreenProps) {
               submission.score !== null
                 ? Math.round((submission.score / submission.totalPossible) * 100)
                 : null;
-            const submittedDate = new Date(submission.submittedAt).toLocaleDateString("en-SG", {
+            const submittedDate = formatSingaporeDate(new Date(submission.submittedAt), {
               day: "numeric",
               month: "short",
               year: "numeric",

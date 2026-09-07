@@ -1,6 +1,7 @@
 import { Check, X } from "lucide-react";
 
 import type { CharacterHistoryMatrix } from "@/entities/character-result/api/buildCharacterHistoryMatrix";
+import { formatSingaporeDate } from "@/shared/lib/formatSingaporeDate";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 
 type HistoricalMatrixProps = {
@@ -20,7 +21,7 @@ export function HistoricalMatrix({ matrix, pinyinByCharacter }: HistoricalMatrix
           <TableHead>Character</TableHead>
           {matrix.dates.map((date) => (
             <TableHead key={date} className="text-center">
-              {new Date(date).toLocaleDateString("en-SG", { day: "numeric", month: "short" })}
+              {formatSingaporeDate(new Date(date), { day: "numeric", month: "short" })}
             </TableHead>
           ))}
         </TableRow>

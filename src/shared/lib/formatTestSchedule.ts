@@ -1,12 +1,8 @@
-// MOE Singapore curriculum (see CONTEXT/PRD) — a test's scheduled time must
-// display the same way regardless of where the server actually runs
-// (dev machine, Vercel edge region, etc.), so the timezone is pinned rather
-// than left to the host's ambient local time.
-const TIME_ZONE = "Asia/Singapore";
+import { SINGAPORE_TIME_ZONE } from "./formatSingaporeDate";
 
 export function formatTestSchedule(date: Date): string {
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: TIME_ZONE,
+    timeZone: SINGAPORE_TIME_ZONE,
     weekday: "long",
     day: "numeric",
     month: "short",

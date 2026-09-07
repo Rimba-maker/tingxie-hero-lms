@@ -3,6 +3,7 @@ import { Bell, Camera } from "lucide-react";
 
 import type { Lesson } from "@/entities/lesson/model/types";
 import type { StudentCredits } from "@/entities/student/model/types";
+import { formatSingaporeDate } from "@/shared/lib/formatSingaporeDate";
 import { formatTestSchedule } from "@/shared/lib/formatTestSchedule";
 import { getCurrentWeekDays } from "@/shared/lib/getCurrentWeekDays";
 import { buttonVariants } from "@/shared/ui/button";
@@ -37,7 +38,7 @@ export function DashboardScreen({ viewer, credits, upcomingLesson }: DashboardSc
       <CreditsCard
         used={credits.used}
         total={credits.total}
-        expiresOn={new Date(credits.expiresOn).toLocaleDateString("en-US", {
+        expiresOn={formatSingaporeDate(new Date(credits.expiresOn), {
           day: "numeric",
           month: "short",
           year: "numeric",

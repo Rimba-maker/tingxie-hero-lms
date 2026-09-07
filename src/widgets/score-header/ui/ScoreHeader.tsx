@@ -1,3 +1,4 @@
+import { formatSingaporeDate } from "@/shared/lib/formatSingaporeDate";
 import { pluralize } from "@/shared/lib/pluralize";
 import { Card, CardContent } from "@/shared/ui/card";
 
@@ -15,15 +16,13 @@ export function ScoreHeader({ score, totalPossible, gradedAt, charactersMissed }
   // 8/10 (80%) result still renders in the destructive color because 2
   // characters were wrong.
   const isPerfect = charactersMissed === 0;
-  const gradedDate = new Date(gradedAt)
-    .toLocaleString("en-SG", {
-      day: "numeric",
-      month: "short",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    })
-    .replace(/\b(am|pm)\b/i, (match) => match.toUpperCase());
+  const gradedDate = formatSingaporeDate(new Date(gradedAt), {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).replace(/\b(am|pm)\b/i, (match) => match.toUpperCase());
 
   return (
     <Card>

@@ -5,19 +5,13 @@ export type CalendarDay = {
   hasEvent: boolean;
 };
 
-const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+import { SINGAPORE_TIME_ZONE } from "./formatSingaporeDate";
 
-// MOE Singapore curriculum (see CONTEXT/PRD) - "today" and the displayed
-// week must be Singapore's calendar day regardless of where the server
-// process actually runs. formatTestSchedule already pins this explicitly
-// (FSD §6 Phase 7); plain Date getters here would silently read the
-// server's own local timezone instead - the same bug, just never caught
-// for this function.
-const TIME_ZONE = "Asia/Singapore";
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function getSingaporeDateParts(date: Date): { year: number; month: number; day: number } {
   const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: TIME_ZONE,
+    timeZone: SINGAPORE_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

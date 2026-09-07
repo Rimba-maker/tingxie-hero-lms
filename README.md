@@ -68,8 +68,8 @@ with `src/`, trust the code and tell me; the diagram is wrong, not the app.
   photo, positioned from Gemini's own bounding boxes. That overlay is the
   assignment's own named "key evaluation point" — not a stand-in table, an
   actual mark on the actual photo.
-- **Tested where it matters, not everywhere for its own sake.** 69 Vitest
-  unit tests (23 files) cover every entity function's business logic —
+- **Tested where it matters, not everywhere for its own sake.** 72 Vitest
+  unit tests (24 files) cover every entity function's business logic —
   Gemini response parsing, score computation, the grade-submission
   pipeline's full orchestration order — against fakes, no live credentials
   needed to run them. 6 Playwright E2E tests cover navigation and both

@@ -931,6 +931,26 @@ reliably re-announce its own label text changing under it anyway. Verified: `npx
 lint, the full Vitest suite (69/69, unchanged - pure UI attributes, nothing new to unit test), and
 Playwright (6/6) all clean.
 
+### Phase 25 (beyond the original plan) — the credits card showed the wrong number entirely
+
+Found by re-checking `screen1-dashboard.png` pixel-for-pixel against the live component, the same
+method that caught the Syllabus "(80%)" and pinyin-fidelity bugs earlier in this document. The
+mockup reads **"12 of 20 Remaining"** with the progress bar filled to roughly that same 60% - the
+displayed number and the bar both track how many credits are *left*. `CreditsCard` displayed and
+filled its bar from `used` directly: `{used} of {total} Remaining`. Since the live database starts
+with 0 graded submissions, this rendered as **"0 of 30 Remaining"** with an empty bar on a totally
+fresh install - the single most visible number on the entire app, on the very first screen,
+reading as "you have no credits left" when the truth was the opposite: nothing had been spent yet.
+
+Fixed by computing `remaining = total - used` (clamped at 0 - nothing enforces a hard quota, so
+`used` can exceed `total` between a scan and the next Top Up, and a negative "Remaining" isn't a
+state worth rendering even though the numbers allow it). Pulled the math into its own
+`getCreditsDisplay.ts` rather than leaving it inline, the same pattern as `getStatusLabel.ts` -
+this project doesn't unit-test components directly (no React Testing Library / jsdom anywhere in
+it), so arithmetic that's easy to get backwards, as this one proved, needs to live somewhere
+testable without one. TDD'd (72/72, up from 69, 24 files up from 23); re-verified live against the
+real (still-empty) database: the Dashboard now correctly shows "30 of 30 Remaining" with a full bar.
+
 ---
 
 ## 7. Environment Variables

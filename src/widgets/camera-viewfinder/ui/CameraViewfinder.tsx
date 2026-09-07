@@ -36,7 +36,13 @@ export function CameraViewfinder({ onClose, onCapture, capturing }: CameraViewfi
         className="absolute inset-0 size-full object-cover"
       />
 
-      <div className="relative z-10 flex items-center justify-between p-4">
+      {/* z-30, above ScanScreen's busy overlay (z-20 - confirmed live: it's
+          `inset-0`, covers this whole component, and Playwright's own
+          actionability check reported it "intercepts pointer events" on
+          Close) - without this, a user has zero way to back out for the
+          entire upload/grade cycle (up to 60s), trapped until it succeeds
+          or fails on its own. */}
+      <div className="relative z-30 flex items-center justify-between p-4">
         <button
           type="button"
           onClick={onClose}

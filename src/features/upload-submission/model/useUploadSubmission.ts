@@ -35,12 +35,26 @@ export function createUploadSubmissionStore(api: UploadSubmissionApi) {
   }
 
   return create<UploadStore>((set) => {
-    async function grade(submissionId: string): Promise<UploadState> {
-      set({ status: "grading", submissionId });
+    // This store is a module-level singleton, not per-screen state (Phase
+    // 47) - it outlives whichever ScanScreen instance started a given
+    // upload/grade call. Fetches aren't cancelled by unmounting, so an
+    // abandoned call (closed mid-upload, or the browser's own back button)
+    // can still resolve later and, without this guard, overwrite whatever
+    // state a subsequent, unrelated scan session is actually in. Each call
+    // captures the generation current when IT started; only a result from
+    // the still-current generation is ever applied to shared state.
+    let generation = 0;
+
+    async function grade(submissionId: string, myGeneration: number): Promise<UploadState> {
+      // Guarded like every other set() below: grade() is always reached
+      // after at least one prior await (upload()'s own uploadSubmission()
+      // call, or directly via retryGrade()), so a newer generation can
+      // already exist by the time this line runs.
+      if (myGeneration === generation) set({ status: "grading", submissionId });
       try {
         const { score, totalPossible } = await api.gradeSubmission(submissionId);
         const result: UploadState = { status: "success", submissionId, score, totalPossible };
-        set(result);
+        if (myGeneration === generation) set(result);
         return result;
       } catch (err) {
         const result: UploadState = {
@@ -48,7 +62,7 @@ export function createUploadSubmissionStore(api: UploadSubmissionApi) {
           message: errorMessage(err, "Grading failed"),
           submissionId,
         };
-        set(result);
+        if (myGeneration === generation) set(result);
         return result;
       }
     }
@@ -56,19 +70,23 @@ export function createUploadSubmissionStore(api: UploadSubmissionApi) {
     return {
       status: "idle",
       async upload(params) {
+        const myGeneration = ++generation;
         set({ status: "uploading" });
         let submissionId: string;
         try {
           ({ submissionId } = await api.uploadSubmission(params));
         } catch (err) {
           const result: UploadState = { status: "error", message: errorMessage(err, "Upload failed") };
-          set(result);
+          if (myGeneration === generation) set(result);
           return result;
         }
-        return grade(submissionId);
+        return grade(submissionId, myGeneration);
       },
-      retryGrade: grade,
+      retryGrade(submissionId) {
+        return grade(submissionId, ++generation);
+      },
       reset() {
+        generation++;
         set({ status: "idle" });
       },
     };

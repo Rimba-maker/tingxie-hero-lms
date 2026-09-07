@@ -1591,6 +1591,51 @@ this project's own convention, not unit-tested) both clean. `npx tsc --noEmit` a
 
 ---
 
+### Phase 48 (beyond the original plan) — a user was trapped mid-upload, and abandoning it wasn't actually safe
+
+Investigating whether Phase 47's fix fully closed the abandoned-session gap surfaced two more real
+issues, found together because fixing one made the other significantly easier to hit.
+
+**The trap**: `ScanScreen`'s busy overlay (`role="status"`, "Uploading…"/"Grading…") is
+`absolute inset-0 z-20`. `CameraViewfinder`'s header (Close button included) had no explicit
+z-index (`z-10` only applies within its own children, not against this outside sibling), so the
+overlay - later in DOM order with a higher z-index - painted over the entire camera view, Close
+button included. Confirmed live: a real Playwright click on "Close camera" during the busy state
+failed outright, with Playwright's own actionability log naming the exact cause -
+`<div role="status" ...>Uploading…</div> intercepts pointer events`. A user had zero way to back out
+for the whole upload/grade cycle - now up to 60 seconds after Phase 45's timeout - trapped until it
+either succeeds or fails on its own.
+
+Fixing that trap (raising the header to `z-30`, above the overlay) makes leaving mid-upload an
+expected, easy, everyday action instead of a rare browser-back edge case - which meant the
+abandoned-request race Phase 47 didn't fully address became far more likely to actually happen, not
+less. Fetches aren't cancelled by unmounting, so two gaps remained: (1) the shared Zustand store's
+own `set()` calls would still apply a since-abandoned call's late result on top of whatever a
+newer, unrelated scan session is doing; (2) the *old*, now-unmounted `ScanScreen`'s own
+`handleCapture` closure keeps running regardless, and would `router.push()` to the abandoned
+session's Results page - forcibly navigating the user away from whatever they're doing now, entirely
+unprompted, the moment that old request happens to resolve successfully.
+
+Fixed both at once: the store now tracks a `generation` counter, bumped by every `upload()`,
+`retryGrade()`, and `reset()` call; each in-flight call captures the generation current when *it*
+started, and every `set()` inside it - including the intermediate "now grading" transition, not
+just the final result - checks it's still current before touching shared state. Caught a real bug
+in this fix's own first draft via its own regression test: guarding only the *final* result but not
+the intermediate "grading" `set()` still let a stale call's leading edge stomp a newer session's
+already-completed state before its (correctly-skipped) stale result would have applied - the test
+failure showed the store left stuck on the stale submissionId in a phantom "grading" state, worse
+than before the fix. `ScanScreen` separately tracks its own mounted state via a ref, so
+`handleCapture` never navigates on behalf of a call the user has since walked away from.
+
+Verified live end-to-end: re-ran the fake-camera Playwright reproduction and confirmed "Close
+camera" is now clickable during the busy overlay and correctly navigates back. Added a store-level
+regression test simulating the full scenario (an abandoned upload, a reset, a real second session,
+then the abandoned request finally resolving) - it now passes, and previously caught the guard's own
+gap before this was committed. Full Playwright e2e suite (6/6, unchanged) and Vitest (84/84, up from
+83) both clean. `npx tsc --noEmit` and lint clean too.
+
+---
+
 ## 7. Environment Variables
 
 ```

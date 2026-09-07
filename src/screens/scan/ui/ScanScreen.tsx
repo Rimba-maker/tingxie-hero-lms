@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import { useUploadSubmission } from "@/features/upload-submission/model/useUploadSubmission";
@@ -32,9 +32,23 @@ export function ScanScreen({ lessonId }: ScanScreenProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [upload.reset]);
 
+  // Now that Close is reachable mid-upload (see CameraViewfinder), leaving
+  // before this resolves is an expected path, not just a rare browser-back
+  // edge case. Fetches aren't cancelled by unmounting, so this component's
+  // own handleCapture keeps running after the user has navigated elsewhere
+  // - without this check, a since-abandoned scan finishing successfully
+  // later would force-navigate the user to its Results page mid-whatever
+  // they're now doing, entirely unprompted.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   async function handleCapture(file: Blob) {
     const result = await upload.upload({ file, lessonId });
-    if (result.status === "success") {
+    if (mountedRef.current && result.status === "success") {
       router.push(`/results/${result.submissionId}`);
     }
   }

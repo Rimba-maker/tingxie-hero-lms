@@ -123,4 +123,48 @@ describe("useUploadSubmission store", () => {
 
     expect(store.getState().status).toBe("idle");
   });
+
+  test("a since-abandoned upload resolving late doesn't overwrite a newer session's state", async () => {
+    // This store is a module-level singleton (Phase 47) - a slow upload
+    // left running after the user closes the camera and starts a fresh
+    // scan (now reachable via a normal Close tap, not just browser-back -
+    // see CameraViewfinder's busy-overlay z-index fix) must not clobber
+    // whatever the new session is doing once it finally resolves.
+    let resolveFirstUpload!: (value: { submissionId: string }) => void;
+    const fakeApi: UploadSubmissionApi = {
+      uploadSubmission: () => new Promise((resolve) => (resolveFirstUpload = resolve)),
+      gradeSubmission: async () => ({ score: 9, totalPossible: 10 }),
+    };
+    const store = createUploadSubmissionStore(fakeApi);
+
+    // Session 1: starts uploading, never resolves yet.
+    const abandonedPromise = store
+      .getState()
+      .upload({ file: new Blob(["session-1"]), lessonId: "lesson-A" });
+    expect(store.getState().status).toBe("uploading");
+
+    // User closes the camera and reset() runs on the next ScanScreen mount
+    // (Phase 47) - simulates leaving before session 1 ever finishes.
+    store.getState().reset();
+    expect(store.getState().status).toBe("idle");
+
+    // Session 2 starts a completely fresh, real capture and is left to run
+    // to completion on its own before session 1's stale promise resolves -
+    // isolates the assertion to what actually matters (final state
+    // correctness), not a mid-flight status this fake API resolves too
+    // fast to reliably observe.
+    fakeApi.uploadSubmission = async () => ({ submissionId: "sub-456" });
+    const session2Result = await store
+      .getState()
+      .upload({ file: new Blob(["session-2"]), lessonId: "lesson-B" });
+    expect(session2Result).toMatchObject({ status: "success", submissionId: "sub-456" });
+    expect(store.getState()).toMatchObject(session2Result);
+
+    // NOW session 1's long-abandoned request finally resolves - must not
+    // clobber session 2's already-settled, unrelated success state.
+    resolveFirstUpload({ submissionId: "sub-123-STALE" });
+    await abandonedPromise;
+
+    expect(store.getState()).toMatchObject(session2Result);
+  });
 });

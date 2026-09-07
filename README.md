@@ -5,7 +5,7 @@ AI-powered Chinese handwriting grading PWA — take-home technical assignment
 Gemini Vision grading → correction overlay, per the assignment's evaluation
 focus.
 
-**Live URL:** _pending deployment_
+**Live URL:** https://tingxie-hero-lms.vercel.app
 
 ## Screenshots
 
@@ -378,10 +378,13 @@ every phase, every finding, every decision and the reasoning behind it.
 
 ## Deployment
 
-Not deployed yet — pending final review. When ready:
+Live at https://tingxie-hero-lms.vercel.app, deployed via the Vercel CLI to a
+dedicated project (`tingxie-hero-lms`) on its own, separate from any other
+project on the same Vercel account. The three variables from `.env.example`
+are set as encrypted project environment variables (Production + Preview):
+`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`.
 
-1. Create a Vercel project linked to this repo.
-2. Set the same three variables from `.env.example` in the Vercel dashboard
-   (Project → Settings → Environment Variables): `NEXT_PUBLIC_SUPABASE_URL`,
-   `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`.
-3. Deploy, then update the **Live URL** at the top of this README.
+Not connected to auto-deploy-on-push — every deploy is a deliberate,
+manually-triggered `vercel deploy --prod`, consistent with this project's own
+"never deploy without explicit approval" convention holding for every deploy,
+not just the first one.

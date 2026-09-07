@@ -2096,6 +2096,54 @@ busywork this project's own conventions this whole session have argued against.
 
 ---
 
+### Phase 60 (beyond the original plan) — deployed to production, and two real Vercel gotchas caught before calling it done
+
+Deployed via the Vercel CLI rather than the dashboard, to a brand-new project (`tingxie-hero-lms`)
+created explicitly by name (`vercel project add`) - never selected from the account's existing
+project list, which also holds an unrelated SaaS product. Verified before touching anything: full
+git-history scan for accidentally committed secrets or the gitignored `docs/reference/` client
+material (clean - never committed), `.gitignore` correctly excludes `.env*` and `docs/reference/`.
+Made the GitHub repo public on request (the reviewer has no GitHub account to invite to a private
+one) only after that scan came back clean.
+
+Set the three required variables (`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+`GEMINI_API_KEY`) on the new project for both Production and Preview via `vercel env add`, values
+piped directly from `.env.local` through stdin - never echoed to a terminal. `vercel env ls`'s own
+table then displayed `NEXT_PUBLIC_SUPABASE_URL`'s value as what looked like unrelated base64/JWT
+data - alarming at a glance, but a `vercel env pull` (which decrypts and writes the real resolved
+value) confirmed the correct `https://...supabase.co` URL was actually stored; the list view's
+display was just an internal formatting quirk, not a real problem. Confirmed rather than assumed
+either way, per this session's own standing discipline.
+
+**First real gotcha: the first production deploy 404'd on every single route** despite `next build`
+completing successfully in the build log with every route listed correctly. Root cause: `vercel
+project add` creates a bare project shell with the Framework Preset defaulted to "Other" - nothing
+in a plain `vercel deploy` from a not-yet-framework-configured project retroactively corrects that
+setting, so Vercel served the app as a generic static-output project (defaulting to the literal
+`public/` folder) instead of routing through Next.js's actual serverless functions. Fixed with
+`vercel project update --framework nextjs --auto-detect output-directory --auto-detect
+build-command`, then redeployed - the second build's logs showed real `λ` (Lambda) function outputs
+per route, and every route returned 200 with genuine Supabase-backed content afterward.
+
+**Second real gotcha: the live URL served Vercel's own SSO login wall**, not the app - a `curl` came
+back `302` to `vercel.com/sso-api`. This is Vercel's default Deployment Protection, gating even
+Production behind an authenticated Vercel session on a brand-new project. Directly conflicts with
+the assignment's own explicit requirement (`Technical Assignment PDF §5`: "deliver a live shareable
+URL"), since a reviewer with no Vercel account of their own would just hit a login prompt. Fixed
+with `vercel project protection disable tingxie-hero-lms --sso` - scoped to this project alone, the
+SaaS project's own protection settings (whatever they are) untouched. Re-verified with `curl` after:
+every route 200, real page content confirmed in the response body (`grep`-ed for "Welcome back" and
+the actual MOE syllabus heading, not just a bare status code).
+
+Deliberately did not run `vercel git connect` - every deploy from here stays a manual, explicit
+`vercel deploy --prod`, matching this project's "never deploy without explicit approval" convention
+for every deploy, not just this first one. Updated the README's Live URL and Deployment section to
+the real, now-verified URL. `.gitignore` also gained a redundant, duplicate `.vercel`/`.env*` block
+from `vercel link`'s own auto-edit - removed it as dead weight, the earlier explicit `.env`/
+`.env.local`/`.env.*.local`/`.vercel` entries already cover the same ground.
+
+---
+
 ## 7. Environment Variables
 
 ```

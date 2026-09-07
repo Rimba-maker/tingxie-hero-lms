@@ -82,4 +82,32 @@ describe("getLessons", () => {
 
     expect(result[0].latestScore).toEqual({ score: 8, totalPossible: 10 });
   });
+
+  test("latestScore skips a newer stuck-pending retry to show the last real grade", async () => {
+    // Rows arrive most-recent-first (submitted_at desc, per the real query).
+    // A retry that's still pending (e.g. Gemini failed again) has no
+    // total_score yet - the badge should keep showing the last completed
+    // grade instead of silently reverting to plain "Completed".
+    const fakeDb: LessonsDb = {
+      listLessons: async () => [
+        {
+          id: "lesson-4",
+          week_number: 3,
+          title: "第九课",
+          moe_level: "P2",
+          status: "completed",
+          vocabulary: [],
+          test_scheduled_at: null,
+          submissions: [
+            { total_score: null, total_possible: 10 },
+            { total_score: 8, total_possible: 10 },
+          ],
+        },
+      ],
+    };
+
+    const result = await getLessons(fakeDb);
+
+    expect(result[0].latestScore).toEqual({ score: 8, totalPossible: 10 });
+  });
 });

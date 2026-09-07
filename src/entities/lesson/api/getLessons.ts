@@ -10,13 +10,17 @@ type LessonRow = {
   status: string;
   vocabulary: VocabEntry[];
   test_scheduled_at: string | null;
-  // Embedded, ordered submitted_at desc + limited to 1 by the query below —
-  // at most one element, the lesson's most recent graded submission.
+  // Embedded, ordered submitted_at desc + limited to 5 by the query below —
+  // the lesson's most recent attempts, not necessarily all graded yet.
   submissions: { total_score: number | null; total_possible: number }[];
 };
 
 function mapLessonRow(row: LessonRow): Lesson {
-  const latest = row.submissions[0];
+  // submissions arrives most-recent-first. A stuck-pending retry (no
+  // total_score yet) shouldn't hide the last submission that actually got
+  // graded - find the most recent graded one, falling back to the very
+  // latest row (still null) when this lesson has never been graded at all.
+  const latest = row.submissions.find((s) => s.total_score !== null) ?? row.submissions[0];
   return {
     id: row.id,
     weekNumber: row.week_number,
@@ -52,7 +56,10 @@ export function supabaseLessonsDb(supabase: SupabaseClient): LessonsDb {
         )
         .order("week_number", { ascending: false })
         .order("submitted_at", { foreignTable: "submissions", ascending: false })
-        .limit(1, { foreignTable: "submissions" });
+        // 5, not 1: mapLessonRow needs to look past a stuck-pending retry to
+        // find the last submission that actually got graded, not just the
+        // single most recent row regardless of whether it ever finished.
+        .limit(5, { foreignTable: "submissions" });
       if (error) throw error;
       return data;
     },

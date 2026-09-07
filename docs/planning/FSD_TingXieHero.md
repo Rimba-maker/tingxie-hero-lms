@@ -951,6 +951,24 @@ it), so arithmetic that's easy to get backwards, as this one proved, needs to li
 testable without one. TDD'd (72/72, up from 69, 24 files up from 23); re-verified live against the
 real (still-empty) database: the Dashboard now correctly shows "30 of 30 Remaining" with a full bar.
 
+### Phase 26 (beyond the original plan) — a deferred finding from Phase 21, now fixed properly
+
+Phase 21 found but deliberately deferred this: `getLessons`' query embeds only the single most
+recent submission per lesson (`order + limit(1)`), with no status filter. If that most recent
+submission is a stuck-pending retry (Phase 21's other fix - a Gemini failure that hasn't been
+retried yet, or was retried and failed again), the Syllabus badge would silently revert from
+"Completed (80%)" to plain "Completed", hiding the last real grade. Deferred then because the
+obvious fix - filtering the embedded `submissions` to `status = 'graded'` - requires PostgREST's
+`!inner` join syntax, which would turn every lesson with zero graded submissions yet into a
+dropped row entirely (a `pending`/`needs_revision` lesson silently vanishing from its own Syllabus
+tab is a worse bug than the one being fixed).
+
+The actual fix needed no restructuring: widen `.limit(1, ...)` to `.limit(5, ...)` and have
+`mapLessonRow` pick the first of those five with a non-null `total_score` (they arrive
+most-recent-first already), falling back to the single latest row when a lesson has never been
+graded at all - same left-join shape, just looking a few rows deeper before deciding. TDD'd
+(73/73, up from 72); `npx tsc --noEmit`, lint, and Playwright (6/6) all clean.
+
 ---
 
 ## 7. Environment Variables

@@ -29,7 +29,7 @@ export type GeminiClient = {
 const GEMINI_MODEL = "gemini-flash-latest";
 
 function buildPrompt(vocabList: string[]): string {
-  return `Compare the handwriting in this Tian Zige grid against the expected spelling list [${vocabList.join(", ")}]. Return which words were written correctly or incorrectly, and for each word its box_2d bounding box (as [ymin, xmin, ymax, xmax] normalized to 0-1000) around where that word was handwritten in the grid — this drives a red-pen correction overlay on the frontend, the assignment's key evaluation point.`;
+  return `Compare the handwriting in this Tian Zige grid against the expected spelling list [${vocabList.join(", ")}]. For each word in the list, return the expected word itself exactly as given in the list (never a transcription of what was actually handwritten, even when it was written incorrectly), whether it was written correctly, and its box_2d bounding box (as [ymin, xmin, ymax, xmax] normalized to 0-1000) around where that word was handwritten in the grid — this drives a red-pen correction overlay on the frontend showing the correct answer, the assignment's key evaluation point.`;
 }
 
 // Raw shape Gemini returns, before box_2d (an array) becomes the named
@@ -96,7 +96,11 @@ export async function gradeWithGemini(
           items: {
             type: "object",
             properties: {
-              character: { type: "string" },
+              character: {
+                type: "string",
+                description:
+                  "The expected word from the spelling list this result grades - always the correct target word exactly as given in the list, never a transcription of what the student actually wrote, even when isCorrect is false.",
+              },
               isCorrect: { type: "boolean" },
               box_2d: {
                 type: "array",

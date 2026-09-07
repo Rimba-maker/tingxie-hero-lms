@@ -25,6 +25,38 @@ describe("gradeWithGemini", () => {
     expect(call.contents[0].parts[1].inlineData?.mimeType).toBe("image/png");
   });
 
+  test("instructs Gemini the character field is always the expected word, never a transcription", async () => {
+    // Confirmed live against the real Gemini API: with no such instruction,
+    // a wrong answer's "character" field came back as what the student
+    // actually wrote (e.g. "爸" for a "妈妈" vocab word written incorrectly),
+    // not the expected word - WorksheetOverlay renders this exact field as
+    // "Correct word: {character}" on the results screen, so this silently
+    // showed parents their child's own wrong answer as if it were the
+    // correction. This is the regression guard for that instruction, since
+    // the app code itself just passes Gemini's string through unchanged -
+    // nothing here is testable except that the instruction is actually sent.
+    const generateContent = vi.fn<GeminiClient["models"]["generateContent"]>(async () => ({
+      text: JSON.stringify([]),
+    }));
+    const fakeGemini: GeminiClient = { models: { generateContent } };
+
+    await gradeWithGemini(fakeGemini, {
+      imageBase64: "fake-base64-image-data",
+      mimeType: "image/jpeg",
+      vocabList: ["妈妈"],
+    }).catch(() => {});
+
+    const call = generateContent.mock.calls[0][0] as {
+      contents: { parts: { text?: string }[] }[];
+      config: { responseSchema: { items: { properties: { character: { description?: string } } } } };
+    };
+    const promptText = call.contents[0].parts[0].text ?? "";
+    const schemaDescription = call.config.responseSchema.items.properties.character.description ?? "";
+
+    expect(promptText).toMatch(/never a transcription of what was actually handwritten/);
+    expect(schemaDescription).toMatch(/never a transcription of what the student actually wrote/);
+  });
+
   test("computes score from the graded characters Gemini returns", async () => {
     const fakeGemini: GeminiClient = {
       models: {

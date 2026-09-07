@@ -1519,6 +1519,43 @@ all clean.
 
 ---
 
+### Phase 46 (beyond the original plan) — the red-pen correction could show the child's own wrong answer as "correct"
+
+The Gemini response schema's `character` field had no `description` at all, unlike `box_2d`, which
+does. Confirmed live against the real Gemini API this was a real, not theoretical, gap: built a
+synthetic worksheet image with the vocab word "妈妈" but showing the deliberately wrong "爸爸"
+handwritten instead, sent it through this app's exact prompt/schema, and got back `{"character":
+"爸", "isCorrect": false, ...}` for both grid positions - Gemini returned what was actually
+*handwritten* (the wrong answer), not the expected vocabulary word. `WorksheetOverlay.tsx` renders
+this exact field as `aria-label="Correct word: {character}"`, the red-pen correction shown directly
+on the assignment's own named "key evaluation point" - meaning a parent trying to help their child
+fix a mistake would see the child's own wrong answer presented as the correction, with zero actual
+corrective value, on the app's single most important feature.
+
+Fixed by making the instruction explicit in both places that actually reach Gemini: the prompt text
+now says "return the expected word itself exactly as given in the list (never a transcription of
+what was actually handwritten, even when it was written incorrectly)", and the schema's `character`
+property gained a matching `description` ("always the correct target word... never a transcription
+of what the student actually wrote, even when isCorrect is false") - the same technique `box_2d`
+already used successfully to get Gemini to reliably follow a specific, non-obvious contract.
+
+**Honesty on verification**: confirmed the *bug* live with a real Gemini call. Attempting to
+re-verify the *fix* the same way hit this project's free-tier quota
+(`GenerateRequestsPerDayPerProjectPerModel-FreeTier`, 20 requests/day for this model) after the
+day's earlier live-verification calls (Phases 39, 45, and this bug's own repro) used up the
+remaining allowance - confirmed via the SDK's own `RESOURCE_EXHAUSTED` error, not a guess, and it
+did not clear even after waiting past the quoted retry delays (a daily quota, not a short rolling
+window). Deliberately stopped retrying rather than keep burning quota needed for actual grading
+before the submission deadline. The fix itself is applied on the same well-established mechanism
+`box_2d`'s own description already uses successfully in this exact schema, and is backed by a new
+regression-guard test (`gradeWithGemini.test.ts`) asserting the prompt text and schema description
+sent to Gemini contain the corrective instruction - but the model's actual compliance with the new
+wording could not be re-confirmed live tonight. Whoever reviews this should spot-check one real
+wrong-answer submission once quota resets. `npx tsc --noEmit`, lint, and the full Vitest suite
+(83/83, up from 82) all clean.
+
+---
+
 ## 7. Environment Variables
 
 ```

@@ -17,8 +17,15 @@ export function TopUpButton() {
   }
 
   return (
-    <Button size="sm" onClick={handleTopUp} disabled={loading}>
-      {loading ? "Adding…" : "Top Up"}
-    </Button>
+    <>
+      <Button size="sm" onClick={handleTopUp} disabled={loading}>
+        {loading ? "Adding…" : "Top Up"}
+      </Button>
+      {/* A screen reader focused on the button won't hear its own label
+          change mid-click - a separate live region announces it instead. */}
+      <span role="status" aria-live="polite" className="sr-only">
+        {loading ? "Adding credits…" : ""}
+      </span>
+    </>
   );
 }

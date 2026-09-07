@@ -58,19 +58,26 @@ export function PrintWorksheetButton({ lesson }: PrintWorksheetButtonProps) {
   }
 
   return (
-    <button
-      type="button"
-      onMouseEnter={preload}
-      onFocus={preload}
-      onClick={handleClick}
-      disabled={loading}
-      className="flex items-center justify-between rounded-md text-sm text-primary outline-none hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
-    >
-      <span className="flex items-center gap-1.5">
-        <Printer className="size-4" />
-        {loading ? "Preparing PDF…" : "Print A4 Worksheet (PDF)"}
+    <>
+      <button
+        type="button"
+        onMouseEnter={preload}
+        onFocus={preload}
+        onClick={handleClick}
+        disabled={loading}
+        className="flex items-center justify-between rounded-md text-sm text-primary outline-none hover:text-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+      >
+        <span className="flex items-center gap-1.5">
+          <Printer className="size-4" />
+          {loading ? "Preparing PDF…" : "Print A4 Worksheet (PDF)"}
+        </span>
+        <ChevronDown className="size-4 -rotate-90" />
+      </button>
+      {/* A screen reader focused on the button won't hear its own label
+          change mid-click - a separate live region announces it instead. */}
+      <span role="status" aria-live="polite" className="sr-only">
+        {loading ? "Preparing worksheet PDF…" : ""}
       </span>
-      <ChevronDown className="size-4 -rotate-90" />
-    </button>
+    </>
   );
 }

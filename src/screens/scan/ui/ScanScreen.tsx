@@ -27,13 +27,20 @@ export function ScanScreen({ lessonId }: ScanScreenProps) {
       <CameraViewfinder onClose={() => router.back()} onCapture={handleCapture} capturing={isBusy} />
 
       {isBusy && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 text-white">
+        <div
+          role="status"
+          aria-live="polite"
+          className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 text-white"
+        >
           {upload.status === "uploading" ? "Uploading…" : "Grading…"}
         </div>
       )}
 
       {upload.status === "error" && (
-        <div className="absolute inset-x-4 bottom-28 z-20 rounded-md bg-red-950/90 p-3 text-center text-sm text-white">
+        <div
+          role="alert"
+          className="absolute inset-x-4 bottom-28 z-20 rounded-md bg-red-950/90 p-3 text-center text-sm text-white"
+        >
           {upload.message}{" "}
           <button
             type="button"

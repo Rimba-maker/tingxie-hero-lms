@@ -911,6 +911,26 @@ displayed raw `error.message` to the end user - the same generic Next.js digest 
 no reason to see. Removed it from all three in favor of the app's own friendly fallback text;
 `console.error(error)` already captures the real one for debugging.
 
+### Phase 24 (beyond the original plan) — dynamic status changes were never announced
+
+Same audit family as Phase 20 (app-wide heading/landmark gap), one dimension over: Phase 20 fixed
+*static* structure; this pass grepped the whole `src/` tree for `aria-live`/`role="status"`/
+`role="alert"` and found **zero matches anywhere in the app**. Every async status change - Scan's
+"Uploading…" → "Grading…" → the error banner, Top Up's "Adding…", Print Worksheet's "Preparing
+PDF…" - only ever updated visibly. A screen-reader user wouldn't hear any of it; they'd have to
+manually re-explore the page after every action to discover what happened, on the exact flow the
+assignment names as its key evaluation point.
+
+Fixed all three: `ScanScreen`'s busy overlay is `role="status" aria-live="polite"` (routine
+progress), its error banner is `role="alert"` (interrupts immediately, matching how errors should
+read - `role="alert"` implies assertive by spec, no separate `aria-live` needed). `TopUpButton` and
+`PrintWorksheetButton` each get a visually-hidden `role="status" aria-live="polite"` span next to
+the button - stacking a status role directly on the `<button>` itself isn't valid ARIA once it
+already carries the interactive button role, and a screen reader focused on a button doesn't
+reliably re-announce its own label text changing under it anyway. Verified: `npx tsc --noEmit`,
+lint, the full Vitest suite (69/69, unchanged - pure UI attributes, nothing new to unit test), and
+Playwright (6/6) all clean.
+
 ---
 
 ## 7. Environment Variables

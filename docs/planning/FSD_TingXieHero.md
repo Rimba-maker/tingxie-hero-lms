@@ -969,6 +969,31 @@ most-recent-first already), falling back to the single latest row when a lesson 
 graded at all - same left-join shape, just looking a few rows deeper before deciding. TDD'd
 (73/73, up from 72); `npx tsc --noEmit`, lint, and Playwright (6/6) all clean.
 
+### Phase 27 (beyond the original plan) — dark mode: a real contrast bug, and a bigger surprise under it
+
+Went looking for the same class of bug Phase 4 found in light mode (`Badge`'s tinted-surface text
+color failing WCAG AA) but in dark mode specifically, since README's own Known Limitations already
+flagged dark mode as "not mockup-verified." Computed real contrast ratios via the actual formula
+(OKLCH → linear sRGB → relative luminance → ratio), not by eyeballing `L` values - that's the exact
+mistake that caused the original bug. `Badge`'s dark-mode variants render `text-{color}` over
+`dark:bg-{color}/20` (a 20%-opacity self-tint over `--card`, confirmed by reading `badge.tsx`, not
+assumed), so that's the pair that actually renders, not `{color}` vs `{color}-foreground`. Two of
+three failed: `destructive` 3.95:1, `success` 4.22:1 (both below the 4.5:1 minimum); `warning`
+passed at 5.83:1. Fixed by lightening `--destructive` (0.65→0.7 L) and `--success` (0.65→0.69 L) in
+`.dark`, keeping chroma/hue - now 4.58:1 and 4.74:1. Verified by forcing the `.dark` class in a
+real browser and screenshotting `/syllabus` (all three badge variants visible at once).
+
+That last step surfaced something bigger than the contrast bug: **nothing in this codebase ever
+applies the `.dark` class** - no theme toggle, no `prefers-color-scheme: dark` media query, nothing.
+`globals.css` scopes every dark token behind `@custom-variant dark (&:is(.dark *))`, a manual-class
+selector, not a media query. README's Known Limitations claimed the `.dark` palette exists "so the
+app doesn't break under `prefers-color-scheme: dark`" - false as written; that media query is never
+referenced anywhere, so every visitor sees the light theme regardless of their OS setting, and
+dark mode has been unreachable, not just unverified. Left unwired rather than building a toggle or
+media-query switch - no dark-mode mockup was ever supplied, and theme switching was never part of
+the assignment's scope - but corrected the README claim to say what's actually true, and kept the
+contrast fix anyway: harmless now, correct from day one if this ever does get wired up later.
+
 ---
 
 ## 7. Environment Variables

@@ -223,10 +223,13 @@ Scoped out deliberately, not oversights:
   mockups and never mentions desktop/tablet layouts (re-verified against the
   source PDF, not just the mockup images) — no responsive breakpoints were
   built.
-- **Dark mode tokens exist but aren't mockup-verified.** `globals.css`
-  defines a `.dark` palette so the app doesn't break under
-  `prefers-color-scheme: dark`, but no dark-mode mockup was supplied and it
-  hasn't had a dedicated visual pass.
+- **Dark mode tokens exist but nothing switches to them.** `globals.css`
+  defines a full `.dark` palette (contrast-checked, same as light mode - see
+  FSD §6), but the app never applies that class: no theme toggle, and no
+  `prefers-color-scheme: dark` media query wiring it to the system
+  preference either. Every visitor sees the light theme regardless of their
+  OS setting. Left as-is rather than wired up - no dark-mode mockup was
+  supplied, and switching themes was never part of the assignment's scope.
 - **History and Results start empty on a fresh database** — intentionally;
   see the empty state on `/history`. No demo data is seeded into the
   reviewer's database, since fabricated `submitted_at` history would misrepresent

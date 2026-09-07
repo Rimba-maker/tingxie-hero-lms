@@ -1990,6 +1990,17 @@ server had verified it.
 
 ---
 
+### Phase 56 (beyond the original plan) — the Scan screenshot removed entirely
+
+Phase 55's synthesized desk-clip fix was still, on reflection, a fake camera feed dressed up to
+look like a real one for a screenshot - better than a flat green test pattern, but still not honest
+documentation of a live camera preview that fundamentally can't be captured as a static image in
+the first place. Replaced the screenshot with a plain description of what the live screen shows
+(real video feed, alignment brackets, QR target box, shutter button) instead of stretching a
+fake-camera workaround further.
+
+---
+
 ## 7. Environment Variables
 
 ```

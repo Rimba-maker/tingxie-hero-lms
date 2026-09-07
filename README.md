@@ -9,13 +9,13 @@ focus.
 
 ## Screenshots
 
-| Dashboard | Syllabus | Scan |
+| Dashboard | Syllabus | Results |
 |---|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Syllabus](docs/screenshots/syllabus.png) | ![Scan](docs/screenshots/scan.png) |
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Syllabus](docs/screenshots/syllabus.png) | ![Results](docs/screenshots/results.png) |
 
-| Results | History | Print Worksheet |
-|---|---|---|
-| ![Results](docs/screenshots/results.png) | ![History](docs/screenshots/history.png) | ![Print Worksheet](docs/screenshots/print-worksheet.png) |
+| History | Print Worksheet |
+|---|---|
+| ![History](docs/screenshots/history.png) | ![Print Worksheet](docs/screenshots/print-worksheet.png) |
 
 Results and History above show three real graded submissions for the same
 lesson across three different dates (score, per-character correction
@@ -28,17 +28,16 @@ a synthesized demo image (not a real phone photo), built the same way for
 this screenshot only. The shipped database starts empty; see
 **Known limitations** below for why no demo data is seeded permanently.
 
-Scan shows the real, live camera screen — header, alignment brackets, QR
-target box, shutter button — genuinely streaming, not a static mockup or an
-error fallback. Chromium's fake-camera flag defaults to a flat green test
-pattern, which read as broken in a screenshot rather than illustrative, so
-this one feeds it a synthesized desk-with-worksheet clip
-(`--use-file-for-fake-video-capture`) instead — still a fake feed standing
-in for a real phone camera (that's what actually varies before first
-real-device use, see **Known limitations**), just a more legible one for
-documentation purposes. Print Worksheet is the actual generated Tian Zige
-practice-sheet PDF (`generateWorksheetPdf`, real output, not a mockup),
-rendered here in a PDF viewer.
+Scan isn't screenshotted here — Chromium's fake-camera flag has no way to
+produce something that reads as a genuine phone-camera preview in a static
+image, and every attempt at one (a flat green test pattern, then a
+synthesized desk clip) ended up less honest than just describing it: the
+live screen has a real video feed, alignment brackets, a QR target box, and
+a shutter button, genuinely streaming rather than a static mockup or error
+fallback — see **Known limitations** for what only a real device confirms.
+Print Worksheet is the actual generated Tian Zige practice-sheet PDF
+(`generateWorksheetPdf`, real output, not a mockup), rendered here in a PDF
+viewer.
 
 ## For reviewers: open the architecture diagrams first
 

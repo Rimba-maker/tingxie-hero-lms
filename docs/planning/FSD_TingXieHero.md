@@ -2045,6 +2045,57 @@ confirmed 0 rows remaining.
 
 ---
 
+### Phase 59 (beyond the original plan) — a full audit against Vercel's React/Next.js performance rules, ahead of deploy
+
+Asked to run the `vercel-react-best-practices` skill's full 70-rule set (waterfalls, bundle size,
+server/client data fetching, re-renders, rendering, JS performance, advanced patterns) across the
+entire codebase before deploy, and implement whatever it finds.
+
+Read every page (`(dashboard)`, `syllabus`, `history`, `results/[submissionId]`, `scan`), every API
+route, every client hook, and every widget/feature component against the ruleset. Most of the
+70 rules were already satisfied - not by coincidence, but as the accumulated effect of this
+session's own 58 prior phases:
+
+- **Waterfalls**: the Dashboard page already `Promise.all()`s its two independent Supabase reads;
+  every other sequential `await` chain (upload -> createSubmission, getSubmissionDetail ->
+  getCharacterHistory, the grading pipeline's fetch -> encode -> grade -> save) is a genuine data
+  dependency, not a fixable waterfall.
+- **Bundle size**: `PrintWorksheetButton` and `StrokeOrderCard` already dynamically import their
+  heavy dependencies (`pdf-lib`+`fontkit`, `hanzi-writer`) with hover/focus preloading on the first;
+  no barrel files exist anywhere in `src/`; the Gemini SDK is confirmed server-only (grep found it in
+  exactly the 3 files that should have it, none of them `"use client"`).
+- **Server performance**: `getSupabaseServer()` is already a module-level singleton - a stronger
+  guarantee than `React.cache()`'s per-request dedup would even give.
+- **Client data fetching**: no client-side polling or repeated `fetch()` exists to deduplicate (SWR
+  would add a dependency this app has no use for); no `localStorage` usage anywhere to version.
+- **Re-renders/rendering**: no components defined inside other components; derived state (`isBusy`,
+  `needsRevision`) is computed inline during render, never stored in state or set from an effect;
+  every `&&` conditional guards on an actual boolean, not a number that could render a stray "0";
+  `StrokeOrderCard`'s reduced-motion read already uses `useSyncExternalStore` (avoiding the
+  effect+state hydration flicker a naive implementation would hit).
+- **JS performance**: `HistoricalMatrix` already caches its per-row `Map.get()` into a local instead
+  of calling it twice (a recent, already-shipped commit).
+
+**One genuine, new finding**: nothing preloaded `results.png`'s worksheet photo - this app's own
+named "key evaluation point," the single most important image on the single most important screen -
+even though the Results page is a Server Component that already knows the exact image URL before any
+HTML reaches the browser. Added `preload(submission.imageUrl, { as: "image" })` from `react-dom` in
+`ResultsScreen.tsx`. Verified this wasn't a no-op: a raw `fetch()` of the HTML shows only React's RSC
+wire encoding for it (`:HL[...]`, a "hoistable link" instruction, not a literal `<link>` tag) - a real
+Playwright browser was needed to confirm React's hydration runtime actually inserts a
+`<link rel="preload" as="image" href="...">` into `document.head`, which it does. Everything else -
+`npx tsc --noEmit`, lint, Vitest (84/84), e2e (6/6) - stayed clean; one `impeccable detect` false
+positive (its scanner matched the literal string `<img>` inside this change's own explanatory
+comment, not real JSX) was resolved by rewording the comment rather than suppressing the finding.
+
+No other code changes were made. Force-fitting the remaining rules (`useTransition` in place of the
+upload state machine's explicit `idle/uploading/grading/success/error` states, `SWR` where nothing
+polls, `content-visibility` on lists that top out at a dozen rows) would have added real surface and
+risk for zero measurable benefit at this app's actual scale - exactly the kind of manufactured
+busywork this project's own conventions this whole session have argued against.
+
+---
+
 ## 7. Environment Variables
 
 ```

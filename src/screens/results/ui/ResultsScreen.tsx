@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RotateCcw, Share2 } from "lucide-react";
+import { preload } from "react-dom";
 
 import type { CharacterHistoryMatrix } from "@/entities/character-result/api/buildCharacterHistoryMatrix";
 import { buildPinyinLookup } from "@/entities/lesson/model/buildPinyinLookup";
@@ -48,6 +49,15 @@ export function ResultsScreen({ submission, historyMatrix }: ResultsScreenProps)
   const missedCharacters = submission.characterResults.filter((r) => !r.isCorrect);
   const needsRevision = missedCharacters.length > 0;
   const pinyinByCharacter = buildPinyinLookup(submission.vocabulary);
+
+  // The graded worksheet photo is this app's own named "key evaluation
+  // point" - the whole reason this screen exists - and its exact URL is
+  // already known here, server-side, before any HTML reaches the browser.
+  // Hinting the browser to start fetching it now (rather than waiting for
+  // WorksheetOverlay's own plain image tag to be discovered mid-hydration)
+  // shaves a real round-trip off the one photo every reviewer actually
+  // looks at.
+  preload(submission.imageUrl, { as: "image" });
 
   return (
     <ScreenShell>

@@ -18,7 +18,7 @@
     { "id": "pwa", "type": "frontend", "label": "TingXie HERO", "sublabel": "Next.js PWA · Serwist", "pos": [260, 300], "size": [150, 64], "tag": "installable" },
     { "id": "hanziwriter", "type": "external", "label": "hanzi-writer CDN", "sublabel": "stroke-order SVG data", "pos": [260, 170], "size": [160, 60] },
     { "id": "server", "type": "backend", "label": "App Router Server", "sublabel": "3 API routes + RSC screens", "pos": [540, 300], "size": [160, 64] },
-    { "id": "postgres", "type": "database", "label": "Postgres", "sublabel": "lessons · submissions · students", "pos": [820, 195], "size": [160, 60] },
+    { "id": "postgres", "type": "database", "label": "Postgres", "sublabel": "4 tables — see cards", "pos": [820, 195], "size": [160, 60] },
     { "id": "storage", "type": "cloud", "label": "Supabase Storage", "sublabel": "worksheet-photos (public)", "pos": [820, 300], "size": [160, 60] },
     { "id": "gemini", "type": "external", "label": "Gemini", "sublabel": "vision grading", "pos": [820, 405], "size": [160, 60] }
   ],
@@ -37,6 +37,6 @@
   "cards": [
     { "dot": "emerald", "title": "Client", "items": ["Installable PWA (Serwist service worker)", "Camera capture with torch + ImageCapture fallback", "Never calls Supabase directly — every request goes through the server", "Exception: stroke-order practice fetches SVG data straight from hanzi-writer's CDN"] },
     { "dot": "cyan", "title": "Server", "items": ["3 real API routes: upload, grade, credits top-up", "Everything else is a Server Component reading data directly", "Service-role key guarded by a server-only import at build time", "Grading also persists each character's result to character_results before responding"] },
-    { "dot": "rose", "title": "Data", "items": ["RLS: public read, service-role write only", "Storage bucket public — worksheet photos, not sensitive PII", "Gemini returns a bounding box per character, drawn back as a red-pen overlay", "Fourth table character_results stores that per-character verdict and box"] }
+    { "dot": "rose", "title": "Data", "items": ["4 tables: lessons, submissions, character_results, students", "RLS: public read, service-role write only", "Storage bucket public — worksheet photos, not sensitive PII", "Gemini returns a bounding box per character, drawn back as a red-pen overlay"] }
   ]
 }

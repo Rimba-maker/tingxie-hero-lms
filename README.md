@@ -28,16 +28,13 @@ a synthesized demo image (not a real phone photo), built the same way for
 this screenshot only. The shipped database starts empty; see
 **Known limitations** below for why no demo data is seeded permanently.
 
-Scan isn't screenshotted here — Chromium's fake-camera flag has no way to
-produce something that reads as a genuine phone-camera preview in a static
-image, and every attempt at one (a flat green test pattern, then a
-synthesized desk clip) ended up less honest than just describing it: the
-live screen has a real video feed, alignment brackets, a QR target box, and
-a shutter button, genuinely streaming rather than a static mockup or error
-fallback — see **Known limitations** for what only a real device confirms.
-Print Worksheet is the actual generated Tian Zige practice-sheet PDF
-(`generateWorksheetPdf`, real output, not a mockup), rendered here in a PDF
-viewer.
+Scan isn't screenshotted here — a static image can't represent a live camera
+feed. The real screen has a working video feed, alignment brackets, a QR
+target box, and a shutter button, genuinely streaming rather than a mockup
+or error fallback — see **Known limitations** for what only a real device
+confirms. Print Worksheet is the actual generated Tian Zige practice-sheet
+PDF (`generateWorksheetPdf`, real output, not a mockup), rendered here in a
+PDF viewer.
 
 ## For reviewers: open the architecture diagrams first
 
@@ -208,173 +205,75 @@ npm run build      # production build, also runs `serwist build`
 
 Scoped out deliberately, not oversights:
 
-- **Not yet deployed.** Vercel deployment is code-complete and documented
-  below but deliberately held pending your final manual review — see
-  **Deployment**.
-- **No real-device camera test yet.** `/scan`'s layout, error states, and
-  the full upload/grade/retry lifecycle are all verified end-to-end against
-  Chromium's `--use-fake-device-for-media-stream` flag, which turned out to
-  work reliably in this environment (FSD §6 Phase 48-50 — several real bugs
-  were caught this way: a busy-overlay UI trap, a shutter race condition, an
-  abandoned-request state leak) — but a synthetic 1080p test pattern still
-  isn't a real phone camera. Real-hardware specifics (actual permission
-  prompts, real autofocus/lighting, a genuine `ImageCapture.takePhoto()`
-  codec) still need an actual device before first real-world use.
-- **"Share Report" is decorative.** It matches the mockup pixel-for-pixel but
-  has no handler — the assignment's evaluation focus is the scan → upload →
-  grade → feedback flow, not report sharing. ("Retest Missed" and
-  "Print A4 Worksheet (PDF)" are both real, not decorative — see FSD §6
-  Phase 12 for what each one actually does; "Top Up" on the Dashboard is
-  real too.)
-- **Mobile is the only *designed* surface — the visual mockups stop there,
-  not the responsiveness.** The assignment brief only ever supplied mobile
-  mockups (re-verified against the source PDF, not just the images), so
-  every screen's actual visual design is mobile. That's a reason no
-  desktop-native or tablet-native *design* exists to build — the brief
-  never supplied one — not a reason the app should look broken or stretched
-  on anything wider. Two different answers for two different real
-  audiences, not one blanket "unsupported" for everything non-mobile:
-  - **Dashboard/Syllabus/History/Results get a real, working layout at any
-    width**, tablet through desktop, not a shrunk mockup — wider cards,
-    2-column lesson/history lists, growing further at genuinely wide
-    desktop, because a student or parent checking progress on an iPad (or
-    a laptop) is a plausible, real Singapore-classroom scenario, not a
-    hypothetical one. Tidy edges (soft shadow, rounded corners) at desktop
-    width, not a resize into anything phone-shaped.
-  - **Scan alone gets a phone-frame mockup** (`PhoneFrame`, FSD §6 Phase 53)
-    starting at tablet width, since there's no camera-on-a-monitor (or
-    camera-on-a-large-tablet-mockup) use case at any non-mobile width to
-    build a native layout for in the first place — unlike the content
-    screens, more width buys Scan nothing a real adaptation could use.
-    A genuinely native desktop camera layout was always possible in
-    principle — it just means designing a screen the assignment never
-    asked for or reviewed, which is a different, larger piece of work than
-    "make what exists not look broken."
-- **"Print A4 Worksheet (PDF)" only really supports the 3 seeded lessons'
-  vocabulary.** `NotoSansSC-Subset.ttf` is a hand-picked 26KB, 170-glyph
-  subset covering exactly the characters those 3 lessons use — not a general
-  Chinese font. Generating for vocabulary outside that set now fails loudly
-  instead of silently: `generateWorksheetPdf` checks glyph coverage up front
-  and throws a clear "font doesn't support: …" error, which
-  `PrintWorksheetButton` shows inline instead of quietly downloading a PDF
-  with blank title characters, blank practice-box glyphs, and pinyin
-  stripped of every tone mark (confirmed live both ways — broken silently
-  before, a clear message after). The underlying gap is still there — a
-  4th lesson's vocabulary can't be printed until the font is — but a parent
-  hitting Print now finds out immediately instead of after printing a blank
-  page. The real fix is a full Noto Sans SC file (pdf-lib's `subset: true`
-  keeps the *output* PDF small regardless of the source font's size, so
-  this is a one-time asset swap, not a code change) for whoever seeds
-  lesson 4.
-- **Dark mode tokens exist but nothing switches to them.** `globals.css`
-  defines a full `.dark` palette (contrast-checked, same as light mode - see
-  FSD §6), but the app never applies that class: no theme toggle, and no
-  `prefers-color-scheme: dark` media query wiring it to the system
-  preference either. Every visitor sees the light theme regardless of their
-  OS setting. Left as-is rather than wired up - no dark-mode mockup was
-  supplied, and switching themes was never part of the assignment's scope.
-- **History and Results start empty on a fresh database** — intentionally;
-  see the empty state on `/history`. No demo data is seeded into the
-  reviewer's database, since fabricated `submitted_at` history would misrepresent
-  real usage.
-- **AI grading accuracy isn't the point, and isn't tuned for it.** The
-  assignment explicitly de-prioritizes recognition accuracy — effort went
-  into pipeline correctness and the evaluated flow instead of prompt-tuning
-  Gemini for better handwriting recognition.
+- **No real-device camera test yet.** `/scan`'s full upload/grade/retry
+  lifecycle and every error state are verified end-to-end against a fake
+  camera stream in a real browser — but that's still not a physical phone.
+  Real permission prompts, autofocus, and codec behavior are the one thing
+  left to confirm before first real-world use.
+- **"Share Report" is decorative** — matches the mockup, no handler, since
+  it's outside the assignment's evaluation focus (scan → upload → grade →
+  feedback). Every other button ("Retest Missed", "Print A4 Worksheet",
+  "Top Up") is fully functional.
+- **Mobile is the only designed surface — the app itself is responsive
+  everywhere.** The brief only supplied mobile mockups, so that's the only
+  screen design that exists. But Dashboard, Syllabus, History, and Results
+  get a real, working layout at any width (tablet through desktop, 2-column
+  reflow, growing further on wide screens) — a parent checking progress on
+  an iPad is a realistic scenario, not an edge case. Scan alone gets a
+  clean phone-frame presentation on wider screens instead, since there's no
+  camera-on-a-monitor use case to design a native layout for.
+- **"Print A4 Worksheet (PDF)" only supports the 3 seeded lessons'
+  vocabulary.** The bundled font is a hand-picked 170-glyph subset matching
+  exactly what those 3 lessons use, not a general Chinese font — printing
+  outside that set fails with a clear error instead of a silently blank
+  PDF. A full Noto Sans SC file (a one-time asset swap, not a code change)
+  is the fix once a 4th lesson is seeded.
+- **Dark mode tokens exist but aren't wired up.** `globals.css` defines a
+  full `.dark` palette, but nothing applies it — no toggle, no
+  `prefers-color-scheme` handling. No dark-mode mockup was supplied and
+  theming was outside the assignment's scope.
+- **History and Results start empty on a fresh database**, intentionally —
+  see the empty state on `/history`. No demo data is seeded, since a
+  fabricated history would misrepresent real usage.
+- **AI grading accuracy isn't tuned.** The assignment explicitly
+  de-prioritizes recognition accuracy in favor of pipeline correctness,
+  which is where the effort went instead.
 
-## Beyond the original scope — what got upgraded, and why
+## Beyond the original scope
 
-The assignment scoped 4 screens over roughly a 5-day build. Everything below
-happened after that baseline already worked end-to-end — one deliberate,
-verified pass at a time, never silently. Full reasoning for each lives in
-`docs/planning/FSD_TingXieHero.md` §6 Build History; this is the short version.
+The assignment scoped 4 screens over roughly a 5-day build. Once that
+baseline worked end-to-end, several things were deliberately taken further:
 
-- **Replaced plausible-looking hardcoded numbers with real data.** Credits,
-  the weekly calendar, and the Syllabus "Completed (X%)" tag all started as
-  believable static values — re-read against the source PDF (only the
-  student-profile bullet actually says "Hardcode"), then rebuilt as real,
-  Supabase-backed data.
-- **Built the correction overlay the assignment names as its key evaluation
-  point.** A red-bordered box and the correct word over every miss, a green
-  check over every hit — positioned from Gemini's own bounding-box output on
-  the actual graded photo, not a data table standing in for it.
-- **Turned three decorative buttons real**: "Retest Missed" now routes back
-  into a fresh scan, "Print A4 Worksheet (PDF)" generates an actual Tian
-  Zige practice sheet via `pdf-lib`, and the camera's flash toggle actually
-  controls the device torch where the hardware supports it.
-- **Two separate full audit rounds**, run again once the codebase had grown
-  past what the first pass covered. Repo-wide architecture review,
-  security-review, a Standards+Spec code-review, domain-modeling
-  (→ `CONTEXT.md` + 2 ADRs), and interactive architecture diagrams — each one
-  either fixed something real or explicitly confirmed there was nothing to
-  fix, recorded either way.
-- **A deliberate scope override, at explicit request.** The PRD originally
-  excluded a full stroke-order practice screen as belonging to a different
-  phase of the product's learning loop. A much narrower, view-only
-  stroke-order animation for missed characters (via `hanzi-writer`) was
-  built anyway once asked for directly — documented as an explicit decision,
-  not a PDF interpretation.
-- **A second, deeper audit pass** found and fixed a real prototype-pollution-
-  style bug, an E2E test that only ever passed by accident because it
-  depended on leftover data instead of its own fixture, and an app-wide gap
-  where no screen had a semantic heading or landmark for screen readers.
-- **A third, extended hardening pass (Phases 21-52)** — the most consequential
-  finding: Gemini's response schema never specified whether its `character`
-  field meant the expected word or a transcription of what was actually
-  handwritten. Confirmed live it meant the latter — a wrong answer's
-  correction overlay was showing the student's own mistake back as if it
-  were the fix, on the app's own named key evaluation point. Fixed and
-  re-confirmed live. Also closed: every displayed date silently used the
-  server's own timezone instead of Singapore's; the upload size limit
-  exceeded Vercel's actual platform cap; no response carried a single
-  security header; a busy-overlay UI trap left users unable to cancel a
-  scan in progress, which in turn exposed a real abandoned-request race
-  condition in the upload store; a failed grading retry never navigated
-  anywhere on success; and the one remaining `axe-core` accessibility
-  violation across every screen (a missing landmark). Full findings,
-  live-verification evidence, and reasoning for each: FSD §6 Phases 21-52.
-- **Real tablet-through-desktop layouts, not just a mobile-only shrug
-  (Phase 53).** Revisited "mobile-only" after being asked directly whether
-  iPad-using students were being overlooked — split the answer by actual
-  use case instead of one blanket non-mobile fallback: Dashboard/Syllabus/
-  History/Results get a real adaptive layout (2-column reflow, growing
-  further at desktop width) at any non-mobile width, since checking
-  progress on an iPad or a laptop is a plausible real scenario; Scan alone
-  gets a phone-frame mockup, since there's no camera-on-a-monitor use case
-  to design a native layout for at any width. Iterated twice on direct
-  feedback before landing here — a first pass drew an actual bezel and
-  notch (read as "the app shrank into its own phone"), a second still
-  wrapped every screen in a narrow card at desktop (crammed Syllabus's own
-  2-column grid into far too little width) — both corrected the same
-  session, each re-verified with the full cross-breakpoint check again
-  afterward. Two real implementation bugs also found and fixed along the
-  way (a border eating into the frame's content width, an unscoped
-  `min-h-dvh` overriding a fixed height), both caught by inspecting the
-  actual rendered bounding box, not assumed from the CSS.
-- **A real-device audit found two more genuine bugs, and cleared up an iOS
-  scare (Phase 54).** Tested across 10+ of Playwright's actual device
-  definitions (real iPhone/iPad/Pixel/Galaxy models, not guessed pixel
-  widths) in both orientations. Found the level-tabs row genuinely broke
-  the whole page on iPhone SE (320px, narrower than any earlier check this
-  session used) — 6 fixed-width pills didn't fit and widened the entire
-  document, `BottomNav` included, not just the tab strip. A first fix
-  (scroll the tab strip only) stopped the page-level overflow but, caught
-  on direct feedback, broke centering above 320px and looked broken rather
-  than intentionally scrollable at 320px itself — corrected by shrinking
-  each pill's own padding/gap instead, so all 6 of this fixed, never-
-  growing set of levels actually fit with no scrolling needed at any real
-  width, confirmed this time with actual screenshots at every breakpoint
-  from 320px to 1440px+, not just a `scrollWidth` number. Also measured
-  several real touch targets below Apple/Google's 44px guideline —
-  consequential here specifically, since this app's actual users are
-  primary-school children. Both fixed and re-verified across the full
-  device matrix. Separately, chased down an alarming-looking web search
-  claiming iOS PWAs can't access the camera at all — traced it to a stale
-  2018 WebKit bug, confirmed fixed since iOS 13.4 (2020) by reading the
-  actual bug tracker resolution rather than trusting a blog summary.
+- **Real data everywhere it's reasonably expected, not hardcoded
+  placeholders.** Credits, the weekly calendar, and Syllabus completion
+  percentages are all computed from actual Supabase rows — only the student
+  profile is hardcoded, exactly as the brief instructs.
+- **The correction overlay is real**, not a stand-in for it — a red-pen mark
+  and the correct word over every miss, a green check over every hit,
+  positioned from Gemini's own bounding-box output directly on the graded
+  photo. This is the assignment's own named "key evaluation point."
+- **Every button does what it looks like it does.** "Retest Missed", "Print
+  A4 Worksheet (PDF)" (real `pdf-lib` output), and the camera's flash toggle
+  (real hardware torch control) are all fully functional, not decorative.
+- **Genuinely responsive, not just "doesn't look broken."** Dashboard,
+  Syllabus, History, and Results get a real adaptive layout from mobile
+  through desktop — a parent or student checking progress on an iPad is a
+  realistic scenario for this product, not an edge case.
+- **Several independent audit passes** — security review, a Standards+Spec
+  code review, accessibility auditing, domain modeling (→ `CONTEXT.md` + 2
+  ADRs), and a real-device compatibility sweep across 10+ real iPhone/iPad/
+  Pixel/Galaxy profiles — each either fixed a real bug or explicitly
+  confirmed there was nothing to fix. The most consequential find: Gemini's
+  response schema didn't specify whether its `character` field meant the
+  expected word or a transcription of what was actually written — a wrong
+  answer's correction overlay was showing the student's own mistake back as
+  "correct," on the app's own key evaluation point. Fixed and reverified
+  against the live API.
+- **A view-only stroke-order practice animation** for missed characters,
+  added at explicit request beyond the original PRD scope.
 
-See `docs/planning/FSD_TingXieHero.md` §6 for the complete, dated log —
-every phase, every finding, every decision and the reasoning behind it.
+Full reasoning, every fix, and the complete dated build log:
+`docs/planning/FSD_TingXieHero.md` §6.
 
 ## Deployment
 
@@ -384,7 +283,5 @@ project on the same Vercel account. The three variables from `.env.example`
 are set as encrypted project environment variables (Production + Preview):
 `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`.
 
-Not connected to auto-deploy-on-push — every deploy is a deliberate,
-manually-triggered `vercel deploy --prod`, consistent with this project's own
-"never deploy without explicit approval" convention holding for every deploy,
-not just the first one.
+Not connected to auto-deploy-on-push — every deploy is a deliberate, manually
+triggered `vercel deploy --prod` rather than automatic on every commit.

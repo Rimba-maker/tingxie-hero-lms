@@ -18,7 +18,10 @@ export function HistoricalMatrix({ matrix, pinyinByCharacter }: HistoricalMatrix
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Character</TableHead>
+          {/* Pinned so the character stays visible once enough weeks of
+              history push the date columns into horizontal scroll - the
+              exact "over time" tracking this widget exists for. */}
+          <TableHead className="sticky left-0 z-10 bg-background">Character</TableHead>
           {matrix.dates.map((date) => (
             <TableHead key={date} className="text-center">
               {formatSingaporeDate(new Date(date), { day: "numeric", month: "short" })}
@@ -31,7 +34,7 @@ export function HistoricalMatrix({ matrix, pinyinByCharacter }: HistoricalMatrix
           const pinyin = pinyinByCharacter?.get(row.character);
           return (
             <TableRow key={row.character}>
-              <TableCell className="font-medium">
+              <TableCell className="sticky left-0 z-10 bg-background font-medium">
                 {row.character}
                 {pinyin && (
                   <span className="block text-xs font-normal text-muted-foreground">{pinyin}</span>

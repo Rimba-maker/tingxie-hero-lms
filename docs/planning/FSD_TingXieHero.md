@@ -1438,6 +1438,29 @@ same live-verification convention noted in Phase 39) all clean.
 
 ---
 
+### Phase 43 (beyond the original plan) — the character column would scroll away on a long history
+
+This iteration was asked to look for feature weaknesses too, not just outright bugs. `HistoricalMatrix`
+adds one date column per calendar day a character was attempted, with no cap - exactly the "track
+progress over time" this widget exists for, meaning it's designed to keep growing across real
+weeks of use. Nothing pinned the leftmost "Character" column, so once enough dates pushed the table
+into its container's horizontal scroll (already provided by the shared `Table` primitive), scrolling
+right to see recent dates would carry the character name off-screen with it - on a real mobile
+viewport (this app is deliberately mobile-only, README's Known Limitations), losing track of which
+row you're even looking at.
+
+Pinned the first column (`sticky left-0 z-10 bg-background` on both the header and body cells) so it
+stays visible regardless of scroll position. Verified live against real overflow, not a guess:
+inserted a temp lesson with 15 distinct days of graded history for one character (three seeded
+lessons' actual demo dataset has too few dates today to ever trigger this), confirmed the table's
+`scrollWidth` (916px) genuinely exceeds a real 390px mobile viewport's `clientWidth` (358px),
+screenshotted before and after scrolling the container fully right - the character column stays
+pinned exactly in place in both. Temp lesson/submissions/character_results deleted after, confirmed
+0 remain. `npx tsc --noEmit`, lint, and the full Vitest suite (82/82, unchanged - pure layout CSS,
+no new business logic) all clean.
+
+---
+
 ## 7. Environment Variables
 
 ```

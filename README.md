@@ -13,13 +13,16 @@ focus.
 |---|---|---|---|
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Syllabus](docs/screenshots/syllabus.png) | ![Results](docs/screenshots/results.png) | ![History](docs/screenshots/history.png) |
 
-Results and History above show a real graded submission (score, per-character
-correction overlay, historical matrix with pinyin, and a "Practice writing"
-stroke-order animation per missed character) — captured against one
-temporary submission inserted directly into the live database for this
-screenshot, then deleted immediately after. The shipped database starts
-empty; see **Known limitations** below for why no demo data is seeded
-permanently.
+Results and History above show three real graded submissions for the same
+lesson across three different dates (score, per-character correction
+overlay, a "Results over time" matrix that now actually has history to show,
+pinyin, and a "Practice writing" stroke-order animation for the one
+character still missed) — captured against temporary submissions inserted
+directly into the live database for this screenshot, then deleted
+immediately after (verified 0 rows remaining). The worksheet photo itself is
+a synthesized demo image (not a real phone photo), built the same way for
+this screenshot only. The shipped database starts empty; see
+**Known limitations** below for why no demo data is seeded permanently.
 The Scan screen isn't pictured here — `getUserMedia`'s fake camera device
 doesn't work in this project's screenshot sandbox (a known limitation of
 that environment, not the app; see FSD §6 Phase 3), so it needs a real

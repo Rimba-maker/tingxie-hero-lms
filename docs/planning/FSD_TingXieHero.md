@@ -1678,6 +1678,39 @@ clean. `npx tsc --noEmit` and lint clean too.
 
 ---
 
+### Phase 50 (beyond the original plan) — the shutter button could enable itself before the camera had a real frame to capture
+
+Also used the now-proven fake-camera Playwright technique to check the `mountedRef`/`preloaded`/
+`capturingRef` refs elsewhere in the codebase for the same class of Strict-Mode reset bug Phase 49
+found - confirmed the other two (`PrintWorksheetButton`'s `preloaded`, `useCameraCapture`'s own
+`capturingRef`) are both set inside plain function calls, never inside a `useEffect` cleanup, so
+neither is affected. Not a systemic issue, just Phase 48's one instance.
+
+Continued looking and found a real, now-easily-reproducible gap: `useCameraCapture.start()` called
+`setState("streaming")` (which enables `ShutterButton`) immediately after `getUserMedia()` resolved,
+before the `<video>` element had necessarily decoded its first frame. `captureOnce()`'s own
+`video.videoWidth === 0` guard already existed for exactly this case, but hitting it just returns
+`null` silently - `onCapture` never fires, no error, no feedback, the tap simply does nothing.
+Confirmed live without needing artificial timing tricks: polling for the shutter button to become
+enabled and clicking the instant it did caught `video.videoWidth` still at `0` naturally, and the
+upload API was never called - the exact silent-failure anti-pattern this project has already fixed
+multiple times elsewhere (TopUpButton, PrintWorksheetButton, malformed request bodies), just not yet
+caught here.
+
+Fixed at the root instead of patching the symptom: `start()` now waits for the video's own
+`loadedmetadata` event (only when `videoWidth` isn't already non-zero) before transitioning to
+`"streaming"`, so the shutter is never enabled before a real frame actually exists to capture -
+closing the gap at its source rather than adding a "please wait" message for a race the UI should
+never have let happen in the first place. Verified live: re-ran the exact same
+poll-and-click-instantly reproduction after the fix and confirmed `video.videoWidth` reads a real
+value (1920) by the time the button enables, and the upload API is now correctly called. Re-ran the
+normal-timing capture flow too, confirming zero regression to the common case. Full Playwright e2e
+suite (6/6, unchanged) and Vitest (84/84, unchanged - this hook has no test file, per this project's
+established live-verification convention for DOM-heavy camera code) both clean. `npx tsc --noEmit`
+and lint clean too.
+
+---
+
 ## 7. Environment Variables
 
 ```

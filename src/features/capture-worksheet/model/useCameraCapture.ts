@@ -36,14 +36,28 @@ export function useCameraCapture() {
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
       const capabilities = stream.getVideoTracks()[0]?.getCapabilities() as
         | TorchCapabilities
         | undefined;
       setTorchSupported(!!capabilities?.torch);
       setTorchOn(false);
+
+      const video = videoRef.current;
+      if (video) {
+        video.srcObject = stream;
+        // getUserMedia() resolving doesn't mean the video element has
+        // decoded a first frame yet - confirmed live: a tap landing in that
+        // gap made captureOnce()'s videoWidth===0 guard silently return
+        // null, with the shutter button already enabled and zero feedback
+        // shown. Only enabling the shutter (state: "streaming") once a
+        // frame genuinely exists closes the gap at its source rather than
+        // handling the failure after the fact.
+        if (video.videoWidth === 0) {
+          await new Promise<void>((resolve) => {
+            video.addEventListener("loadedmetadata", () => resolve(), { once: true });
+          });
+        }
+      }
       setState("streaming");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not access camera");

@@ -1320,6 +1320,43 @@ the full Vitest suite (81/81, unchanged - existing tests updated, not added) all
 
 ---
 
+### Phase 39 (beyond the original plan) — the enhanced capture path could hand Gemini an orientation-ambiguous photo
+
+`useCameraCapture`'s canvas fallback draws the live `<video>` element directly, which is always
+already in correct display orientation - safe by construction. Its progressive enhancement,
+`ImageCapture.takePhoto()` (Chromium only, full sensor resolution), reads straight from the camera
+hardware instead and can return a Blob carrying a real EXIF orientation tag - a well-documented,
+common behavior of phone cameras, not a novel theory. Nothing downstream normalized it: the raw
+bytes went straight to Storage and to Gemini's `inlineData`, while the `<img>` overlay
+(`WorksheetOverlay.tsx`) on the Results screen - the assignment's own named "key evaluation point"
+- renders through a browser, which auto-applies EXIF orientation per the HTML spec. If Gemini's
+`box_2d` coordinates are computed against the raw, un-rotated pixel buffer (undocumented, and
+plausible - many vision pipelines decode via libraries that don't auto-rotate), the correction
+overlay would end up positioned against the wrong dimensions entirely.
+
+Tried to confirm Gemini's exact behavior live first: built a synthetic JPEG (`sharp`) with two
+asymmetric color markers and a real EXIF orientation-6 tag, sent it to the actual Gemini API asking
+for box_2d bounding boxes on each marker. The live API returned persistent `503 UNAVAILABLE` on
+every retry (the same already-documented flakiness this project has hit repeatedly) - undetermined,
+not ruled out.
+
+Rather than depend on an external API's undocumented, unconfirmable behavior, closed the ambiguity
+at the source instead: `capture()` now pipes the `takePhoto()` Blob through
+`createImageBitmap(blob, { imageOrientation: "from-image" })` before returning it - this option
+makes the *decode itself* apply the EXIF rotation, so the resulting bitmap's dimensions are already
+the corrected ones. Re-drawn onto a canvas and re-encoded via `toBlob()` (which never writes EXIF),
+the photo that leaves this hook is always orientation-normalized with no tag left to interpret
+differently, matching what the canvas fallback path already guaranteed. Verified live, not
+inferred: ran the exact same `createImageBitmap`/canvas logic in a real Chromium browser
+(Playwright) against the synthetic EXIF-6 test image - the normalized output's dimensions and
+marker pixel positions exactly matched the independently-computed ground truth for correct display
+orientation, and `sharp` confirmed the output file carries no orientation tag at all. This hook has
+no existing test file (browser-only camera/canvas APIs, consistent with the project's convention of
+not unit-testing DOM-heavy code), so verified live only. `npx tsc --noEmit`, lint, and the full
+Vitest suite (81/81, unchanged) all clean.
+
+---
+
 ## 7. Environment Variables
 
 ```

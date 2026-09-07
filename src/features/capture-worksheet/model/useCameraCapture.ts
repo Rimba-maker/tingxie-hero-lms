@@ -89,7 +89,17 @@ export function useCameraCapture() {
     const track = streamRef.current?.getVideoTracks()[0];
     if (track && typeof ImageCapture !== "undefined") {
       try {
-        return await new ImageCapture(track).takePhoto();
+        const photo = await new ImageCapture(track).takePhoto();
+        // Unlike the canvas path below, takePhoto() reads straight from the
+        // camera hardware and can carry an EXIF orientation tag (real phone
+        // cameras commonly set one). Gemini's box_2d coordinates and this
+        // Blob's own pixel buffer would then disagree with what a
+        // <img>/EXIF-aware viewer displays - normalizing bakes the rotation
+        // into the pixels and drops the tag, so every consumer of this photo
+        // sees identical, unambiguous pixels. Confirmed live in a real
+        // browser: an EXIF-tagged test image's markers land in the correct
+        // display position after this, with no orientation tag surviving.
+        return await normalizeOrientation(photo);
       } catch {
         // Some Chromium builds expose the constructor but reject
         // takePhoto() on specific hardware — fall through to the canvas
@@ -110,4 +120,20 @@ export function useCameraCapture() {
   }, []);
 
   return { videoRef, state, error, torchSupported, torchOn, start, stop, toggleTorch, capture };
+}
+
+// "from-image" makes the decode itself apply the Blob's EXIF orientation, so
+// the bitmap's width/height are already the corrected (display) dimensions —
+// re-drawing it plain bakes that rotation into the pixels. canvas.toBlob
+// never writes EXIF, so the result carries no orientation tag for anything
+// downstream to interpret differently.
+async function normalizeOrientation(blob: Blob): Promise<Blob | null> {
+  const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return blob;
+  ctx.drawImage(bitmap, 0, 0);
+  return new Promise((resolve) => canvas.toBlob((normalized) => resolve(normalized ?? blob), "image/jpeg", 0.9));
 }

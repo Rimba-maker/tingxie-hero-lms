@@ -12,6 +12,23 @@ Junior Back-End Developer role. Product requirements and implementation spec liv
 `docs/reference/` (gitignored) holds the original JD and assignment PDFs — client-
 sensitive source material, not part of the submission.
 
+## Git workflow
+
+This repo is reviewed by the client — commit history is part of what gets read.
+
+- **One commit per logical concern, always.** Never bundle unrelated changes
+  (e.g. two different screenshots plus a docs restructure) into a single
+  commit just because they landed in the same turn. If a change touches N
+  independent things, that's N commits, staged and committed one at a time
+  (`git add <specific files>` per commit, not `git add -A`).
+- Each commit message explains *why*, not just *what* — the same style as
+  the existing history (`git log --oneline`).
+- Verify (lint/typecheck/test, or the equivalent manual check for docs/asset
+  changes) before each commit, not just once at the end for the whole batch.
+- Never push without explicit confirmation for that specific push. Never
+  deploy to Vercel under any circumstance unless explicitly told to in that
+  turn — deploy is a separate, higher-stakes action from a git push.
+
 @AGENTS.md
 
 ## Agent skills

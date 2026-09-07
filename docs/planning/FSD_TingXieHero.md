@@ -18,7 +18,7 @@ grading-flow sequence diagrams)
 | Database | Supabase (PostgreSQL) | |
 | Storage | Supabase Storage Bucket | For uploaded worksheet photos |
 | AI Vision | Google Gemini via `@google/genai` SDK | Model: `gemini-flash-latest` (Google-maintained alias) — `gemini-2.5-flash` was retired for new API keys mid-build, its suggested replacement `gemini-3.6-flash` hit consistent 503s, so the alias was chosen specifically to avoid another manual version bump on the next deprecation |
-| Deployment | Vercel | Frontend + API routes together. **Not yet deployed** — deliberately deferred pending final review (see §8) |
+| Deployment | Vercel | Frontend + API routes together. **Live** at `tingxie-hero-lms.vercel.app` — deployed via the Vercel CLI, not the dashboard's git-import flow (see §8) |
 | PWA | Serwist (`@serwist/next` + `@serwist/turbopack` + `@serwist/cli`) | Configurator mode, required for Turbopack (webpack-only `next-pwa` doesn't work here) |
 | State (client) | Zustand | `useUploadSubmission` store only — everything else is server-fetched or local `useState` |
 | Icons | lucide-react | |
@@ -323,7 +323,7 @@ export function getGeminiClient(): GoogleGenAI {
 ```
 
 ```ts
-// src/entities/submission/api/gradeWithGemini.ts (server-only, TDD'd — 5 tests)
+// src/entities/submission/api/gradeWithGemini.ts (server-only, TDD'd — 11 tests)
 const GEMINI_MODEL = "gemini-flash-latest";
 
 const response = await geminiClient.models.generateContent({
@@ -333,6 +333,9 @@ const response = await geminiClient.models.generateContent({
     { inlineData: { mimeType: "image/jpeg", data: imageBase64 } },
   ]}],
   config: {
+    httpOptions: { timeout: 60_000 }, // Phase 45 — a stalled (not just fast-failing) request
+    // would otherwise leave a submission stuck "grading" forever, since the retry button
+    // only appears once a call actually throws
     mediaResolution: "MEDIA_RESOLUTION_HIGH", // same 256 tokens/image as MEDIUM, better stroke detail
     safetySettings: [
       { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
@@ -344,7 +347,12 @@ const response = await geminiClient.models.generateContent({
     // array of { character, isCorrect, box_2d?: [ymin, xmin, ymax, xmax] } —
     // box_2d normalized 0-1000, Gemini's documented object-detection output
     // shape (confirmed via Context7), drives WorksheetOverlay's red/green
-    // marks on the graded photo — the assignment's own "key evaluation point"
+    // marks on the graded photo — the assignment's own "key evaluation point".
+    // `character`'s own schema description explicitly says "the expected
+    // word... never a transcription of what the student actually wrote,
+    // even when isCorrect is false" (Phase 46) — without it, Gemini returned
+    // what was actually handwritten, showing a wrong answer's own mistake
+    // back as the "correction."
     responseSchema: { /* ... */ },
   },
 });
@@ -2162,13 +2170,19 @@ ever needed browser-side Supabase access) and was removed as dead code, along wi
 
 - [x] Supabase project created, schema + seed data applied, `worksheet-photos` bucket created with
   its access policy
-- [ ] Vercel project linked to GitHub repo, env vars set in Vercel dashboard (not committed to
-  repo) — see README's Deployment section for the exact steps
+- [x] Vercel project created via the CLI (`vercel project add`), explicitly separate from any other
+  project on the same account — never selected from an existing-project picker. Env vars set via
+  `vercel env add` (Production + Preview), not the dashboard, values piped from `.env.local`
+  through stdin and never echoed to a terminal. See FSD §6 Phase 60 for the full deploy log,
+  including two real gotchas caught and fixed (a Framework Preset defaulting to "Other" that 404'd
+  every route, and Deployment Protection's default SSO wall blocking public access).
 - [x] Serwist build output verified (manifest reachable, icons load, service worker registers,
   confirmed via Playwright)
-- [ ] Live URL tested end-to-end from a real mobile device (needs the deploy above first)
+- [x] Live URL verified end-to-end via `curl` after deploy — every route 200, real Supabase-backed
+  content confirmed in the response body. **Still open:** a real mobile device hasn't tested the
+  live camera flow yet (see PRD §6 Screen 3 and README's Known Limitations).
 - [x] README includes: setup steps, env vars needed, screenshots, architecture notes, Known
-  Limitations, Deployment steps — live URL itself still pending the deploy above
+  Limitations, Deployment section with the live URL
 
 ---
 

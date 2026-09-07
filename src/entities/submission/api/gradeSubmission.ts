@@ -8,7 +8,7 @@ export type GradeSubmissionDeps = {
   gradingDb: SubmissionForGradingDb;
   resultsDb: CharacterResultsDb;
   gemini: GeminiClient;
-  fetchImageAsBase64: (imageUrl: string) => Promise<string>;
+  fetchImageAsBase64: (imageUrl: string) => Promise<{ imageBase64: string; mimeType: string }>;
 };
 
 export type GradeSubmissionResult = {
@@ -28,8 +28,8 @@ export async function gradeSubmission(
   submissionId: string,
 ): Promise<GradeSubmissionResult> {
   const { imageUrl, vocabList } = await getSubmissionForGrading(deps.gradingDb, submissionId);
-  const imageBase64 = await deps.fetchImageAsBase64(imageUrl);
-  const grade = await gradeWithGemini(deps.gemini, { imageBase64, vocabList });
+  const { imageBase64, mimeType } = await deps.fetchImageAsBase64(imageUrl);
+  const grade = await gradeWithGemini(deps.gemini, { imageBase64, mimeType, vocabList });
   await saveGradingResult(deps.resultsDb, submissionId, grade);
 
   return {
@@ -42,7 +42,17 @@ export async function gradeSubmission(
 
 // Real implementation. Untested glue — a real network fetch, same category
 // as the Supabase/Gemini SDK calls elsewhere in this file's siblings.
-export async function fetchImageAsBase64(imageUrl: string): Promise<string> {
+export async function fetchImageAsBase64(
+  imageUrl: string,
+): Promise<{ imageBase64: string; mimeType: string }> {
   const response = await fetch(imageUrl);
-  return Buffer.from(await response.arrayBuffer()).toString("base64");
+  const imageBase64 = Buffer.from(await response.arrayBuffer()).toString("base64");
+  // The Storage bucket now serves back whatever validateWorksheetImage
+  // actually accepted (uploadWorksheetImage no longer hardcodes
+  // "image/jpeg") - read it back rather than assuming, so Gemini is told
+  // the real format for these exact bytes. "image/jpeg" fallback only for
+  // the case a response genuinely omits the header, not as the default
+  // expectation.
+  const mimeType = response.headers.get("content-type") ?? "image/jpeg";
+  return { imageBase64, mimeType };
 }

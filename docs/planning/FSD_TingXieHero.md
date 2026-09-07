@@ -994,6 +994,41 @@ media-query switch - no dark-mode mockup was ever supplied, and theme switching 
 the assignment's scope - but corrected the README claim to say what's actually true, and kept the
 contrast fix anyway: harmless now, correct from day one if this ever does get wired up later.
 
+### Phase 28 (beyond the original plan) — the photo's real format was never checked past the client
+
+Re-read `uploadWorksheetImage.ts`'s own comment against `useCameraCapture.ts` side by side and
+found a contradiction: the comment claimed "the only real capture path... always produces
+image/jpeg," but `useCameraCapture` tries `ImageCapture.takePhoto()` *first* (the preferred,
+higher-resolution path on Chromium), falling back to the fixed-JPEG canvas snapshot only when that
+throws or isn't available. Confirmed via MDN, not assumed: `takePhoto()`'s returned `Blob` format
+isn't guaranteed to be JPEG - it's whatever the device's camera hardware defaults to. Every upload
+was stored under a hardcoded `Content-Type: image/jpeg` regardless, and `gradeWithGemini` then told
+Gemini the same hardcoded `image/jpeg` for whatever bytes actually got fetched back - on a device
+whose `takePhoto()` returns PNG or another format, Gemini would receive mismatched format metadata
+paired with the real image bytes, on the exact flow the assignment calls its key evaluation point.
+
+Threaded the *validated* real type through instead of hardcoding one at either end:
+`validateWorksheetImage` now allowlists specific raster formats (`image/jpeg`, `image/png`,
+`image/webp`) rather than a blanket `startsWith("image/")` - deliberately not just trusting
+`file.type` again, since that same blanket check is also what let `image/svg+xml` through before
+9a94c9e's fix (that commit hardcoded the *stored* type against a spoofed client one; this one still
+needed the input narrowed to safe raster formats before ever using it as the real type anywhere).
+`/api/upload` passes that validated `file.type` to `uploadWorksheetImage`, which now stores it as
+the real `Content-Type` instead of a hardcoded one. `fetchImageAsBase64` reads the Storage
+response's actual `Content-Type` header back and threads it through `gradeSubmission` into
+`gradeWithGemini`'s `inlineData.mimeType`, so Gemini is told the truth about whatever bytes it's
+actually receiving. TDD'd (76/76, up from 73) — one test asserts the mimeType Gemini's SDK is
+actually called with, not just that the pipeline doesn't throw.
+
+Verified live end-to-end, not just unit-tested: uploaded a real PNG through `/api/upload`, confirmed
+the stored object is served back as `Content-Type: image/png` (previously would have been a lying
+`image/jpeg`), then called `/api/grade` against it. Gemini itself returned a 503 "experiencing high
+demand" - the same live, already-documented flakiness this project has hit before (§5), confirmed
+via a temporary debug log showing the raw SDK error, not assumed. A 503 rather than a 400 is itself
+useful evidence: Gemini's API accepted the request shape, `image/png` mimeType included, and simply
+had no capacity - not a sign this fix broke anything. Temp submission and its Storage object deleted
+after, confirmed 0 remain.
+
 ---
 
 ## 7. Environment Variables

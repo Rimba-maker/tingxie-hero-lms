@@ -9,7 +9,18 @@ describe("validateWorksheetImage", () => {
 
   test("rejects a non-image file", () => {
     expect(validateWorksheetImage({ type: "application/pdf", size: 1000 })).toBe(
-      "File must be an image",
+      "File must be a JPEG, PNG, or WebP image",
+    );
+  });
+
+  test("rejects an image/* type outside the raster allowlist", () => {
+    // Downstream, this Content-Type gets stored and served back verbatim
+    // from a public Storage URL (9a94c9e) - image/svg+xml starts with
+    // "image/" but can carry embedded <script>, so a blanket
+    // startsWith("image/") check isn't actually the safety boundary it
+    // looks like. Only the raster formats a real capture path can produce.
+    expect(validateWorksheetImage({ type: "image/svg+xml", size: 1000 })).toBe(
+      "File must be a JPEG, PNG, or WebP image",
     );
   });
 

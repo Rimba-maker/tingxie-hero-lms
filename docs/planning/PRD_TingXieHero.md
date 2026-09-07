@@ -300,7 +300,7 @@ rather than hardcoded mockup values — not part of the original 3-table sketch.
 - **Security:** Gemini API key and Supabase service role key must live server-side only (Next.js API routes / server actions), never exposed to the client bundle.
 - **NDA-safety:** Since this is a take-home for a company with IP-sensitive policies, avoid referencing this project publicly by client name after submission unless explicitly permitted.
 - **Performance:** Not a primary evaluation criterion per the assignment, but image upload should show loading feedback so the flow doesn't feel broken during the Gemini round-trip (which can take a few seconds).
-- **Test coverage:** 73 unit tests (Vitest, 24 files) covering every entity function's business
+- **Test coverage:** 76 unit tests (Vitest, 24 files) covering every entity function's business
   logic — Gemini response parsing, score computation, the pivot logic behind the historical matrix,
   the grade-submission pipeline's orchestration order — against fakes, no live credentials needed to
   run them. 6 Playwright E2E cases (one spec) covering navigation, tab switching, and both History

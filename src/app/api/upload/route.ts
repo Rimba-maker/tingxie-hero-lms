@@ -25,11 +25,13 @@ export async function POST(request: NextRequest) {
   }
 
   const supabaseServer = getSupabaseServer();
+  const extension = file.type.split("/")[1];
 
   try {
     const { imageUrl } = await uploadWorksheetImage(supabaseWorksheetImageStorage(supabaseServer), {
       file,
-      path: `${randomUUID()}.jpg`,
+      path: `${randomUUID()}.${extension}`,
+      contentType: file.type,
     });
 
     const submission = await createSubmission(supabaseSubmissionsDb(supabaseServer), {

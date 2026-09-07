@@ -1,9 +1,30 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import { gradeWithGemini, type GeminiClient } from "./gradeWithGemini";
 import { GeminiGradingError } from "./gradingErrors";
 
 describe("gradeWithGemini", () => {
+  test("sends the caller's actual mimeType to Gemini, not a hardcoded one", async () => {
+    // A real ImageCapture.takePhoto() capture isn't guaranteed to be JPEG
+    // (confirmed via MDN) - previously this was hardcoded to "image/jpeg"
+    // regardless of what format the stored photo actually was.
+    const generateContent = vi.fn<GeminiClient["models"]["generateContent"]>(async () => ({
+      text: JSON.stringify([]),
+    }));
+    const fakeGemini: GeminiClient = { models: { generateContent } };
+
+    await gradeWithGemini(fakeGemini, {
+      imageBase64: "fake-base64-image-data",
+      mimeType: "image/png",
+      vocabList: ["校园"],
+    }).catch(() => {}); // empty results throws (Phase 22) - only the call args matter here
+
+    const call = generateContent.mock.calls[0][0] as {
+      contents: { parts: { inlineData?: { mimeType: string } }[] }[];
+    };
+    expect(call.contents[0].parts[1].inlineData?.mimeType).toBe("image/png");
+  });
+
   test("computes score from the graded characters Gemini returns", async () => {
     const fakeGemini: GeminiClient = {
       models: {
@@ -19,6 +40,7 @@ describe("gradeWithGemini", () => {
 
     const result = await gradeWithGemini(fakeGemini, {
       imageBase64: "fake-base64-image-data",
+      mimeType: "image/jpeg",
       vocabList: ["校园", "礼堂", "老师"],
     });
 
@@ -45,6 +67,7 @@ describe("gradeWithGemini", () => {
 
     const result = await gradeWithGemini(fakeGemini, {
       imageBase64: "fake-base64-image-data",
+      mimeType: "image/jpeg",
       vocabList: ["校园", "礼堂"],
     });
 
@@ -80,6 +103,7 @@ describe("gradeWithGemini", () => {
 
     const result = await gradeWithGemini(fakeGemini, {
       imageBase64: "fake-base64-image-data",
+      mimeType: "image/jpeg",
       vocabList: ["校园", "礼堂", "老师"],
     });
 
@@ -97,6 +121,7 @@ describe("gradeWithGemini", () => {
     await expect(
       gradeWithGemini(brokenGemini, {
         imageBase64: "fake-base64-image-data",
+      mimeType: "image/jpeg",
         vocabList: ["校园"],
       }),
     ).rejects.toThrow("Gemini returned invalid JSON");
@@ -115,6 +140,7 @@ describe("gradeWithGemini", () => {
     await expect(
       gradeWithGemini(blockedGemini, {
         imageBase64: "fake-base64-image-data",
+      mimeType: "image/jpeg",
         vocabList: ["校园"],
       }),
     ).rejects.toThrow("Gemini blocked this image: SAFETY");
@@ -130,6 +156,7 @@ describe("gradeWithGemini", () => {
     await expect(
       gradeWithGemini(emptyGemini, {
         imageBase64: "fake-base64-image-data",
+      mimeType: "image/jpeg",
         vocabList: ["校园"],
       }),
     ).rejects.toThrow("Gemini returned invalid JSON");
@@ -151,7 +178,7 @@ describe("gradeWithGemini", () => {
     };
 
     await expect(
-      gradeWithGemini(overloadedGemini, { imageBase64: "x", vocabList: ["校园"] }),
+      gradeWithGemini(overloadedGemini, { imageBase64: "x", mimeType: "image/jpeg", vocabList: ["校园"] }),
     ).rejects.toBeInstanceOf(GeminiGradingError);
   });
 
@@ -168,7 +195,7 @@ describe("gradeWithGemini", () => {
     };
 
     await expect(
-      gradeWithGemini(emptyResultsGemini, { imageBase64: "x", vocabList: ["校园"] }),
+      gradeWithGemini(emptyResultsGemini, { imageBase64: "x", mimeType: "image/jpeg", vocabList: ["校园"] }),
     ).rejects.toThrow("Gemini didn't grade any characters, please try again");
   });
 
@@ -180,7 +207,7 @@ describe("gradeWithGemini", () => {
     };
 
     await expect(
-      gradeWithGemini(blockedGemini, { imageBase64: "x", vocabList: ["校园"] }),
+      gradeWithGemini(blockedGemini, { imageBase64: "x", mimeType: "image/jpeg", vocabList: ["校园"] }),
     ).rejects.toBeInstanceOf(GeminiGradingError);
   });
 });

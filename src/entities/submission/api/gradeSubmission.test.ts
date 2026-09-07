@@ -27,7 +27,10 @@ function makeDeps(overrides: Partial<GradeSubmissionDeps> = {}): GradeSubmission
       }),
     },
   };
-  const fetchImageAsBase64 = vi.fn(async () => "fake-base64-image-data");
+  const fetchImageAsBase64 = vi.fn(async () => ({
+    imageBase64: "fake-base64-image-data",
+    mimeType: "image/jpeg",
+  }));
 
   return { gradingDb, resultsDb, gemini, fetchImageAsBase64, ...overrides };
 }
@@ -44,7 +47,7 @@ describe("gradeSubmission", () => {
       },
       fetchImageAsBase64: async (url) => {
         calls.push(`fetch:${url}`);
-        return "fake-base64";
+        return { imageBase64: "fake-base64", mimeType: "image/jpeg" };
       },
       gemini: {
         models: {

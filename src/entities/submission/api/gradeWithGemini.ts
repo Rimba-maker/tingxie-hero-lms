@@ -42,7 +42,7 @@ type RawGradedCharacter = {
 
 export async function gradeWithGemini(
   geminiClient: GeminiClient,
-  params: { imageBase64: string; vocabList: string[] },
+  params: { imageBase64: string; mimeType: string; vocabList: string[] },
 ): Promise<GradeResult> {
   let response;
   try {
@@ -53,7 +53,7 @@ export async function gradeWithGemini(
           role: "user",
           parts: [
             { text: buildPrompt(params.vocabList) },
-            { inlineData: { mimeType: "image/jpeg", data: params.imageBase64 } },
+            { inlineData: { mimeType: params.mimeType, data: params.imageBase64 } },
           ],
         },
       ],

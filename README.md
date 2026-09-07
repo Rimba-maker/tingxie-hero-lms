@@ -355,7 +355,14 @@ verified pass at a time, never silently. Full reasoning for each lives in
   widths) in both orientations. Found the level-tabs row genuinely broke
   the whole page on iPhone SE (320px, narrower than any earlier check this
   session used) — 6 fixed-width pills didn't fit and widened the entire
-  document, `BottomNav` included, not just the tab strip. Also measured
+  document, `BottomNav` included, not just the tab strip. A first fix
+  (scroll the tab strip only) stopped the page-level overflow but, caught
+  on direct feedback, broke centering above 320px and looked broken rather
+  than intentionally scrollable at 320px itself — corrected by shrinking
+  each pill's own padding/gap instead, so all 6 of this fixed, never-
+  growing set of levels actually fit with no scrolling needed at any real
+  width, confirmed this time with actual screenshots at every breakpoint
+  from 320px to 1440px+, not just a `scrollWidth` number. Also measured
   several real touch targets below Apple/Google's 44px guideline —
   consequential here specifically, since this app's actual users are
   primary-school children. Both fixed and re-verified across the full

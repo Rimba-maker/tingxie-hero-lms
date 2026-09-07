@@ -1886,7 +1886,23 @@ SE (320px - narrower than the 390px every earlier check this session used as its
 showed genuine horizontal page overflow on `/syllabus`: `document.documentElement.scrollWidth`
 (350) exceeded `clientWidth` (320). Traced to the 6 fixed-width P1-P6 pills never fitting at that
 width, with nothing scoping the overflow - it widened the *whole page*, `BottomNav` included, not
-just the tab row itself. Fixed with `overflow-x-auto` on a wrapper around just that strip.
+just the tab row itself. First fix: `overflow-x-auto` on a wrapper around just that strip - stopped
+the page-level overflow (confirmed `scrollWidth === clientWidth === 320`), but that check only
+looked at the number, not the picture.
+
+**Corrected again, on direct feedback.** The scroll wrapper itself looked broken: at 768px+,
+`mx-auto` on `TabsList` (an `inline-flex w-fit` element per its own base class) stopped centering
+once nested inside a separate `overflow-x-auto` block - the strip sat left-aligned instead. At
+320px, "P6" sat half-cut at the right edge with no scroll affordance (no fade, no partial-reveal
+styling) - reading as a bug, not an intentionally swipeable strip. Root fix: there are only 6
+levels, a fixed set (MOE Singapore's own P1-P6) that will never grow, so the real answer is making
+all 6 actually *fit* rather than scrolling past them. Removed the wrapper entirely (restoring plain
+`mx-auto` centering, which works correctly once nothing nests it inside a scrolling block) and
+tightened `gap-2` → `gap-1.5`, `TabsTrigger`'s `px-4` → `px-3`. Confirmed live this time with actual
+screenshots, not just `scrollWidth`/`clientWidth` numbers: all 6 pills fit with room to spare at
+320px (iPhone SE, both the emulated profile and Playwright's real device definition), and centering
+holds correctly from 320px through 1440px+ with zero scrolling at any real width. `h-11` (the 44px
+touch target from the fix below) was untouched - only width shrank.
 
 **Found and fixed: several real touch targets measured below the 44px guideline** on that same
 iPhone SE profile - "Top Up" (28px), both "Scan & Grade Worksheet" CTAs (36px/32px), the level tabs

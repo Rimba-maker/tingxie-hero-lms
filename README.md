@@ -30,10 +30,13 @@ this screenshot only. The shipped database starts empty; see
 
 Scan shows the real, live camera screen — header, alignment brackets, QR
 target box, shutter button — genuinely streaming, not a static mockup or an
-error fallback; Chromium's synthetic test-pattern feed (the moving
-green/light-green shape) stands in for a real phone camera here, which is
-what actually varies before first real-device use (see **Known
-limitations**). Print Worksheet is the actual generated Tian Zige
+error fallback. Chromium's fake-camera flag defaults to a flat green test
+pattern, which read as broken in a screenshot rather than illustrative, so
+this one feeds it a synthesized desk-with-worksheet clip
+(`--use-file-for-fake-video-capture`) instead — still a fake feed standing
+in for a real phone camera (that's what actually varies before first
+real-device use, see **Known limitations**), just a more legible one for
+documentation purposes. Print Worksheet is the actual generated Tian Zige
 practice-sheet PDF (`generateWorksheetPdf`, real output, not a mockup),
 rendered here in a PDF viewer.
 

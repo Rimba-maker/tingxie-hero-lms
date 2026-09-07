@@ -1949,6 +1949,47 @@ audit), full screenshot comparison confirming no visual regression, full e2e sui
 
 ---
 
+### Phase 55 (beyond the original plan) — a misleading doc screenshot, and a stray dev server skewing this session's own verification
+
+Asked directly why `docs/screenshots/results.png` showed 67% and why the Scan screenshot looked
+like a flat green screen - two questions worth answering precisely rather than guessing.
+
+**67% is correct, not a bug.** `ScoreHeader` computes `Math.round((score / totalPossible) * 100)`;
+2 correct out of 3 is 66.67%, which rounds to 67%. Traced live against the actual submission behind
+that screenshot - the math matches.
+
+**The red correction-box position is Gemini's own imprecision, not this app's overlay math.**
+`boundingBoxToOverlayStyle` is a plain linear map from Gemini's normalized 0-1000 `box_2d` to CSS
+percentages (unit-tested, both cases exact). The exact same image bytes stored in Supabase are what
+get base64-encoded and sent to Gemini (`gradeSubmission.ts`'s `fetchImageAsBase64` fetches the
+stored `imageUrl` itself) - no resize or recrop between what Gemini scores and what the overlay
+renders against, and Phase 39 already closed the one real way this class of bug could happen
+(EXIF-rotation disagreement between the stored photo and Gemini's coordinate space). What's left is
+Gemini's vision model itself returning an imprecise box for that specific real photo - already the
+accepted, named trade-off in `PRD_TingXieHero.md` ("an inexact but real bounding box... best matches
+what's actually being assessed"), not a defect introduced by this codebase.
+
+**The Scan screenshot's flat green screen was a documentation problem, not a product bug.**
+Chromium's `--use-fake-device-for-media-stream` flag defaults to a solid-green synthetic test
+pattern - accurately captured, but reads as broken to someone who doesn't know that's the fake-
+camera default. Replaced it with `--use-file-for-fake-video-capture=<file>.y4m` feeding a
+synthesized desk-with-worksheet scene (built with `sharp` rendering an SVG to a raw RGBA buffer,
+manually converted to YUV 4:2:0 and wrapped in a hand-written Y4M container - no new dependency,
+`sharp` was already present transitively) - still a fake feed, just a legible one for a reader
+skimming the README. Regenerated `docs/screenshots/scan.png` and corrected the caption in
+`README.md` that named the old green pattern by description.
+
+**Caught along the way: a stray `next dev` process had squatted on port 3000 since earlier in this
+session**, so `npm run start` (production) was silently failing with `EADDRINUSE` on every attempt
+this turn while `curl` checks kept returning 200 from the old dev server instead - the Next.js dev
+overlay showed up baked into the first screenshot attempt, which is what surfaced it. Killed the
+stray process, confirmed a genuine `next start` bound to :3000, and re-ran the prior turn's Syllabus
+level-tabs verification (device-matrix overflow/centering check, Vitest, e2e) against the real
+production build - all still clean, so the earlier fix itself was never in question, only which
+server had verified it.
+
+---
+
 ## 7. Environment Variables
 
 ```

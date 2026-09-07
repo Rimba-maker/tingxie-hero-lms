@@ -1461,6 +1461,36 @@ no new business logic) all clean.
 
 ---
 
+### Phase 44 (beyond the original plan) — a malformed request body broke this app's own error contract
+
+Every route in this app returns a consistent `{ error: string }` JSON shape on failure -
+`mapGradeError`, `validateWorksheetImage`, the topup route's own catch block all honor it. But
+`POST /api/grade`'s `request.json()` and `POST /api/upload`'s `request.formData()` were both called
+*before* their route's try/catch began, not inside it. Confirmed live: `curl`ing malformed JSON to
+`/api/grade` and a malformed multipart body to `/api/upload` both returned a bare `500` with an
+**empty body** - no `error` field at all, silently breaking the one contract every client-side
+caller (`readErrorMessage` in `useUploadSubmission.ts`) depends on to show a real message instead of
+a bare status code. Not reachable through this app's own UI (the real client always sends valid
+JSON/multipart), but a genuine trust-boundary gap regardless - exactly the kind of input validation
+ponytail's own rules call out as never worth simplifying away.
+
+Wrapped both body-parsing calls in their own try/catch, returning this app's normal `{ error:
+"Invalid request body" }` at `400` instead of falling through to an empty framework 500. Verified
+live: re-ran the same malformed-JSON and malformed-multipart requests after the fix and confirmed
+both now return the structured `400` error; re-ran the existing valid-JSON error paths
+(missing `submissionId`, a nonexistent one) to confirm zero regression - identical `400`/`404`
+responses as before.
+
+Caught and fixed a self-inflicted mistake during this verification: an early `curl` against the
+real, unmocked `/api/credits/topup` (checking it needed no body-parsing guard, since it reads none)
+actually incremented the real student's live `credits_total` by 10 as a side effect of hitting a
+real endpoint. Caught immediately from the response body, reverted with a direct database update
+back to the prior value, and confirmed via a fresh read afterward. `npx tsc --noEmit`, lint, and the
+full Vitest suite (82/82, unchanged - a trust-boundary guard around already-covered logic, not new
+business logic) all clean.
+
+---
+
 ## 7. Environment Variables
 
 ```

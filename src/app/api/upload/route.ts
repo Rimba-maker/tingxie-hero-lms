@@ -11,7 +11,15 @@ import { validateWorksheetImage } from "@/entities/submission/api/validateWorksh
 import { getSupabaseServer } from "@/shared/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
-  const formData = await request.formData();
+  // Same class of gap as /api/grade: a malformed multipart body makes
+  // request.formData() throw, which left unguarded becomes an empty 500
+  // instead of this route's own { error: string } contract. Confirmed live.
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const file = formData.get("image");
   const lessonId = formData.get("lessonId");
 

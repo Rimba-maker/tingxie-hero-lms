@@ -365,6 +365,16 @@ were connected. Its suggested replacement, `gemini-3.6-flash`, hit consistent 50
 across multiple retries. Settled on the `-latest` alias Google maintains, specifically so the next
 model retirement doesn't need another manual version bump.
 
+**Future mitigation option, not implemented:** researched against the current `@google/genai`
+docs (via context7) while looking for anything else worth upgrading — the SDK exposes
+`ai.models.get({ model })`, returning a `ModelStatus` with a `modelStage` field
+(`STABLE`/`DEPRECATED`/`RETIRED`/etc.) and an optional `retirementTime`. Given this build already
+hit two real model retirements (above), this is a genuine way to detect the next one proactively
+instead of via a live 404/503. Deliberately not built: it's an extra API call on every grading
+request for a failure mode the `-latest` alias already mitigates by design, and this assignment's
+own Non-Functional Requirements don't prioritize performance or resilience hardening. Worth
+revisiting if this pipeline is ever operated for real, ongoing use.
+
 ---
 
 ## 6. Build History

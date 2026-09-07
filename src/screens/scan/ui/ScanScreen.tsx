@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useUploadSubmission } from "@/features/upload-submission/model/useUploadSubmission";
 import { CameraViewfinder } from "@/widgets/camera-viewfinder/ui/CameraViewfinder";
+import { PhoneFrame } from "@/widgets/phone-frame/ui/PhoneFrame";
 
 type ScanScreenProps = {
   lessonId: string;
@@ -81,34 +82,42 @@ export function ScanScreen({ lessonId }: ScanScreenProps) {
   const isBusy = upload.status === "uploading" || upload.status === "grading";
 
   return (
-    <main className="relative">
-      <CameraViewfinder onClose={() => router.back()} onCapture={handleCapture} capturing={isBusy} />
+    // Framed starting at tablet width (md:), not xl: like the content
+    // screens - unlike Dashboard/Syllabus/History/Results, there's no
+    // meaningful native-tablet camera layout to build: photographing a
+    // worksheet works identically at any touchscreen size, so extra width
+    // buys nothing a real adaptation could use. Desktop has no camera-on-a-
+    // monitor use case at all, so the mockup treatment starts earlier here.
+    <PhoneFrame activateAt="md">
+      <main className="relative">
+        <CameraViewfinder onClose={() => router.back()} onCapture={handleCapture} capturing={isBusy} />
 
-      {isBusy && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 text-white"
-        >
-          {upload.status === "uploading" ? "Uploading…" : "Grading…"}
-        </div>
-      )}
-
-      {upload.status === "error" && (
-        <div
-          role="alert"
-          className="absolute inset-x-4 bottom-28 z-20 rounded-md bg-red-950/90 p-3 text-center text-sm text-white"
-        >
-          {upload.message}{" "}
-          <button
-            type="button"
-            onClick={() => (upload.submissionId ? handleRetry(upload.submissionId) : upload.reset())}
-            className="underline"
+        {isBusy && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 text-white"
           >
-            Try again
-          </button>
-        </div>
-      )}
-    </main>
+            {upload.status === "uploading" ? "Uploading…" : "Grading…"}
+          </div>
+        )}
+
+        {upload.status === "error" && (
+          <div
+            role="alert"
+            className="absolute inset-x-4 bottom-28 z-20 rounded-md bg-red-950/90 p-3 text-center text-sm text-white"
+          >
+            {upload.message}{" "}
+            <button
+              type="button"
+              onClick={() => (upload.submissionId ? handleRetry(upload.submissionId) : upload.reset())}
+              className="underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+      </main>
+    </PhoneFrame>
   );
 }
